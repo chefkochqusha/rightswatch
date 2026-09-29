@@ -24,15 +24,23 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
         action: input.action,
         targetType: input.targetType,
         targetId: input.targetId,
-        // `metadata` is an optional `Json?` column — Prisma's generated
-        // create input doesn't accept a bare `null` for it (confirmed by
-        // Vercel's build once the real generated types existed to check
-        // against, not something this sandbox's `tsc` run could catch).
-        // `Prisma.DbNull` is the documented sentinel for "set this Json
-        // column to SQL NULL," as opposed to `Prisma.JsonNull` (store the
-        // JSON literal `null` as the value) — SQL NULL is what "no
-        // metadata" means here.
-        metadata: input.metadata ?? Prisma.DbNull,
+        // `metadata` is an optional `Json?` column, needing two casts
+        // Prisma's real generated types require (both only catchable once
+        // those types exist to check against, which this sandbox's `tsc`
+        // run can't do — confirmed by Vercel's build, one error at a time):
+        // (1) a bare `null` isn't accepted — `Prisma.DbNull` is the
+        // documented sentinel for "set this Json column to SQL NULL," as
+        // opposed to `Prisma.JsonNull` (store the JSON literal `null` as
+        // the value) — SQL NULL is what "no metadata" means here; (2) a
+        // plain `Record<string, unknown>` isn't directly assignable either
+        // — its index signature's `unknown` value type doesn't structurally
+        // satisfy Prisma's `InputJsonValue`, same underlying reason
+        // `CaseOpenedPayload` needed a cast in
+        // `modules/notifications/prisma-repository.ts` — so it needs the
+        // same representation-bridging `as unknown as` cast.
+        metadata: input.metadata
+          ? (input.metadata as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
       },
     });
     return mapAuditLog(row);
