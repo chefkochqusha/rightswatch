@@ -1,29 +1,27 @@
+import { InMemoryRateLimiter } from "@/modules/auth";
 import {
-  InMemoryMembershipRepository,
-  InMemoryRateLimiter,
-  InMemoryUserRepository,
-  InMemoryWorkspaceRepository,
-} from "@/modules/auth";
+  PrismaMembershipRepository,
+  PrismaUserRepository,
+  PrismaWorkspaceRepository,
+} from "@/modules/auth/prisma-repositories";
 
 /**
- * One shared in-memory identity store per server process (see
- * `modules/auth/in-memory-repositories.ts` for why it's in-memory at all:
- * Phase 4's Prisma schema exists but `prisma generate` can't run in the
- * current build sandbox — ARCHITECTURE.md "Open decisions"). Swapping this
- * file's internals for Prisma-backed repositories later is the only change
- * needed to turn real signup/login from in-memory to durable — nothing in
- * `modules/auth`, the signup/login Server Actions, or the pages needs to
- * change, since they all depend only on the repository interfaces.
+ * One shared identity store per server process. Prisma-backed as of Phase
+ * 2 (Neon is live — see `prisma.config.ts`/`src/lib/prisma-client.ts`):
+ * real signup/login/team-invite accounts are now durable Postgres rows,
+ * not process memory. `modules/auth/in-memory-repositories.ts` still
+ * exists and is still exercised by this module's own tests, but nothing
+ * in `modules/auth`, the signup/login Server Actions, or the pages needed
+ * to change for this swap — they all depend only on the repository
+ * interfaces in `modules/auth/types.ts`.
  *
- * Cached on `globalThis` so `next dev`'s module-reload-on-save doesn't wipe
- * every account created while testing this locally — a dev convenience,
- * not a durability guarantee. State is still lost on every process
- * restart or redeploy, and is never shared across serverless instances.
+ * `InMemoryRateLimiter` deliberately stays as-is: login brute-force
+ * protection is Redis-bound per the Master Brief, not part of this swap.
  */
 interface AuthStore {
-  users: InMemoryUserRepository;
-  workspaces: InMemoryWorkspaceRepository;
-  memberships: InMemoryMembershipRepository;
+  users: PrismaUserRepository;
+  workspaces: PrismaWorkspaceRepository;
+  memberships: PrismaMembershipRepository;
   /** Login brute-force protection (see `modules/auth/rate-limiter.ts`) —
    *  shared across requests for the same reason the repositories are: a
    *  fresh one per request would never accumulate any failures. */
@@ -35,9 +33,9 @@ const globalForAuth = globalThis as unknown as { __rightswatchAuthStore?: AuthSt
 export function getAuthStore(): AuthStore {
   if (!globalForAuth.__rightswatchAuthStore) {
     globalForAuth.__rightswatchAuthStore = {
-      users: new InMemoryUserRepository(),
-      workspaces: new InMemoryWorkspaceRepository(),
-      memberships: new InMemoryMembershipRepository(),
+      users: new PrismaUserRepository(),
+      workspaces: new PrismaWorkspaceRepository(),
+      memberships: new PrismaMembershipRepository(),
       loginRateLimiter: new InMemoryRateLimiter(),
     };
   }

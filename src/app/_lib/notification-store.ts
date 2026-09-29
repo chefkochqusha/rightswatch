@@ -1,13 +1,12 @@
-import { InMemoryNotificationRepository } from "@/modules/notifications";
+import { PrismaNotificationRepository } from "@/modules/notifications/prisma-repository";
 
 /**
- * One shared in-memory Notification store per server process — same
- * rationale and same caveats as `auth-store.ts`, `case-store.ts` and
- * `workspace-scan-store.ts` (Prisma-backed later, cached on `globalThis`
- * for `next dev`, not for production).
+ * One shared Notification store per server process. Prisma-backed as of
+ * Phase 2 (Neon is live) — same rationale as `auth-store.ts` for why
+ * nothing else needed to change.
  */
 interface NotificationStore {
-  notifications: InMemoryNotificationRepository;
+  notifications: PrismaNotificationRepository;
 }
 
 const globalForNotifications = globalThis as unknown as {
@@ -17,7 +16,7 @@ const globalForNotifications = globalThis as unknown as {
 export function getNotificationStore(): NotificationStore {
   if (!globalForNotifications.__rightswatchNotificationStore) {
     globalForNotifications.__rightswatchNotificationStore = {
-      notifications: new InMemoryNotificationRepository(),
+      notifications: new PrismaNotificationRepository(),
     };
   }
   return globalForNotifications.__rightswatchNotificationStore;

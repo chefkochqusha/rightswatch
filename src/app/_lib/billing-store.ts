@@ -1,17 +1,18 @@
-import {
-  InMemoryPlanRepository,
-  InMemorySubscriptionRepository,
-  MockPaymentProvider,
-} from "@/modules/billing";
+import { MockPaymentProvider } from "@/modules/billing";
+import { PrismaPlanRepository, PrismaSubscriptionRepository } from "@/modules/billing/prisma-repositories";
 
 /**
- * One shared billing store per server process — same rationale and
- * caveats as `auth-store.ts`/`case-store.ts` (Prisma- and Stripe-backed
- * later, cached on `globalThis` for `next dev`, not for production).
+ * One shared billing store per server process. Prisma-backed as of Phase
+ * 2 (Neon is live) — `plans` reads the catalog seeded by `prisma/seed.ts`
+ * (run on every build) instead of the hardcoded `PLAN_CATALOG` array, and
+ * `subscriptions` are durable Postgres rows. Same rationale as
+ * `auth-store.ts` for why nothing else needed to change. `paymentProvider`
+ * deliberately stays mocked — no real Stripe keys yet, see
+ * `modules/billing/types.ts`'s `PaymentProvider` comment.
  */
 interface BillingStore {
-  plans: InMemoryPlanRepository;
-  subscriptions: InMemorySubscriptionRepository;
+  plans: PrismaPlanRepository;
+  subscriptions: PrismaSubscriptionRepository;
   paymentProvider: MockPaymentProvider;
 }
 
@@ -20,8 +21,8 @@ const globalForBilling = globalThis as unknown as { __rightswatchBillingStore?: 
 export function getBillingStore(): BillingStore {
   if (!globalForBilling.__rightswatchBillingStore) {
     globalForBilling.__rightswatchBillingStore = {
-      plans: new InMemoryPlanRepository(),
-      subscriptions: new InMemorySubscriptionRepository(),
+      plans: new PrismaPlanRepository(),
+      subscriptions: new PrismaSubscriptionRepository(),
       paymentProvider: new MockPaymentProvider(),
     };
   }

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma-client";
+import { getPrisma } from "@/lib/prisma-client";
 import type { Prisma } from "@/generated/prisma/client";
 import type {
   CaseOpenedPayload,
@@ -10,8 +10,11 @@ import type {
 /**
  * Prisma-backed `NotificationRepository` (Phase 2) — drop-in replacement
  * for `InMemoryNotificationRepository`, matching `types.ts`'s interface
- * exactly. Not yet wired into `app/_lib/notification-store.ts`: that swap
- * happens once Neon's initial schema push is confirmed live.
+ * exactly. Wired into `app/_lib/notification-store.ts` now that Neon's
+ * schema push is live.
+ *
+ * `getPrisma()`, not a top-level `prisma` binding — see
+ * `src/lib/prisma-client.ts`'s doc comment for why.
  */
 export class PrismaNotificationRepository implements NotificationRepository {
   async create(input: {
@@ -20,7 +23,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     type: NotificationType;
     payload: CaseOpenedPayload;
   }): Promise<NotificationRecord> {
-    const row = await prisma.notification.create({
+    const row = await getPrisma().notification.create({
       data: {
         workspaceId: input.workspaceId,
         userId: input.userId,
@@ -40,7 +43,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
   }
 
   async findForUser(workspaceId: string, userId: string): Promise<NotificationRecord[]> {
-    const rows = await prisma.notification.findMany({
+    const rows = await getPrisma().notification.findMany({
       where: { workspaceId, userId },
       orderBy: { createdAt: "desc" },
     });
@@ -48,7 +51,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
   }
 
   async countUnread(workspaceId: string, userId: string): Promise<number> {
-    return prisma.notification.count({
+    return getPrisma().notification.count({
       where: { workspaceId, userId, read: false },
     });
   }
@@ -57,7 +60,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
     // `updateMany` on zero matching rows is a no-op that still succeeds —
     // matches the in-memory version's "no-op if nothing's unread" contract
     // without needing a separate existence check first.
-    await prisma.notification.updateMany({
+    await getPrisma().notification.updateMany({
       where: { workspaceId, userId, read: false },
       data: { read: true },
     });

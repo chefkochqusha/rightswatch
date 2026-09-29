@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/prisma-client";
+import { getPrisma } from "@/lib/prisma-client";
+import type { PrismaClient } from "@/generated/prisma/client";
 import type {
   PlanRecord,
   PlanRepository,
@@ -12,15 +13,17 @@ import type {
  * Prisma-backed repositories (Phase 2) for `Plan` and `Subscription` —
  * drop-in replacements for `InMemoryPlanRepository`/
  * `InMemorySubscriptionRepository`, matching `types.ts`'s interfaces
- * exactly. Not yet wired into `app/_lib/billing-store.ts`: that swap
- * happens once Neon's initial schema push is confirmed live.
- * `MockPaymentProvider` has no Prisma equivalent — Stripe isn't wired up
- * yet, see `types.ts`'s `PaymentProvider` comment.
+ * exactly. Wired into `app/_lib/billing-store.ts` now that Neon's schema
+ * push is live. `MockPaymentProvider` has no Prisma equivalent — Stripe
+ * isn't wired up yet, see `types.ts`'s `PaymentProvider` comment.
  *
  * `Plan` is seeded, never written by application code (see `types.ts`'s
- * own comment on `PlanRepository`) — the seed script/mechanism for the
- * static plan catalog (`plan-catalog.ts`) is separate follow-up work, not
- * part of this repository class.
+ * own comment on `PlanRepository`) — see `prisma/seed.ts` for the seed
+ * script that populates the static plan catalog (`plan-catalog.ts`), run
+ * on every build.
+ *
+ * `getPrisma()`, not a top-level `prisma` binding — see
+ * `src/lib/prisma-client.ts`'s doc comment for why.
  */
 
 // Same representation-bridging rationale as `modules/auth/prisma-
@@ -28,7 +31,20 @@ import type {
 // `SubscriptionStatus` are the other two schema enums this module touches,
 // and this sandbox can't run `prisma generate` to see whether Prisma 7
 // generated them as nominal TS enums or plain string unions.
-type PrismaPlanTier = Parameters<typeof prisma.plan.findUnique>[0]["where"]["tier"] & string;
+// `typeof getPrisma().plan.findUnique` won't parse — TypeScript's `typeof`
+// type operator only accepts a dotted identifier chain, never a call
+// expression like `getPrisma()`. Indexing the `PrismaClient` type directly
+// (`PrismaClient["plan"]["findUnique"]`) parses fine but was verified
+// (empirically, in this sandbox) to behave differently from the old
+// `typeof prisma.plan.findUnique`: with the generated client absent here,
+// TypeScript's error-recovery for the unresolvable import degrades a plain
+// `typeof value.prop.prop` chain silently, but degrades a type-level index
+// access into a spurious `Parameters<...>[0]["where"]`/`["data"]` "does not
+// exist on type 'unknown'" error. A never-initialized `declare const` gives
+// `typeof` a plain identifier to walk again, restoring the old, clean
+// behavior — shared by both enum derivations below.
+declare const _phantomPrismaClient: PrismaClient;
+type PrismaPlanTier = Parameters<typeof _phantomPrismaClient.plan.findUnique>[0]["where"]["tier"] & string;
 function toPrismaPlanTier(tier: PlanTier): PrismaPlanTier {
   return tier as PrismaPlanTier;
 }
@@ -36,7 +52,7 @@ function fromPrismaPlanTier(tier: string): PlanTier {
   return tier as PlanTier;
 }
 
-type PrismaSubscriptionStatus = Parameters<typeof prisma.subscription.create>[0]["data"]["status"] & string;
+type PrismaSubscriptionStatus = Parameters<typeof _phantomPrismaClient.subscription.create>[0]["data"]["status"] & string;
 function toPrismaSubscriptionStatus(status: SubscriptionStatus): PrismaSubscriptionStatus {
   return status as PrismaSubscriptionStatus;
 }
@@ -46,24 +62,24 @@ function fromPrismaSubscriptionStatus(status: string): SubscriptionStatus {
 
 export class PrismaPlanRepository implements PlanRepository {
   async findByTier(tier: PlanTier): Promise<PlanRecord | null> {
-    const row = await prisma.plan.findUnique({ where: { tier: toPrismaPlanTier(tier) } });
+    const row = await getPrisma().plan.findUnique({ where: { tier: toPrismaPlanTier(tier) } });
     return row ? mapPlan(row) : null;
   }
 
   async findById(id: string): Promise<PlanRecord | null> {
-    const row = await prisma.plan.findUnique({ where: { id } });
+    const row = await getPrisma().plan.findUnique({ where: { id } });
     return row ? mapPlan(row) : null;
   }
 
   async findAll(): Promise<PlanRecord[]> {
-    const rows = await prisma.plan.findMany();
+    const rows = await getPrisma().plan.findMany();
     return rows.map(mapPlan);
   }
 }
 
 export class PrismaSubscriptionRepository implements SubscriptionRepository {
   async findByWorkspaceId(workspaceId: string): Promise<SubscriptionRecord | null> {
-    const row = await prisma.subscription.findUnique({ where: { workspaceId } });
+    const row = await getPrisma().subscription.findUnique({ where: { workspaceId } });
     return row ? mapSubscription(row) : null;
   }
 
@@ -80,7 +96,7 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
     // rather than the in-memory repository's plain `Error` message. No
     // caller inspects that message today (`subscribe-workspace.ts` always
     // checks `findByWorkspaceId` first), so the difference is dormant.
-    const row = await prisma.subscription.create({
+    const row = await getPrisma().subscription.create({
       data: {
         workspaceId: input.workspaceId,
         planId: input.planId,
@@ -99,7 +115,7 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
       Pick<SubscriptionRecord, "planId" | "status" | "stripeSubscriptionId" | "currentPeriodEnd">
     >,
   ): Promise<SubscriptionRecord> {
-    const row = await prisma.subscription.update({
+    const row = await getPrisma().subscription.update({
       where: { id },
       data: {
         ...changes,

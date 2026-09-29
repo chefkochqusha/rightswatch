@@ -1,12 +1,17 @@
-import { prisma } from "@/lib/prisma-client";
-import { Prisma } from "@/generated/prisma/client";
+import { getPrisma } from "@/lib/prisma-client";
+import type { Prisma } from "@/generated/prisma/client";
 import type { AuditLogRecord, AuditLogRepository } from "./types";
 
 /**
  * Prisma-backed `AuditLogRepository` (Phase 2) — drop-in replacement for
  * `InMemoryAuditLogRepository`, matching `types.ts`'s interface exactly.
- * Not yet wired into `app/_lib/audit-store.ts`: that swap happens once
- * Neon's initial schema push is confirmed live (see `ARCHITECTURE.md`).
+ * Wired into `app/_lib/audit-store.ts` now that Neon's schema push is live.
+ *
+ * `getPrisma()`, not a top-level `prisma` binding — see
+ * `src/lib/prisma-client.ts`'s doc comment for why: a plain `import { prisma }`
+ * (or any other *value* import from the generated client) at this file's
+ * top level would crash any test that merely imports this module, even one
+ * that never calls `create`/`findForWorkspace`.
  */
 export class PrismaAuditLogRepository implements AuditLogRepository {
   async create(input: {
@@ -17,7 +22,15 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
     targetId: string;
     metadata?: Record<string, unknown> | null;
   }): Promise<AuditLogRecord> {
-    const row = await prisma.auditLog.create({
+    // `Prisma.DbNull` is a runtime sentinel value, not just a type, so it
+    // can't come from the `import type` above (that's erased entirely at
+    // compile time). Deferred `require()` for the same reason `getPrisma()`
+    // itself is deferred: a top-level *value* import of anything from the
+    // generated client crashes at module-load time in this sandbox, where
+    // that client doesn't exist.
+    /* eslint-disable-next-line @typescript-eslint/no-require-imports -- deferred on purpose, see comment above */
+    const { Prisma: PrismaRuntime } = require("../../generated/prisma/client");
+    const row = await getPrisma().auditLog.create({
       data: {
         workspaceId: input.workspaceId,
         actorId: input.actorId,
@@ -40,14 +53,14 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
         // same representation-bridging `as unknown as` cast.
         metadata: input.metadata
           ? (input.metadata as unknown as Prisma.InputJsonValue)
-          : Prisma.DbNull,
+          : PrismaRuntime.DbNull,
       },
     });
     return mapAuditLog(row);
   }
 
   async findForWorkspace(workspaceId: string): Promise<AuditLogRecord[]> {
-    const rows = await prisma.auditLog.findMany({
+    const rows = await getPrisma().auditLog.findMany({
       where: { workspaceId },
       orderBy: { createdAt: "desc" },
     });

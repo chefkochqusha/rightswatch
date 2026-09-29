@@ -1,13 +1,12 @@
-import { InMemoryAuditLogRepository } from "@/modules/audit";
+import { PrismaAuditLogRepository } from "@/modules/audit/prisma-repository";
 
 /**
- * One shared in-memory AuditLog store per server process — same rationale
- * and same caveats as `auth-store.ts`, `case-store.ts` and
- * `notification-store.ts` (Prisma-backed later, cached on `globalThis` for
- * `next dev`, not for production).
+ * One shared AuditLog store per server process. Prisma-backed as of Phase
+ * 2 (Neon is live) — same rationale as `auth-store.ts` for why nothing
+ * else needed to change.
  */
 interface AuditStore {
-  auditLogs: InMemoryAuditLogRepository;
+  auditLogs: PrismaAuditLogRepository;
 }
 
 const globalForAudit = globalThis as unknown as {
@@ -17,7 +16,7 @@ const globalForAudit = globalThis as unknown as {
 export function getAuditStore(): AuditStore {
   if (!globalForAudit.__rightswatchAuditStore) {
     globalForAudit.__rightswatchAuditStore = {
-      auditLogs: new InMemoryAuditLogRepository(),
+      auditLogs: new PrismaAuditLogRepository(),
     };
   }
   return globalForAudit.__rightswatchAuditStore;
