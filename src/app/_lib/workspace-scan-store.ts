@@ -9,6 +9,7 @@ import { notifyCaseOpened } from "@/modules/notifications";
 import { getCaseStore } from "./case-store";
 import { getNotificationStore } from "./notification-store";
 import { getAuthStore } from "./auth-store";
+import { getAuditStore } from "./audit-store";
 
 /**
  * Per-workspace "sample scan" results for the real, authenticated app —
@@ -117,6 +118,10 @@ export function getRightsAssessmentId(workspaceId: string, contentId: string): s
 
 export async function runSampleScanForWorkspace(
   workspaceId: string,
+  /** The user who clicked "Run a sample scan" — threaded through only so
+   *  any case this run opens can be audit-logged against a real actor
+   *  rather than `null`. Nothing else in this function needs it. */
+  triggeredByUserId: string,
 ): Promise<WorkspaceScanItem[]> {
   const connector = new MockTikTokConnector();
   const musicProvider = new FixtureMusicIdentificationProvider();
@@ -191,6 +196,20 @@ export async function runSampleScanForWorkspace(
           },
           { notificationRepository },
         );
+        // Same `result.created` guard as the notification above, and the
+        // same audit action/targetType this app's other real case-opening
+        // path writes (`app/workspace/items/[contentId]/case-actions.ts`'s
+        // `openCaseAction`) — this is actually the more common of the two
+        // in practice, since a scan auto-opens a case for every flagged
+        // item, and the manual "Open a case" button only ever shows up for
+        // the items this loop skips (already-open, or CLEARED).
+        await getAuditStore().auditLogs.create({
+          workspaceId,
+          actorId: triggeredByUserId,
+          action: "case.opened",
+          targetType: "case",
+          targetId: result.case.id,
+        });
       }
     }
   }

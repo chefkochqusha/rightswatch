@@ -15,6 +15,6 @@ import { runSampleScanForWorkspace } from "@/app/_lib/workspace-scan-store";
  */
 export async function runSampleScanAction() {
   const session = await requireCaseManager();
-  await runSampleScanForWorkspace(session.workspace.id);
+  await runSampleScanForWorkspace(session.workspace.id, session.user.id);
   revalidatePath("/workspace");
 }

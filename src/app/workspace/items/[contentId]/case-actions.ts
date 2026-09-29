@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
 import { getCaseStore } from "@/app/_lib/case-store";
+import { getAuditStore } from "@/app/_lib/audit-store";
 import { getWorkspaceScanItem, getRightsAssessmentId } from "@/app/_lib/workspace-scan-store";
 import { openCase, addCaseNote, updateCase } from "@/modules/cases";
 import type { CaseStatus } from "@/modules/cases";
@@ -39,10 +40,23 @@ export async function openCaseAction(formData: FormData) {
   const contentId = String(formData.get("contentId") ?? "");
   const { session, rightsAssessmentId } = await requireAssessedItem(contentId);
   const store = getCaseStore();
-  await openCase(
+  const result = await openCase(
     { workspaceId: session.workspace.id, rightsAssessmentId },
     { caseRepository: store.cases },
   );
+  // Same idempotency-respecting check as `workspace-scan-store.ts`'s
+  // `notifyCaseOpened` call: `openCase` is safe to call on an
+  // already-open case (returns the existing one rather than erroring),
+  // so only a genuinely new case is worth an audit entry.
+  if (result.created) {
+    await getAuditStore().auditLogs.create({
+      workspaceId: session.workspace.id,
+      actorId: session.user.id,
+      action: "case.opened",
+      targetType: "case",
+      targetId: result.case.id,
+    });
+  }
   revalidatePath(`/workspace/items/${contentId}`);
   revalidatePath("/workspace");
 }
@@ -53,7 +67,7 @@ export async function updateCaseStatusAction(formData: FormData) {
   if (!CASE_STATUSES.includes(rawStatus as CaseStatus)) {
     throw new Error(`Unrecognized case status: ${rawStatus}`);
   }
-  const { rightsAssessmentId } = await requireAssessedItem(contentId);
+  const { session, rightsAssessmentId } = await requireAssessedItem(contentId);
   const store = getCaseStore();
   const existing = await store.cases.findByRightsAssessmentId(rightsAssessmentId);
   if (!existing) throw new Error("No case exists yet for this content item.");
@@ -61,6 +75,20 @@ export async function updateCaseStatusAction(formData: FormData) {
     { caseId: existing.id, status: rawStatus as CaseStatus },
     { caseRepository: store.cases },
   );
+  // The UI disables the button for the case's current status, so a normal
+  // click never gets here with `rawStatus === existing.status` — but a
+  // hand-crafted request could, and a "changed from RESOLVED to RESOLVED"
+  // entry would just be noise in the trail, not a real event.
+  if (existing.status !== rawStatus) {
+    await getAuditStore().auditLogs.create({
+      workspaceId: session.workspace.id,
+      actorId: session.user.id,
+      action: "case.status_changed",
+      targetType: "case",
+      targetId: existing.id,
+      metadata: { from: existing.status, to: rawStatus },
+    });
+  }
   revalidatePath(`/workspace/items/${contentId}`);
   revalidatePath("/workspace");
 }
@@ -76,9 +104,21 @@ export async function toggleAssignToMeAction(formData: FormData) {
     { caseId: existing.id, assignedToId: nextAssignee },
     { caseRepository: store.cases },
   );
+  await getAuditStore().auditLogs.create({
+    workspaceId: session.workspace.id,
+    actorId: session.user.id,
+    action: "case.assignee_changed",
+    targetType: "case",
+    targetId: existing.id,
+    metadata: { from: existing.assignedToId, to: nextAssignee },
+  });
   revalidatePath(`/workspace/items/${contentId}`);
 }
 
+// `addCaseNoteAction` deliberately doesn't write an audit entry: a note
+// already shows its own author and timestamp inline in the UI
+// (`case-panel.tsx`), so a separate audit-log row for it would just
+// duplicate information that's already visible and attributed on its own.
 export async function addCaseNoteAction(formData: FormData) {
   const contentId = String(formData.get("contentId") ?? "");
   const body = String(formData.get("body") ?? "");

@@ -158,6 +158,7 @@ Server Actions, or pages that use it.
 | `cases` | Turns a flagged assessment into actionable, assignable work | §43 |
 | `notifications` | In-app notifications for workspace members | schema only — not itself Brief-numbered |
 | `billing` | Plans and subscriptions | §18–§20 |
+| `audit` | Per-workspace audit trail of case-lifecycle events | schema only — not itself Brief-numbered |
 
 ## Connector architecture
 
@@ -244,7 +245,7 @@ it — but no code under `src/` currently executes a Prisma query.
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, in-memory (`modules/notifications`). `NotificationPreference`: deliberately unbuilt (see "Notifications") |
 | Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, in-memory + `MockPaymentProvider`. `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
-| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | Unbuilt — no writer exists for any of the three yet |
+| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, in-memory (`modules/audit`) — see "Case management". `Job`/`WebhookEvent`: unbuilt, both genuinely blocked on infrastructure this project doesn't have (BullMQ/Redis; a real webhook source) rather than just not-yet-written |
 
 `RightsRecord` and `RightsRule` are split per Brief §43's allowance to split
 or merge entities "if there is a strong reason" — documented directly on
@@ -411,6 +412,25 @@ assessment returns the existing case rather than erroring or duplicating it
 attachments) is the one entity in this domain still out of scope, blocked
 on an object-storage decision (see "Open decisions").
 
+**Audit trail.** Every case-lifecycle mutation writes an `AuditLog` row
+(`modules/audit` — in-memory, schema-shaped, not itself a numbered Brief
+section) recording who did what to which case and when: `case.opened`
+(both paths that can open one — the manual "Open a case" button in
+`case-actions.ts`, and the scan-triggered auto-open in
+`workspace-scan-store.ts`, which is actually the more common of the two in
+practice), `case.status_changed` (from/to status in `metadata`), and
+`case.assignee_changed` (from/to assignee in `metadata`). Writes are
+guarded the same way `notifyCaseOpened` already is — only on a genuine
+state change, never for a no-op re-click of the same status or a
+sample-scan re-run that opens nothing new. `addCaseNoteAction` is
+deliberately not audited: a note is already self-attributing (author and
+timestamp render inline wherever notes appear), so a parallel audit entry
+would be redundant. The audit writes live at the Server-Action/caller
+layer, not inside `modules/cases` itself, following this project's
+existing convention for cross-cutting side effects (see "Notifications").
+There's no page to browse this log yet — that's a separate, later unit of
+work.
+
 ## Notifications
 
 Not itself a numbered Brief section — modeled in `prisma/schema.prisma`'s
@@ -561,6 +581,13 @@ reads as an oversight:
   `prisma generate`
 - The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
 - Real Stripe integration — no real keys available to configure
+- Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen
+  approach (see "Open decisions" → Background jobs), but this sandbox is
+  subject to the same network restrictions that block Prisma: there's no
+  reaching a real Redis instance from here either
+- Webhook ingestion (`WebhookEvent`) — needs a real external source
+  actually delivering webhooks to a real, publicly reachable endpoint,
+  which this sandbox doesn't have
 
 **Deliberately not built — would be speculative scope today:**
 - `PlanEntitlement` / `UsageRecord` (billing) — no concrete entitlement or
@@ -574,9 +601,6 @@ reads as an oversight:
   change than anything else on this list
 - Signup rate-limiting by IP — no settled convention yet for trusting a
   forwarded-IP header from a host that hasn't been chosen
-- `AuditLog`, `Job`, `WebhookEvent` — modeled in the schema; no writer
-  exists for any of the three yet, since there's nothing real to audit or
-  queue until the above land
 - A custom favicon / brand mark — `src/app/favicon.ico` is still the
   default `create-next-app` icon (unmodified since the original scaffold);
   there's no logo yet to replace it with
