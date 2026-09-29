@@ -94,6 +94,20 @@ made once and referenced everywhere rather than re-litigated per file.
   remains in-memory (`InMemory*`) or fixture (`Fixture*`), kept
   field-compatible with the Prisma schema for the same drop-in-replacement
   reason the five modules above once were.
+- **`rights`/`campaigns`/`music` and `connectors` are not simple drop-in
+  swaps waiting for their turn.** Their `Fixture*`/mock implementations
+  aren't a stand-in for a not-yet-written `Prisma*Repository` the way
+  `InMemoryCaseRepository` was — per "Module-layer architecture" above,
+  they're deliberately read-only reference data "a real integration would
+  sync in from elsewhere," and nothing in the app today creates or edits a
+  `RightsRecord`/`Campaign`/`MusicTrack`/`Connector` row at all. A real swap
+  needs a real source to sync from first — a publisher's actual rights
+  catalog, or the real TikTok connector — before there's anything
+  meaningful to persist; seeding a Prisma table with today's static demo
+  fixture content would just relocate the same data, not add real
+  functionality. Tracked as tasks #56 and #60, intentionally left open
+  rather than closed with speculative CRUD or an unused repository with no
+  caller.
 - **`getPrisma()`, never a top-level `prisma` constant**
   (`src/lib/prisma-client.ts`): the generated client, its driver adapter, and
   the `pg` pool all load via a `require()` deferred until `getPrisma()`
