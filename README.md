@@ -28,9 +28,15 @@ from `binaries.prisma.sh`) with something like:
 Error: Failed to fetch sha256 checksum at https://binaries.prisma.sh/... - 403 Forbidden
 ```
 
-This is expected wherever that host isn't reachable, and safe to ignore:
-every real dependency still installs correctly, and nothing in the app
-imports the generated Prisma client yet (see "Current status" below).
+This is expected wherever that host isn't reachable, and safe to ignore for
+local development: every real dependency still installs correctly, and
+`npm run dev`/`npm test`/`tsc`/`eslint` all work with no generated client
+present — the four domain modules that are Prisma-backed in production
+(auth, billing, notifications, audit; see "Current status" below) only ever
+load the generated client lazily, at the moment a repository method
+actually runs. Only signing up, logging in, or otherwise exercising one of
+those four modules against a real Postgres locally needs a successful
+`prisma generate` first.
 
 To try the real, authenticated workspace (sign up, run a sample scan, open
 cases, invite teammates) on a fresh checkout, copy the environment file and
@@ -55,18 +61,22 @@ anything currently reads it.
 | `npm run lint` | ESLint |
 | `npm test` | Run the test suite (Node's built-in test runner via `tsx`) |
 | `npm run db:migrate` | `prisma migrate dev` — needs a real `DATABASE_URL` and a working `prisma generate`; not usable until both are in place (see above) |
+| `npm run db:push` | `prisma db push` — syncs the schema to whatever Postgres connection is configured, no migration history needed; what production actually runs, on every build |
 
 ## Current status
 
 Every domain — auth, connectors, music identification, the rights engine,
 campaigns, cases, notifications, billing — is fully built and tested
-end-to-end: real business logic, real UI, real tests, just not yet backed
-by a real Postgres database. The Prisma schema (`prisma/schema.prisma`)
-already models the full data layer; every repository in `src/modules/*` is
-written to be a drop-in-compatible swap for a Prisma-backed one the moment
-its client can generate. The real TikTok connector is similarly blocked —
-on TikTok API access, not an engineering decision — so the app runs against
-a mock connector until then.
+end-to-end: real business logic, real UI, real tests. Four of those domains
+are now backed by a real Postgres database on Neon — auth, billing,
+notifications, and audit — verified in production with a real signup →
+dashboard → logout → login round-trip, not just a successful build. The
+rest (connectors, music identification, the rights engine, campaigns,
+cases) still run against in-memory or fixture repositories, written to be a
+drop-in-compatible swap for a Prisma-backed one the same way the four above
+already were. The real TikTok connector is separately blocked — on TikTok
+API access, not an engineering decision — so the app runs against a mock
+connector until then.
 
 `ARCHITECTURE.md` has the full picture: what's built, what's blocked and on
 what, and what's deliberately left out of scope for now.

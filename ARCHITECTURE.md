@@ -51,10 +51,10 @@ targets").
 | UI | React 19, Tailwind CSS v4 | Built |
 | Language | TypeScript | Built |
 | Validation | Zod | Built (where used) |
-| ORM | Prisma (`prisma/schema.prisma`) | Schema complete; client can't be generated in this sandbox — see "Open decisions" |
-| Database | PostgreSQL, hosted on Neon | Chosen, not provisioned — see "Open decisions" |
+| ORM | Prisma (`prisma/schema.prisma`) | Schema complete; client generates and runs on Vercel's build (still can't run locally in this sandbox) — see "Open decisions" |
+| Database | PostgreSQL, hosted on Neon | Provisioned and live (Vercel marketplace integration) — see "Open decisions" |
 | Background jobs | BullMQ on Upstash Redis | Chosen, not wired — see "Open decisions" |
-| Auth | Session-based, signed cookie (Brief §40) | Built, in-memory-backed |
+| Auth | Session-based, signed cookie (Brief §40) | Built, Prisma-backed (Neon) |
 | Payments | Stripe (test mode) | Mocked (`MockPaymentProvider`); no real keys configured |
 | Testing | Node's built-in test runner via `tsx --test` | Built — one `*.test.ts` per implementation file |
 
@@ -73,13 +73,32 @@ made once and referenced everywhere rather than re-litigated per file.
   serverless-friendly Next.js app rather than cited from the Brief.
 - **Current reality:** `prisma generate` cannot run in this build sandbox —
   it needs to download a query-engine binary, and this sandbox's outbound
-  network access is allowlisted to package registries and GitHub only.
-  Every repository interface in `src/modules/*` (`UserRepository`,
-  `CaseRepository`, `RightsRepository`, and so on) is therefore backed by an
-  in-memory (`InMemory*`) or fixture (`Fixture*`) implementation today,
-  written to be field-compatible with the Prisma schema so a `Prisma*`
-  implementation is a drop-in replacement later with no change to the
-  business logic or pages that call it.
+  network access is allowlisted to package registries and GitHub only. It
+  runs fine on Vercel's own build, which is where the generated client
+  actually gets produced and exercised; schema sync happens via `prisma db
+  push` on every build rather than versioned `migrate` files, since this
+  sandbox can reach neither Postgres nor the `migrate dev` shadow-database
+  tooling directly.
+- **Four of seven repository domains are Prisma-backed and live**, verified
+  against production Neon with a real signup → dashboard → logout → login
+  round-trip, not just a successful build: `auth`
+  (`User`/`Workspace`/`Membership`), `billing` (`Plan`/`Subscription`),
+  `notifications` (`Notification`), and `audit` (`AuditLog`). Every other
+  repository interface in `src/modules/*` (`CaseRepository`,
+  `RightsRepository`, `CampaignRepository`, and the
+  `connectors`/`music`/`creators` boundaries) remains in-memory
+  (`InMemory*`) or fixture (`Fixture*`), kept field-compatible with the
+  Prisma schema for the same drop-in-replacement reason the four modules
+  above once were.
+- **`getPrisma()`, never a top-level `prisma` constant**
+  (`src/lib/prisma-client.ts`): the generated client, its driver adapter, and
+  the `pg` pool all load via a `require()` deferred until `getPrisma()`
+  actually runs, not a top-level `import`. This isn't a style choice — a
+  top-level *value* import of anything from the generated client crashes at
+  module-load time in this sandbox for any file sharing an import graph with
+  a Prisma repository, even code that never touches Prisma itself (found via
+  two real test regressions while wiring the four modules above). Every
+  Prisma-backed repository, current and future, follows this pattern.
 
 ### Background jobs
 
@@ -226,26 +245,28 @@ only in server-only code — the same rule `.env.example` states as the reason
 its secrets are server-side environment variables, never `NEXT_PUBLIC_*`
 ones.
 
-**Current reality:** every domain module is backed by an in-memory or
-fixture repository (see "Open decisions" → Data layer), not by Prisma
-queries against this schema. The schema is complete relative to the Brief,
-and every module's plain-data types are deliberately field-compatible with
-it — but no code under `src/` currently executes a Prisma query.
+**Current reality:** the schema is complete relative to the Brief, live on
+Neon, and four of seven domain modules query it for real — `auth`,
+`billing`, `notifications`, `audit` (see "Open decisions" → Data layer for
+which, and how that was verified). Every other domain module is still
+backed by an in-memory or fixture repository, with plain-data types kept
+deliberately field-compatible with this schema for the same reason the four
+Prisma-backed modules once were.
 
 ### Entities, by domain
 
 | Domain | Models | Built today? |
 |---|---|---|
-| Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`) | Yes — in-memory (`modules/auth`) |
+| Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`) | Yes — Prisma-backed (Neon), `modules/auth` |
 | Creators & content | `Creator`, `Content`, `CommercialContent` (+`Platform`) | Represented via `connectors` module types; no Prisma-backed rows |
 | Campaigns | `Campaign` | Yes — fixture-backed lookup (`modules/campaigns`) |
 | Music | `MusicTrack`, `MusicMatch` | Represented via `music` module types; no Prisma-backed rows |
 | Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`). `RightsAssessment`: computed on the fly by `rights-engine`, never persisted. `RightsRule`: unbuilt (see below) |
 | Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, in-memory (`modules/cases`), with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
-| Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, in-memory (`modules/notifications`). `NotificationPreference`: deliberately unbuilt (see "Notifications") |
-| Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, in-memory + `MockPaymentProvider`. `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
+| Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
+| Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon) + `MockPaymentProvider` for the payment gateway. `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
-| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, in-memory (`modules/audit`) — see "Case management". `Job`/`WebhookEvent`: unbuilt, both genuinely blocked on infrastructure this project doesn't have (BullMQ/Redis; a real webhook source) rather than just not-yet-written |
+| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, Prisma-backed (Neon), `modules/audit` — see "Case management". `Job`/`WebhookEvent`: unbuilt, both genuinely blocked on infrastructure this project doesn't have (BullMQ/Redis; a real webhook source) rather than just not-yet-written |
 
 `RightsRecord` and `RightsRule` are split per Brief §43's allowance to split
 or merge entities "if there is a strong reason" — documented directly on
@@ -413,7 +434,7 @@ attachments) is the one entity in this domain still out of scope, blocked
 on an object-storage decision (see "Open decisions").
 
 **Audit trail.** Every case-lifecycle mutation writes an `AuditLog` row
-(`modules/audit` — in-memory, schema-shaped, not itself a numbered Brief
+(`modules/audit` — Prisma-backed (Neon), not itself a numbered Brief
 section) recording who did what to which case and when: `case.opened`
 (both paths that can open one — the manual "Open a case" button in
 `case-actions.ts`, and the scan-triggered auto-open in
@@ -467,8 +488,8 @@ re-notifies about a case that already existed.
 
 (Brief §18–20)
 
-`Plan` / `Subscription` are built (in-memory repositories, `MockPaymentProvider`
-standing in for Stripe). `PlanEntitlement` (flexible per-plan feature flags)
+`Plan` / `Subscription` are built (Prisma-backed repositories against Neon,
+`MockPaymentProvider` standing in for Stripe). `PlanEntitlement` (flexible per-plan feature flags)
 and `UsageRecord` (periodic usage snapshots) are both modeled in the schema
 but deliberately unbuilt: nothing in this codebase has a concrete
 entitlement key or a billing-period usage rollup to populate them with yet,
@@ -548,10 +569,18 @@ table doesn't guess at what they might cover.
 
 | Phase | Covers | Status |
 |---|---|---|
-| 4 | Prisma schema / data layer | Schema written; client can't generate in this sandbox |
+| 4 | Prisma schema / data layer | Schema written and live on Neon; client can't generate locally in this sandbox, but does on Vercel's build |
 | 5 | Auth module — signup, login, sessions, one workspace per user | Built |
 | 6 | Demo Mode — public, fixture-data pages, no signup | Built |
 | 10 | Real TikTok connector | Blocked on TikTok API access/credentials |
+
+A separate, unrelated "Phase 2" label appears in this project's own task
+tracking and in code comments added during the Neon/Prisma cutover (e.g.
+`PrismaAuditLogRepository`'s doc comment) — it names this project's own
+second major work initiative (wiring real infrastructure in, after Phase
+1's full-featured build against fixtures), not a Brief-numbered phase. It
+isn't listed in the table above for that reason: mixing it in would imply
+an ordering relative to Phases 4–10 that doesn't exist.
 
 ## Testing & verification conventions
 
@@ -575,7 +604,7 @@ local development and never commit real values.
 
 | Variable(s) | Purpose | Current status |
 |---|---|---|
-| `DATABASE_URL` | Postgres connection (Neon pooled string) | Set for a real Postgres later; unused while repositories are in-memory |
+| `DATABASE_URL` | Postgres connection (local dev fallback) | Used for local Postgres only — production reads Neon's own `storagee_*` vars instead (see "Open decisions" → Data layer) |
 | `SESSION_SECRET` | Signs the session cookie | Required for real auth to work at all |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Payments | Blank — `MockPaymentProvider` used instead |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank until Phase 10 — mock connector used instead |
@@ -590,8 +619,12 @@ Worth distinguishing "blocked" from "deliberately not built yet," so neither
 reads as an oversight:
 
 **Blocked on something outside this codebase's control:**
-- Prisma-backed persistence — this sandbox's network restrictions block
-  `prisma generate`
+- Running Prisma directly from this sandbox — `prisma generate`/`migrate`,
+  and any query against Neon, both need network access this sandbox doesn't
+  have; Vercel's own build is the only place either actually runs (see
+  "Open decisions" → Data layer). This no longer blocks Prisma-backed
+  persistence itself, which is live for four of seven repository domains —
+  it blocks only verifying it from here rather than via a real deployment.
 - The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
 - Real Stripe integration — no real keys available to configure
 - Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen
