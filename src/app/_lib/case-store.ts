@@ -1,14 +1,15 @@
-import { InMemoryCaseRepository, InMemoryCaseNoteRepository } from "@/modules/cases";
+import { PrismaCaseRepository, PrismaCaseNoteRepository } from "@/modules/cases/prisma-repositories";
 
 /**
- * One shared in-memory Case/CaseNote store per server process — same
- * rationale and same caveats as `auth-store.ts` and
- * `workspace-scan-store.ts` (Prisma-backed later, cached on `globalThis`
- * for `next dev`, not for production).
+ * One shared Case/CaseNote store per server process. Prisma-backed as of
+ * Phase 2 (Neon is live) — same rationale as `auth-store.ts` for why nothing
+ * else needed to change: `openCase`/`addCaseNote`/`updateCase` all depend
+ * only on the `CaseRepository`/`CaseNoteRepository` interfaces in
+ * `modules/cases/types.ts`, never a concrete implementation.
  */
 interface CaseStore {
-  cases: InMemoryCaseRepository;
-  notes: InMemoryCaseNoteRepository;
+  cases: PrismaCaseRepository;
+  notes: PrismaCaseNoteRepository;
 }
 
 const globalForCases = globalThis as unknown as { __rightswatchCaseStore?: CaseStore };
@@ -16,8 +17,8 @@ const globalForCases = globalThis as unknown as { __rightswatchCaseStore?: CaseS
 export function getCaseStore(): CaseStore {
   if (!globalForCases.__rightswatchCaseStore) {
     globalForCases.__rightswatchCaseStore = {
-      cases: new InMemoryCaseRepository(),
-      notes: new InMemoryCaseNoteRepository(),
+      cases: new PrismaCaseRepository(),
+      notes: new PrismaCaseNoteRepository(),
     };
   }
   return globalForCases.__rightswatchCaseStore;

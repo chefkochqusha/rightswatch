@@ -24,6 +24,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated, untracked output (e.g. the brag-slim skill's launch-video
+    // build) — never part of the app itself, shouldn't be linted as if it
+    // were.
+    "brag-output/**",
   ]),
 ]);
 

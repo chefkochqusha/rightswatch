@@ -93,24 +93,27 @@ export function getWorkspaceScanItem(
 }
 
 /**
- * A stand-in for a persisted `RightsAssessment.id`. There is no real
- * `RightsAssessment` table yet (Prisma is blocked in this sandbox, and
- * Phase 10's real connector hasn't landed), so `runScan()`'s output is a
- * pure, unpersisted `RightsAssessmentResult` with no id of its own — but
+ * A stand-in for a persisted `RightsAssessment.id`. `RightsAssessment` is
+ * modeled in the Prisma schema, but nothing writes a real row to it: the
+ * Rights Engine's inputs (the `rights`/`campaigns`/`music` modules) are
+ * still fixture-backed, not workspace-scoped Prisma queries — a bigger,
+ * not-yet-decided swap than `Case` itself (see `ARCHITECTURE.md` → "Open
+ * decisions" → Data layer). So `runScan()`'s output stays a pure,
+ * unpersisted `RightsAssessmentResult` with no id of its own — but
  * `openCase()` needs *some* stable identifier to key the 1:1
- * Case<->RightsAssessment relationship on.
+ * Case<->RightsAssessment relationship on, and `Case.rightsAssessmentId` is
+ * a real, `@unique` Prisma column now.
  *
  * `externalContentId` alone isn't enough: every workspace's sample scan
  * runs the exact same `MockTikTokConnector` fixtures, so the same
  * `externalContentId` values recur identically across every workspace.
  * Without the `workspaceId` prefix, two different workspaces opening a
  * case against "the same" fixture content would collide in the shared
- * `InMemoryCaseRepository` (workspace B's `findByRightsAssessmentId` would
- * find workspace A's case). Namespacing by workspace keeps the 1:1
- * uniqueness scoped the way a real per-workspace-scoped `RightsAssessment`
- * row would be — and it's stable across re-scans, since the fixture
- * content ids never change, so re-running a sample scan never orphans an
- * open case.
+ * `Case` table (workspace B's `findByRightsAssessmentId` would find
+ * workspace A's case). Namespacing by workspace keeps the 1:1 uniqueness
+ * scoped the way a real per-workspace-scoped `RightsAssessment` row would
+ * be — and it's stable across re-scans, since the fixture content ids
+ * never change, so re-running a sample scan never orphans an open case.
  */
 export function getRightsAssessmentId(workspaceId: string, contentId: string): string {
   return `${workspaceId}::${contentId}`;

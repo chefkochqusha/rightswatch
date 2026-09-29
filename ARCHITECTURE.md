@@ -79,17 +79,21 @@ made once and referenced everywhere rather than re-litigated per file.
   push` on every build rather than versioned `migrate` files, since this
   sandbox can reach neither Postgres nor the `migrate dev` shadow-database
   tooling directly.
-- **Four of seven repository domains are Prisma-backed and live**, verified
-  against production Neon with a real signup → dashboard → logout → login
-  round-trip, not just a successful build: `auth`
+- **Five of seven repository domains are Prisma-backed and live.** `auth`
   (`User`/`Workspace`/`Membership`), `billing` (`Plan`/`Subscription`),
-  `notifications` (`Notification`), and `audit` (`AuditLog`). Every other
-  repository interface in `src/modules/*` (`CaseRepository`,
-  `RightsRepository`, `CampaignRepository`, and the
-  `connectors`/`music`/`creators` boundaries) remains in-memory
-  (`InMemory*`) or fixture (`Fixture*`), kept field-compatible with the
-  Prisma schema for the same drop-in-replacement reason the four modules
-  above once were.
+  `notifications` (`Notification`), and `audit` (`AuditLog`) are verified
+  against production Neon with a real signup → dashboard → logout → login
+  round-trip, not just a successful build. `cases` (`Case`/`CaseNote`) is
+  the same clean, drop-in swap — `Case` rows are already created through a
+  real app action (`openCase`) against a real, logged-in workspace — and is
+  build-verified on Vercel; its own live round-trip (an authenticated "Run a
+  sample scan") is still pending, since this sandbox can only submit that
+  Server Action through a real browser session (see "Known gaps"). Every
+  other repository interface in `src/modules/*` (`RightsRepository`,
+  `CampaignRepository`, and the `connectors`/`music`/`creators` boundaries)
+  remains in-memory (`InMemory*`) or fixture (`Fixture*`), kept
+  field-compatible with the Prisma schema for the same drop-in-replacement
+  reason the five modules above once were.
 - **`getPrisma()`, never a top-level `prisma` constant**
   (`src/lib/prisma-client.ts`): the generated client, its driver adapter, and
   the `pg` pool all load via a `require()` deferred until `getPrisma()`
@@ -246,12 +250,12 @@ its secrets are server-side environment variables, never `NEXT_PUBLIC_*`
 ones.
 
 **Current reality:** the schema is complete relative to the Brief, live on
-Neon, and four of seven domain modules query it for real — `auth`,
-`billing`, `notifications`, `audit` (see "Open decisions" → Data layer for
-which, and how that was verified). Every other domain module is still
-backed by an in-memory or fixture repository, with plain-data types kept
-deliberately field-compatible with this schema for the same reason the four
-Prisma-backed modules once were.
+Neon, and five of seven domain modules query it for real — `auth`,
+`billing`, `notifications`, `audit`, and `cases` (see "Open decisions" →
+Data layer for which, and how each was verified). Every other domain
+module is still backed by an in-memory or fixture repository, with
+plain-data types kept deliberately field-compatible with this schema for
+the same reason the five Prisma-backed modules once were.
 
 ### Entities, by domain
 
@@ -262,7 +266,7 @@ Prisma-backed modules once were.
 | Campaigns | `Campaign` | Yes — fixture-backed lookup (`modules/campaigns`) |
 | Music | `MusicTrack`, `MusicMatch` | Represented via `music` module types; no Prisma-backed rows |
 | Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`). `RightsAssessment`: computed on the fly by `rights-engine`, never persisted. `RightsRule`: unbuilt (see below) |
-| Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, in-memory (`modules/cases`), with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
+| Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, Prisma-backed (Neon) (`modules/cases`), with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
 | Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon) + `MockPaymentProvider` for the payment gateway. `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
@@ -623,8 +627,11 @@ reads as an oversight:
   and any query against Neon, both need network access this sandbox doesn't
   have; Vercel's own build is the only place either actually runs (see
   "Open decisions" → Data layer). This no longer blocks Prisma-backed
-  persistence itself, which is live for four of seven repository domains —
-  it blocks only verifying it from here rather than via a real deployment.
+  persistence itself, which is live for five of seven repository domains —
+  it blocks only verifying it from here rather than via a real deployment
+  (for `cases` specifically, live verification also needs an authenticated
+  browser session to submit the "Run a sample scan" Server Action, which is
+  why that one is still build-verified-only for now).
 - The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
 - Real Stripe integration — no real keys available to configure
 - Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen

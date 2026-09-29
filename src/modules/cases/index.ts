@@ -8,6 +8,13 @@ export type {
 
 export { InMemoryCaseRepository, InMemoryCaseNoteRepository } from "./in-memory-repositories";
 
+// `PrismaCaseRepository`/`PrismaCaseNoteRepository` are deliberately NOT
+// re-exported here — same reasoning as `modules/audit/index.ts`: they
+// transitively import `@/lib/prisma-client`, and this barrel is used by
+// every in-memory-only consumer (including this module's own tests).
+// Import them directly from "@/modules/cases/prisma-repositories" — already
+// done in `app/_lib/case-store.ts`.
+
 export { openCase } from "./open-case";
 export type { OpenCaseInput, OpenCaseDependencies, OpenCaseResult } from "./open-case";
 
