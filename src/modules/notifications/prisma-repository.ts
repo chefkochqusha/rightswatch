@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma-client";
+import type { Prisma } from "@/generated/prisma/client";
 import type {
   CaseOpenedPayload,
   NotificationRecord,
@@ -24,7 +25,14 @@ export class PrismaNotificationRepository implements NotificationRepository {
         workspaceId: input.workspaceId,
         userId: input.userId,
         type: input.type,
-        payload: input.payload,
+        // `CaseOpenedPayload` is a plain TS `interface`, which structurally
+        // lacks the index signature Prisma's generated `InputJsonObject`
+        // requires for a `Json` column — confirmed by Vercel's build once
+        // the real generated types existed to check against. Every field
+        // on it is already a plain string, so this is a representation-
+        // bridging cast (same rationale as the enum-bridging casts in
+        // `modules/auth/prisma-repositories.ts`), not a real type risk.
+        payload: input.payload as unknown as Prisma.InputJsonValue,
         read: false,
       },
     });

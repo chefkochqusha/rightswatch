@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma-client";
+import { Prisma } from "@/generated/prisma/client";
 import type { AuditLogRecord, AuditLogRepository } from "./types";
 
 /**
@@ -23,7 +24,15 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
         action: input.action,
         targetType: input.targetType,
         targetId: input.targetId,
-        metadata: input.metadata ?? null,
+        // `metadata` is an optional `Json?` column — Prisma's generated
+        // create input doesn't accept a bare `null` for it (confirmed by
+        // Vercel's build once the real generated types existed to check
+        // against, not something this sandbox's `tsc` run could catch).
+        // `Prisma.DbNull` is the documented sentinel for "set this Json
+        // column to SQL NULL," as opposed to `Prisma.JsonNull` (store the
+        // JSON literal `null` as the value) — SQL NULL is what "no
+        // metadata" means here.
+        metadata: input.metadata ?? Prisma.DbNull,
       },
     });
     return mapAuditLog(row);
