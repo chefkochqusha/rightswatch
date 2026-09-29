@@ -40,4 +40,10 @@ export default defineConfig({
   datasource: {
     url: process.env.storagee_DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL!,
   },
+  // Prisma 7 seeding is CLI-only and never automatic (no more auto-run
+  // after `migrate dev`/`reset`) — see `prisma/seed.ts` for what this
+  // seeds and why it's safe to run on every build.
+  migrations: {
+    seed: "tsx prisma/seed.ts",
+  },
 });
