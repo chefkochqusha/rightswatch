@@ -21,8 +21,8 @@ import { getNotificationStore } from "@/app/_lib/notification-store";
  *
  * An async Server Component, not a plain function — it calls
  * `requireSession()` and reads the unread notification count itself rather
- * than taking them as props, so every one of its four call sites (the
- * workspace, team, billing and item-detail pages) needs no change at all
+ * than taking them as props, so every one of its call sites (the workspace,
+ * team, billing, audit-log and item-detail pages) needs no change at all
  * when this badge is added. `requireSession()` is a cheap, side-effect-free
  * read (session-cookie.ts + in-memory lookups), so calling it a second time
  * per request — the rendering page already called it once — costs nothing
@@ -59,6 +59,9 @@ export async function WorkspaceHeader() {
             </Link>
             <Link href="/workspace/team" className="text-sm text-t2 hover:text-tx">
               Team
+            </Link>
+            <Link href="/workspace/audit" className="text-sm text-t2 hover:text-tx">
+              Audit log
             </Link>
             <Link href="/workspace/billing" className="text-sm text-t2 hover:text-tx">
               Billing

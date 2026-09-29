@@ -14,10 +14,10 @@
  * (invites, subscriptions, logins) can start writing its own pairs here
  * without this module changing at all.
  *
- * There's no UI to browse this yet (no page reads `findForWorkspace`) —
- * writing a real, queryable trail for a compliance-adjacent product is the
- * useful part on its own, and a page to view it is a separate, later unit
- * of work, not a reason to leave the writing side unbuilt too.
+ * `app/workspace/audit/page.tsx` is the one reader of `findForWorkspace`
+ * today — a plain, newest-first table, visible to every role the same way
+ * the case table and notifications are (see `ARCHITECTURE.md` → "Auth &
+ * authorization" on visibility never being role-gated).
  */
 
 export interface AuditLogRecord {

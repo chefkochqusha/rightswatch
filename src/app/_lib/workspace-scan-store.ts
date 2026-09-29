@@ -116,6 +116,28 @@ export function getRightsAssessmentId(workspaceId: string, contentId: string): s
   return `${workspaceId}::${contentId}`;
 }
 
+/**
+ * The inverse of `getRightsAssessmentId` — recovers the original
+ * `externalContentId` from an id this function produced, given the same
+ * `workspaceId` the id was minted for. Added for the audit log page
+ * (`app/workspace/audit/page.tsx`), which only ever has a `Case.
+ * rightsAssessmentId` to work with and needs the real content id back to
+ * link to `workspace/items/[contentId]`.
+ *
+ * Returns `null` — never throws or guesses — for anything that isn't
+ * actually one of this workspace's ids (a different workspace's id, or a
+ * string that predates this format entirely), since a caller decoding ids
+ * it didn't itself just mint needs "not one of ours" to be an ordinary,
+ * renderable outcome rather than a crash.
+ */
+export function getContentIdFromRightsAssessmentId(
+  workspaceId: string,
+  rightsAssessmentId: string,
+): string | null {
+  const prefix = `${workspaceId}::`;
+  return rightsAssessmentId.startsWith(prefix) ? rightsAssessmentId.slice(prefix.length) : null;
+}
+
 export async function runSampleScanForWorkspace(
   workspaceId: string,
   /** The user who clicked "Run a sample scan" — threaded through only so

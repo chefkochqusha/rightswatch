@@ -428,8 +428,21 @@ timestamp render inline wherever notes appear), so a parallel audit entry
 would be redundant. The audit writes live at the Server-Action/caller
 layer, not inside `modules/cases` itself, following this project's
 existing convention for cross-cutting side effects (see "Notifications").
-There's no page to browse this log yet — that's a separate, later unit of
-work.
+`/workspace/audit` (`app/workspace/audit/page.tsx`) is the page that reads
+it back — a newest-first table (when / who / what), visible to every role
+with no management gate, the same as the case table and notifications
+(see "Auth & authorization"). It resolves each entry's actor, and the
+counterpart of an assignee-change, by looking the id up against the
+workspace's own membership list (same pattern as `team/page.tsx`), and
+links a "case"-targeted entry back to `/workspace/items/[contentId]` by
+reversing `getRightsAssessmentId` (`getContentIdFromRightsAssessmentId` in
+`workspace-scan-store.ts`) — degrading to plain, unlinked text rather than
+guessing whenever a case or an id can't be resolved. Because `action` and
+`targetType` are open strings by design (see `modules/audit/types.ts`),
+the page's formatting logic (`components/audit/audit-log-view.ts`) has a
+generic fallback for anything it hasn't been taught a richer description
+for, rather than assuming the three actions written today are the only
+ones that will ever exist.
 
 ## Notifications
 
