@@ -607,8 +607,6 @@ reads as an oversight:
 
 **Never attempted, not requested:**
 - Deployment, to Vercel or anywhere else
-- Git commits beyond this repository's initial scaffold — history is left
-  to the project owner to manage
 
 ## Document provenance
 
