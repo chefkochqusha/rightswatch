@@ -15,9 +15,14 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Prisma 7: the connection string is no longer a schema-file concern (a
+// `url = env(...)` line here is now a hard validation error, P1012) — it
+// lives in `prisma.config.ts` instead, read from `DATABASE_URL` for both
+// the CLI (generate/migrate) and, once Phase 2 wires up real repositories,
+// the `PrismaClient` driver adapter. See prisma.config.ts for the other
+// half of this.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------
