@@ -1,0 +1,563 @@
+// RightsWatch — database schema
+//
+// Source of truth for entities: ARCHITECTURE.md (Master Brief §43 "Database
+// entities"). Every model below exists there; nothing here is invented scope.
+// Domain boundaries (who may touch what) are documented in ARCHITECTURE.md,
+// not enforced by the schema itself — enforce them in the module layer.
+//
+// Secrets rule (Master Brief §44): TikTok client secrets, Stripe secret keys
+// and webhook signing secrets are NEVER modeled as plain columns read by the
+// browser. ConnectorCredential.encryptedPayload is ciphertext at rest,
+// decrypted only in server-only code.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & tenancy
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships          Membership[]
+  notificationPrefs    NotificationPreference[]
+  notifications        Notification[]
+  authoredCaseNotes    CaseNote[]
+  assignedCases        Case[]                    @relation("CaseAssignee")
+  auditLogEntries      AuditLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships    Membership[]
+  creators       Creator[]
+  campaigns      Campaign[]
+  musicTracks    MusicTrack[]
+  rightsRecords  RightsRecord[]
+  cases          Case[]
+  notifications  Notification[]
+  subscription   Subscription?
+  usageRecords   UsageRecord[]
+  connectors     Connector[]
+  auditLogs      AuditLog[]
+
+  @@map("workspaces")
+}
+
+enum Role {
+  OWNER // everything
+  ADMIN // workspace administration + data
+  ANALYST // monitoring + cases + rights
+  VIEWER // read-only
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role     @default(ANALYST)
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("memberships")
+}
+
+// ---------------------------------------------------------------------------
+// Creators & campaigns
+// ---------------------------------------------------------------------------
+
+enum Platform {
+  TIKTOK
+  INSTAGRAM // reserved — not built yet, see PlatformConnector (§5)
+  YOUTUBE // reserved — not built yet
+}
+
+model Creator {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  platform     Platform @default(TIKTOK)
+  externalId   String // stable platform id — never assume it's globally unique across platforms
+  handle       String
+  displayName  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaigns Campaign[] @relation("CampaignCreators")
+  content   Content[]
+
+  @@unique([workspaceId, platform, externalId]) // idempotency key, Master Brief §22
+  @@index([workspaceId])
+  @@map("creators")
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creators  Creator[] @relation("CampaignCreators")
+
+  @@index([workspaceId])
+  @@map("campaigns")
+}
+
+// ---------------------------------------------------------------------------
+// Content
+// ---------------------------------------------------------------------------
+
+model Content {
+  id                 String   @id @default(cuid())
+  creatorId          String
+  platform           Platform @default(TIKTOK)
+  externalContentId  String
+  publishedAt        DateTime?
+  createdAt          DateTime @default(now())
+
+  creator           Creator            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  commercialContent CommercialContent?
+
+  @@unique([platform, externalContentId]) // idempotency key, Master Brief §22
+  @@index([creatorId])
+  @@map("content")
+}
+
+// Field names mirror what the current TikTok Commercial Content API actually
+// documents (Master Brief §4): id, create_timestamp, create_date, label,
+// brand_names, creator, videos. Do NOT add a track title, ISRC or raw-audio
+// field here — the API doesn't supply one; that's MusicMatch's job, produced
+// by a MusicIdentificationProvider, never assumed to come from the platform.
+model CommercialContent {
+  id               String   @id @default(cuid())
+  contentId        String   @unique
+  label            String? // TikTok's own disclosure label, e.g. "Paid partnership"
+  brandNames       String[]
+  createTimestamp  BigInt? // raw platform value, kept for traceability
+  createDate       DateTime?
+  rawPayload       Json // full normalized-but-unmodified adapter output, for audits
+  createdAt        DateTime @default(now())
+
+  content     Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  musicMatches MusicMatch[]
+
+  @@map("commercial_content")
+}
+
+// ---------------------------------------------------------------------------
+// Music
+// ---------------------------------------------------------------------------
+
+model MusicTrack {
+  id          String   @id @default(cuid())
+  workspaceId String
+  title       String
+  artist      String?
+  isrc        String?
+  createdAt   DateTime @default(now())
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rightsRecords RightsRecord[]
+  musicMatches  MusicMatch[]
+
+  @@index([workspaceId])
+  @@index([isrc])
+  @@map("music_tracks")
+}
+
+model MusicMatch {
+  id                  String   @id @default(cuid())
+  commercialContentId String
+  musicTrackId        String?
+  provider            String // e.g. "provider-a" | "catalogue-match" | "manual" — see MusicIdentificationProvider (§5)
+  confidence          Float    @default(1)
+  manual              Boolean  @default(false)
+  matchedAt           DateTime @default(now())
+
+  commercialContent CommercialContent  @relation(fields: [commercialContentId], references: [id], onDelete: Cascade)
+  musicTrack        MusicTrack?        @relation(fields: [musicTrackId], references: [id])
+  rightsAssessment  RightsAssessment?
+
+  @@unique([commercialContentId, musicTrackId, provider]) // idempotency key, Master Brief §22
+  @@index([musicTrackId])
+  @@map("music_matches")
+}
+
+// ---------------------------------------------------------------------------
+// Rights
+// ---------------------------------------------------------------------------
+
+model RightsRecord {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  musicTrackId String
+  territories  String[] // ISO country codes, e.g. ["DE","AT","CH"]
+  commercial   Boolean  @default(false)
+  organic      Boolean  @default(true)
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  musicTrack  MusicTrack         @relation(fields: [musicTrackId], references: [id], onDelete: Cascade)
+  rules       RightsRule[]
+  assessments RightsAssessment[]
+  // Empty = applies to every campaign. Non-empty = scoped to just these
+  // (Master Brief §11 lists Campaign as a RightsAssessmentService input and
+  // CAMPAIGN_NOT_COVERED as a reason; this is what that reason evaluates).
+  campaigns   Campaign[]         @relation("RightsRecordCampaigns")
+
+  @@index([workspaceId])
+  @@index([musicTrackId])
+  @@map("rights_records")
+}
+
+// The brief lists RightsRecord and RightsRule as separate entities without
+// defining the split (Master Brief §43 allows splitting/merging "if there is
+// a strong reason," with the reasoning documented — this is that note).
+// Kept intentionally generic: a RightsRecord holds the fields the Rights
+// Engine actually evaluates today (territories, commercial/organic, term);
+// RightsRule is a placeholder extension point for finer-grained clauses
+// (per-usage-type limits, per-campaign carve-outs) once a real requirement
+// shows up. Do not build against `kind`/`value` speculatively before then.
+model RightsRule {
+  id             String   @id @default(cuid())
+  rightsRecordId String
+  kind           String
+  value          Json
+  createdAt      DateTime @default(now())
+
+  rightsRecord RightsRecord @relation(fields: [rightsRecordId], references: [id], onDelete: Cascade)
+
+  @@index([rightsRecordId])
+  @@map("rights_rules")
+}
+
+enum RightsAssessmentStatus {
+  CLEARED
+  REVIEW
+  POTENTIAL_MISMATCH
+  UNKNOWN
+}
+
+// Master Brief §11. This enum is the RightsAssessmentService's full output
+// vocabulary — the demo Artifact currently only produces a subset of these;
+// see ARCHITECTURE.md "Connector architecture" for the gap.
+enum RightsAssessmentReason {
+  NO_RIGHTS_RECORD
+  TERM_EXPIRED
+  TERRITORY_NOT_COVERED
+  USAGE_TYPE_NOT_COVERED
+  COMMERCIAL_USAGE_NOT_COVERED
+  CAMPAIGN_NOT_COVERED
+  CONFLICTING_RIGHTS_RECORDS
+  MANUAL_REVIEW_REQUIRED
+}
+
+model RightsAssessment {
+  id             String                  @id @default(cuid())
+  musicMatchId   String                  @unique
+  rightsRecordId String?
+  status         RightsAssessmentStatus
+  reason         RightsAssessmentReason?
+  confidence     Float                   @default(1)
+  assessedAt     DateTime                @default(now())
+
+  musicMatch   MusicMatch    @relation(fields: [musicMatchId], references: [id], onDelete: Cascade)
+  rightsRecord RightsRecord? @relation(fields: [rightsRecordId], references: [id])
+  case         Case?
+
+  @@index([rightsRecordId])
+  @@map("rights_assessments")
+}
+
+// ---------------------------------------------------------------------------
+// Cases
+// ---------------------------------------------------------------------------
+
+enum CaseStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+model Case {
+  id                 String     @id @default(cuid())
+  workspaceId        String
+  rightsAssessmentId String     @unique
+  status             CaseStatus @default(OPEN)
+  assignedToId       String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rightsAssessment RightsAssessment @relation(fields: [rightsAssessmentId], references: [id], onDelete: Cascade)
+  assignedTo       User?            @relation("CaseAssignee", fields: [assignedToId], references: [id])
+  notes            CaseNote[]
+  evidence         CaseEvidence[]
+
+  @@index([workspaceId])
+  @@map("cases")
+}
+
+model CaseNote {
+  id        String   @id @default(cuid())
+  caseId    String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([caseId])
+  @@map("case_notes")
+}
+
+model CaseEvidence {
+  id          String   @id @default(cuid())
+  caseId      String
+  storageKey  String // S3-compatible object key — never a public URL to a private bucket
+  description String?
+  createdAt   DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@map("case_evidence")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  type        String
+  payload     Json
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id      String  @id @default(cuid())
+  userId  String
+  channel String // "email" | "in_app" — provider abstraction, not a hardcoded vendor
+  enabled Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel])
+  @@map("notification_preferences")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (Master Brief §18–20)
+// ---------------------------------------------------------------------------
+
+enum PlanTier {
+  STARTER
+  GROWTH
+  AGENCY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  tier        PlanTier @unique
+  name        String
+  priceCents  Int
+  creatorCap  Int
+  scanCadence String // "daily" | "every_6h" | "configurable" — backend config, never hardcoded in the UI (§23)
+  createdAt   DateTime @default(now())
+
+  entitlements  PlanEntitlement[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model PlanEntitlement {
+  id     String @id @default(cuid())
+  planId String
+  key    String
+  value  Json
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, key])
+  @@map("plan_entitlements")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  workspaceId          String             @unique
+  planId               String
+  status               SubscriptionStatus @default(TRIALING)
+  stripeCustomerId     String             @unique
+  stripeSubscriptionId String?            @unique
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model UsageRecord {
+  id          String   @id @default(cuid())
+  workspaceId String
+  metric      String // e.g. "tracked_creators"
+  value       Int
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, metric, periodStart])
+  @@map("usage_records")
+}
+
+// ---------------------------------------------------------------------------
+// Connectors (Master Brief §3, §5 — adapter architecture)
+// ---------------------------------------------------------------------------
+
+enum ConnectorStatus {
+  NOT_CONFIGURED
+  CONNECTED
+  ERROR
+}
+
+model Connector {
+  id          String          @id @default(cuid())
+  workspaceId String
+  platform    Platform
+  status      ConnectorStatus @default(NOT_CONFIGURED)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  credentials ConnectorCredential?
+
+  @@unique([workspaceId, platform])
+  @@map("connectors")
+}
+
+// Ciphertext only. Decrypted in server-only code, never sent to the browser
+// (Master Brief §44). Application code must not log `encryptedPayload`.
+model ConnectorCredential {
+  id               String   @id @default(cuid())
+  connectorId      String   @unique
+  encryptedPayload String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@map("connector_credentials")
+}
+
+// ---------------------------------------------------------------------------
+// Operations
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorId     String?
+  action      String
+  targetType  String
+  targetId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@map("audit_logs")
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+// Master Brief §21. One row per BullMQ job for observability/retry-tracking;
+// BullMQ/Redis owns actual queueing, this is the durable record of it.
+model Job {
+  id          String    @id @default(cuid())
+  type        String
+  status      JobStatus @default(QUEUED)
+  attempts    Int       @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  payloadRef  String? // pointer to the job payload (object storage key or a small Json blob below)
+  payload     Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([type, status])
+  @@map("jobs")
+}
+
+// Master Brief §22 idempotency: uniqueness on (source, externalId) so a
+// re-delivered Stripe/TikTok webhook is never processed twice.
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  source      String // "stripe" | "tiktok"
+  externalId  String
+  payload     Json
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([source, externalId])
+  @@map("webhook_events")
+}

@@ -1,0 +1,2 @@
+export { runScan } from './run-scan';
+export type { RunScanParams, ScanResult, ScanItemResult } from './types';

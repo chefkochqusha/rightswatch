@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens (DESIGN_SYSTEM.md "Color"). These are the exact values
+ * from the validated prototype (rightswatch-overview.html) so the real
+ * app, the landing page and the design doc all agree — not a
+ * reinterpretation. Names are short on purpose (`--tx` not
+ * `--color-text`) to match the prototype 1:1 and make future diffs
+ * against it trivial to read.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #f5f5f7; /* page background */
+  --sf: #fff; /* card / surface background */
+  --sb: #ededf0; /* secondary surface (inputs, subtle fills) */
+  --tx: #1d1d1f; /* primary text */
+  --t2: #6e6e73; /* secondary text */
+  --ln: rgba(0, 0, 0, 0.09); /* hairline borders */
+  --ac: #0071e3; /* accent / primary action */
+  --hv: rgba(0, 0, 0, 0.045); /* hover fill */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Rights Engine severities (DESIGN_SYSTEM.md: mapped 1:1) */
+  --gn: #1b7f3b; /* CLEARED — text */
+  --gb: #e5f4e9; /* CLEARED — background */
+  --bl: #0058b0; /* REVIEW — text */
+  --bb: #e6f0fc; /* REVIEW — background */
+  --am: #9a5200; /* UNKNOWN — text */
+  --ab: #fff0d9; /* UNKNOWN — background */
+  --rd: #c0281b; /* POTENTIAL_MISMATCH — text */
+  --rb: #fce7e5; /* POTENTIAL_MISMATCH — background */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #000;
+    --sf: #1c1c1e;
+    --sb: #111113;
+    --tx: #f5f5f7;
+    --t2: #a1a1a6;
+    --ln: rgba(255, 255, 255, 0.13);
+    --ac: #2997ff;
+    --hv: rgba(255, 255, 255, 0.07);
+
+    --gn: #5fd383;
+    --gb: #10301c;
+    --bl: #64b0ff;
+    --bb: #0f2842;
+    --am: #ffb454;
+    --ab: #3a2a0e;
+    --rd: #ff8078;
+    --rb: #3f1916;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--sf);
+  --color-surface-2: var(--sb);
+  --color-tx: var(--tx);
+  --color-t2: var(--t2);
+  --color-line: var(--ln);
+  --color-accent: var(--ac);
+  --color-hover: var(--hv);
+  --color-cleared: var(--gn);
+  --color-cleared-bg: var(--gb);
+  --color-review: var(--bl);
+  --color-review-bg: var(--bb);
+  --color-unknown: var(--am);
+  --color-unknown-bg: var(--ab);
+  --color-mismatch: var(--rd);
+  --color-mismatch-bg: var(--rb);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  /* DESIGN_SYSTEM.md "Typography": real SF Pro for the MacBook-using
+     customer the product targets, Inter as the web-safe fallback
+     elsewhere — no bundled webfont download, so there's nothing to fetch
+     and nothing to flash-of-unstyled-text while it loads. Matches the
+     landing page and design doc's font stack exactly. */
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "SF Pro Text",
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+::selection {
+  background: var(--ac);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
 }
