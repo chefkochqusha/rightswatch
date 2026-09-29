@@ -231,7 +231,14 @@ model RightsRecord {
   commercial   Boolean  @default(false)
   organic      Boolean  @default(true)
   startDate    DateTime
-  endDate      DateTime
+  // Nullable: an open-ended rights grant (no expiry) is a real, common case
+  // — `rights-engine/types.ts`'s own `RightsRecord.endDate` has always been
+  // `Date | null`, and `modules/rights/fixtures.ts` and the assess-engine
+  // tests exercise `endDate: null` deliberately (a far-future publish date
+  // must still be covered). This was a latent schema bug — required here
+  // while every consumer already expected nullable — never caught before
+  // because `prisma generate` never ran to completion until Phase 2.
+  endDate      DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
