@@ -126,8 +126,14 @@ model Campaign {
   name        String
   createdAt   DateTime @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  creators  Creator[] @relation("CampaignCreators")
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creators      Creator[]      @relation("CampaignCreators")
+  // Opposite side of RightsRecord.campaigns — see that field's comment for
+  // what the relation means. Prisma 7's stricter validation (P1012, unlike
+  // earlier versions) now rejects an implicit m:n relation missing either
+  // side, which is how this went unnoticed until `generate` first ran to
+  // completion.
+  rightsRecords RightsRecord[] @relation("RightsRecordCampaigns")
 
   @@index([workspaceId])
   @@map("campaigns")
