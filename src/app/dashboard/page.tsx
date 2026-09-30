@@ -77,6 +77,18 @@ export default async function DashboardPage() {
       <AppHeader active="dashboard" />
 
       <section className="overflow-hidden border-b border-line bg-surface-2">
+        {/* The two rows below are a purely visual, `aria-hidden` marquee —
+            each word list renders twice over for the seamless scroll loop,
+            which would read as garbled, repeated nonsense to a screen
+            reader. This sentence is the one place that information exists
+            in the accessibility tree, since nothing else on this page
+            states it in plain text either. */}
+        <p className="sr-only">
+          Built for music publishers, licensing agencies, rights managers, and
+          brand and agency teams. RightsWatch monitors TikTok content, flags
+          commercial use, surfaces rights mismatches, and signals what needs
+          review.
+        </p>
         <div className="space-y-3 py-5">
           <KeywordMarquee items={AUDIENCE_KEYWORDS} direction="left" />
           <KeywordMarquee items={CAPABILITY_KEYWORDS} direction="right" />

@@ -258,6 +258,12 @@ as separator" motif `StatusBadge` and notification rows already use, not a
 new icon. This is the app's first shipped animation (see "Accessibility"
 below for how it handles `prefers-reduced-motion`).
 
+Both rows are `aria-hidden` (each word list renders twice for the seamless
+loop, which would read as garbled repetition to a screen reader), so a
+plain `sr-only` sentence carries the same information once, in reading
+order, right before them — the one place on this page that states it in
+text at all.
+
 ## Copy & tone
 
 The prototype set a deliberately cautious, non-legal-verdict voice that the
