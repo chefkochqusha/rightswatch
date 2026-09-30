@@ -9,9 +9,10 @@ import type {
 export interface SubscribeWorkspaceInput {
   workspaceId: string;
   planTier: PlanTier;
-  /** Only used the first time a workspace subscribes, to create the
-   *  payment-provider customer — ignored on a plan change or resubscribe,
-   *  since the existing `stripeCustomerId` is reused. */
+  /** Used whenever a payment-provider customer has to be created: the first
+   *  time a workspace subscribes, or a resubscribe whose stored customer
+   *  the current provider can't bill. Ignored otherwise, since the existing
+   *  `stripeCustomerId` is reused. */
   customerEmail: string;
 }
 
@@ -46,10 +47,17 @@ export async function subscribeWorkspace(
 
   // No subscription yet, or a previously canceled one: (re)create it with
   // the payment provider. A canceled subscription's customer id is reused
-  // — in real Stripe, the Customer object outlives a canceled Subscription.
+  // — in real Stripe, the Customer object outlives a canceled Subscription
+  // — as long as the current provider can bill it. One that can't (a
+  // demo-era `cus_mock_…` id after the switch to Stripe) is replaced by a
+  // fresh customer, which is how a demo-era workspace moves to real billing.
   if (!existing || existing.status === "CANCELED") {
+    const reusableCustomerId =
+      existing && deps.paymentProvider.canReuseCustomer(existing.stripeCustomerId)
+        ? existing.stripeCustomerId
+        : null;
     const customerId =
-      existing?.stripeCustomerId ??
+      reusableCustomerId ??
       (await deps.paymentProvider.createCustomer({ email: input.customerEmail, workspaceId: input.workspaceId }))
         .customerId;
 
@@ -62,6 +70,7 @@ export async function subscribeWorkspace(
       ? await deps.subscriptionRepository.update(existing.id, {
           planId: plan.id,
           status: "TRIALING",
+          stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           currentPeriodEnd,
         })

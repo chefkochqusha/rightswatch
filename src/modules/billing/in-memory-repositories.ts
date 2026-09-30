@@ -39,6 +39,13 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
     return this.byId.get(id) ?? null;
   }
 
+  async findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<SubscriptionRecord | null> {
+    for (const record of this.byId.values()) {
+      if (record.stripeSubscriptionId === stripeSubscriptionId) return record;
+    }
+    return null;
+  }
+
   async create(input: {
     workspaceId: string;
     planId: string;
@@ -73,7 +80,10 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
   async update(
     id: string,
     changes: Partial<
-      Pick<SubscriptionRecord, "planId" | "status" | "stripeSubscriptionId" | "currentPeriodEnd">
+      Pick<
+        SubscriptionRecord,
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
+      >
     >,
   ): Promise<SubscriptionRecord> {
     const existing = this.byId.get(id);

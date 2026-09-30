@@ -55,7 +55,8 @@ targets").
 | Database | PostgreSQL, hosted on Neon | Provisioned and live (Vercel marketplace integration) — see "Open decisions" |
 | Background jobs | BullMQ on Upstash Redis | Chosen, not wired — see "Open decisions" |
 | Auth | Session-based, signed cookie (Brief §40) | Built, Prisma-backed (Neon) |
-| Payments | Stripe (test mode) | Mocked (`MockPaymentProvider`); no real keys configured |
+| Payments | Stripe (test mode) | Built; turns on once its five env vars are set (`STRIPE_INTEGRATION.md`) — production runs clearly-labeled demo billing (`MockPaymentProvider`) until then |
+| Hosting | Vercel (production deploys from `main`) | Live |
 | Testing | Node's built-in test runner via `tsx --test` | Built — one `*.test.ts` per implementation file |
 
 ## Open decisions
@@ -138,8 +139,9 @@ made once and referenced everywhere rather than re-litigated per file.
   Brief citation.
 - **Current reality:** nothing is queued yet. The scan pipeline runs
   synchronously, in-process, triggered by a Server Action ("Run a sample
-  scan") rather than a scheduled job. `Job` and `WebhookEvent` exist in the
-  Prisma schema but have no application code reading or writing them.
+  scan") rather than a scheduled job. `Job` exists in the Prisma schema but
+  has no application code reading or writing it. (`WebhookEvent`, the other
+  operations table, is live — see "Payments".)
 
 ### Object storage
 
@@ -157,9 +159,43 @@ send themselves, and in-app notifications are the only notification channel
 
 ### Payments
 
-Stripe, in test mode, per the Brief's billing plan (§18–20). No real Stripe
-keys are configured; `MockPaymentProvider` stands in at the same interface
-a real Stripe-backed `PaymentProvider` would implement.
+Stripe, in test mode, per the Brief's billing plan (§18–20) — built, and
+switched on by configuration alone. Setup and verification steps:
+`STRIPE_INTEGRATION.md`.
+
+- **Two backends, one interface** (`PaymentProvider`):
+  `MockPaymentProvider` (demo billing, labeled as such on the billing page)
+  and `StripePaymentProvider`. `app/_lib/billing-store.ts` picks from the
+  environment — all five Stripe variables set → Stripe, anything missing →
+  mock (`payment-provider-selection.ts`). All-or-nothing, because a secret
+  key without the webhook secret would start subscriptions that then never
+  hear about anything Stripe changes on its own.
+- **Current reality: no Stripe account exists yet**, so production runs on
+  demo billing and the webhook endpoint answers `503`.
+- **Trials start without a card**, and end with the subscription cancelled
+  (not dunned) if none was added — Stripe's `trial_settings.end_behavior:
+  cancel`. Cards, invoices and cancellation live in Stripe's hosted
+  Customer Portal (`stripe-billing-portal.ts`), not in custom UI.
+- **The webhook** (`/api/webhooks/stripe` → `handle-stripe-webhook.ts`) is
+  the only path by which Stripe-side changes reach the database (Brief
+  §18). Signature-verified; each delivery recorded in `WebhookEvent` keyed
+  on Stripe's event id, so a redelivery is processed once (Brief §22); each
+  sync reads the subscription's *current* state from the Stripe API rather
+  than the event's own copy, so out-of-order delivery can't roll a row
+  back. The stored payload is a handful of ids and statuses — never the
+  customer data a Stripe event carries (Brief §59).
+- **`WebhookEvent` is Prisma-backed from day one**, not in-memory first
+  like every other domain was: idempotency kept in one serverless
+  instance's memory would let a redelivery to another instance be
+  processed twice — the one thing the table exists to prevent. It has no
+  foreign keys, so unlike `Case` (see "Data layer") it doesn't depend on
+  anything else being persisted first.
+- **Demo-era subscriptions** carry `cus_mock_…`/`sub_mock_…` ids Stripe has
+  never seen. `RoutingPaymentProvider` keeps those on the mock (a plan
+  change or cancel on one never calls Stripe), and
+  `PaymentProvider.canReuseCustomer` makes the workspace's next subscribe
+  after a cancel create a real Stripe customer — the path from demo to real
+  billing, stated on the billing page.
 
 ### Monitoring
 
@@ -293,9 +329,9 @@ plain-data types kept deliberately field-compatible with this schema.
 | Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`). `RightsAssessment`: computed on the fly by `rights-engine`, never persisted. `RightsRule`: unbuilt (see below) |
 | Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, with a full UI — status transitions, assignment, and notes — on the item detail page; in-memory until `RightsAssessment` rows are persisted (`Case` has a foreign key to it — see "Open decisions" → Data layer). `CaseEvidence`: out of scope (no object-storage decision) |
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
-| Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon) + `MockPaymentProvider` for the payment gateway. `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
+| Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon); payment gateway is Stripe once configured, demo billing until then (see "Open decisions" → Payments). `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
-| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, Prisma-backed (Neon), `modules/audit` — see "Case management". `Job`/`WebhookEvent`: unbuilt, both genuinely blocked on infrastructure this project doesn't have (BullMQ/Redis; a real webhook source) rather than just not-yet-written |
+| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, Prisma-backed (Neon), `modules/audit` — see "Case management". `WebhookEvent`: yes, Prisma-backed (Neon), `modules/webhooks` — Stripe webhook idempotency (see "Open decisions" → Payments). `Job`: unbuilt, blocked on BullMQ/Redis rather than just not-yet-written |
 
 `RightsRecord` and `RightsRule` are split per Brief §43's allowance to split
 or merge entities "if there is a strong reason" — documented directly on
@@ -517,8 +553,10 @@ re-notifies about a case that already existed.
 
 (Brief §18–20)
 
-`Plan` / `Subscription` are built (Prisma-backed repositories against Neon,
-`MockPaymentProvider` standing in for Stripe). `PlanEntitlement` (flexible per-plan feature flags)
+`Plan` / `Subscription` are built (Prisma-backed repositories against Neon),
+billing through Stripe once configured and through clearly-labeled demo
+billing until then — see "Open decisions" → Payments and
+`STRIPE_INTEGRATION.md`. `PlanEntitlement` (flexible per-plan feature flags)
 and `UsageRecord` (periodic usage snapshots) are both modeled in the schema
 but deliberately unbuilt: nothing in this codebase has a concrete
 entitlement key or a billing-period usage rollup to populate them with yet,
@@ -635,7 +673,7 @@ local development and never commit real values.
 |---|---|---|
 | `DATABASE_URL` | Postgres connection (local dev fallback) | Used for local Postgres only — production reads Neon's own `storagee_*` vars instead (see "Open decisions" → Data layer) |
 | `SESSION_SECRET` | Signs the session cookie | Required for real auth to work at all |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Payments | Blank — `MockPaymentProvider` used instead |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank until Phase 10 — mock connector used instead |
 | `REDIS_URL` | BullMQ (Upstash Redis, or any Redis-compatible URL) | Unused — nothing queues jobs yet |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
@@ -658,14 +696,12 @@ reads as an oversight:
   in this sandbox can run a Prisma write against a real Postgres, so the
   constraint was only ever enforced in production.
 - The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
-- Real Stripe integration — no real keys available to configure
+  (TikTok webhooks, the other `WebhookEvent` source, come with it)
+- Stripe going live — built and tested; waiting on a Stripe account, three
+  test-mode prices and a webhook destination (`STRIPE_INTEGRATION.md`)
 - Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen
-  approach (see "Open decisions" → Background jobs), but this sandbox is
-  subject to the same network restrictions that block Prisma: there's no
-  reaching a real Redis instance from here either
-- Webhook ingestion (`WebhookEvent`) — needs a real external source
-  actually delivering webhooks to a real, publicly reachable endpoint,
-  which this sandbox doesn't have
+  approach (see "Open decisions" → Background jobs); no Redis is
+  provisioned yet
 
 **Deliberately not built — would be speculative scope today:**
 - `PlanEntitlement` / `UsageRecord` (billing) — no concrete entitlement or
@@ -677,14 +713,13 @@ reads as an oversight:
 - Multi-workspace membership — Phase 5 scope is one workspace per user;
   turning `current-user.ts` into a workspace picker is a bigger, riskier
   change than anything else on this list
-- Signup rate-limiting by IP — no settled convention yet for trusting a
-  forwarded-IP header from a host that hasn't been chosen
+- Signup rate-limiting by IP — the host is settled now (Vercel), but a
+  per-process, in-memory limiter only sees one serverless instance's
+  traffic; this waits on the same shared store (Upstash Redis) the login
+  limiter should move to
 - A custom favicon / brand mark — `src/app/favicon.ico` is still the
   default `create-next-app` icon (unmodified since the original scaffold);
   there's no logo yet to replace it with
-
-**Never attempted, not requested:**
-- Deployment, to Vercel or anywhere else
 
 ## Document provenance
 

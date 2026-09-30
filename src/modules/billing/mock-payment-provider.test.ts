@@ -22,6 +22,12 @@ describe("MockPaymentProvider", () => {
     assert.ok(currentPeriodEnd.getTime() > before);
   });
 
+  test("canReuseCustomer accepts any stored id — the mock never looks at the customer", () => {
+    const provider = new MockPaymentProvider();
+    assert.equal(provider.canReuseCustomer("cus_mock_1"), true);
+    assert.equal(provider.canReuseCustomer("cus_RealStripe1"), true);
+  });
+
   test("changeSubscriptionPlan and cancelSubscription resolve without throwing", async () => {
     const provider = new MockPaymentProvider();
     await assert.doesNotReject(() =>

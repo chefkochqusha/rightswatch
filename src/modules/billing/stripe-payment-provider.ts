@@ -1,84 +1,44 @@
-import Stripe from "stripe";
+import { getStripeClient, subscriptionItemPeriodEnd } from "@/lib/stripe-client";
 import { TRIAL_LENGTH_DAYS } from "./mock-payment-provider";
+import { STRIPE_PRICE_ID_ENV_VAR, isMockCustomerId } from "./payment-provider-selection";
 import type { PaymentProvider, PlanTier } from "./types";
 
 /**
- * The real `PaymentProvider` (Phase 2/Stripe test mode — Brief §18–20). Same
- * role and same drop-in-replacement contract `types.ts`'s `PaymentProvider`
- * doc comment describes: `subscribe-workspace.ts`/`cancel-subscription.ts`
+ * The real `PaymentProvider` (Stripe test mode — Brief §18–20). Same role
+ * and same drop-in-replacement contract `types.ts`'s `PaymentProvider` doc
+ * comment describes: `subscribe-workspace.ts`/`cancel-subscription.ts`
  * need zero changes to use this instead of `MockPaymentProvider`, only a
  * different `paymentProvider` passed into their `deps`.
  *
- * Not wired into `app/_lib/billing-store.ts` yet — that's a separate,
- * deliberate cutover step (same two-step pattern Prisma's repositories
- * followed: write the adapter, verify it compiles, then flip the store to
- * use it) that happens once real Stripe test-mode keys actually exist. This
- * sandbox has no route to `api.stripe.com` either way, so nothing here can
- * be exercised against real Stripe from here — verification is `tsc`/
- * `eslint` clean now, and a real checkout/plan-change/cancel round-trip on
- * Vercel once keys are configured, the same bar Prisma's cutover used for
- * the one thing this sandbox structurally can't do itself.
+ * Selected automatically by `app/_lib/billing-store.ts` once
+ * `isStripeConfigured()` (`payment-provider-selection.ts`) sees every env
+ * var it needs — never hand-wired, so setting real keys in Vercel is the
+ * whole cutover. This sandbox has no route to `api.stripe.com`, so nothing
+ * here can be exercised against real Stripe from here; verification is
+ * `tsc`/`eslint` clean now, and a real subscribe/change-plan/cancel
+ * round-trip on Vercel once keys exist — the same bar Prisma's cutover
+ * used for the one thing this sandbox structurally can't do itself.
  *
  * No `*.test.ts` sibling, matching every other real-backend adapter in this
  * codebase (`modules/*\/prisma-repositories.ts`): a thin wrapper around a
  * paid external API has nothing to usefully unit-test without either a live
  * connection or a hand-rolled fake SDK this project doesn't otherwise use.
- *
- * `getStripeClient()`, not a top-level `export const stripe`: mirrors
- * `getPrisma()`'s reasoning even though the underlying risk is smaller here
- * (the `stripe` package itself has no import-time side effects and doesn't
- * crash this sandbox to merely import) — but constructing a real client
- * with no `STRIPE_SECRET_KEY` set should fail the moment someone tries to
- * use it, not the moment some unrelated file happens to import this module.
+ * The logic around it that *is* testable without Stripe — which provider to
+ * pick, which one a given id belongs to, how a Stripe status maps onto
+ * ours — lives in its own, tested files.
  */
-
-const globalForStripe = globalThis as unknown as { __rightswatchStripe?: Stripe };
-
-function getStripeClient(): Stripe {
-  if (globalForStripe.__rightswatchStripe) {
-    return globalForStripe.__rightswatchStripe;
-  }
-
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error(
-      "STRIPE_SECRET_KEY is not set — StripePaymentProvider needs a real Stripe " +
-        "test-mode secret key before it can be used.",
-    );
-  }
-
-  // No explicit `apiVersion` pin: the installed `stripe` package version is
-  // itself the pin (each SDK release is tied to one default API version),
-  // so upgrading the SDK is the only way this ever moves, and a stray wrong
-  // version string here can't silently drift out of sync with it. Current
-  // as of this SDK version: subscription billing periods live on each
-  // `SubscriptionItem`, not on the `Subscription` itself — Stripe removed
-  // `Subscription.current_period_end` in the 2025-03-31 ("basil") API
-  // version (see `subscriptionItemPeriodEnd` below); this codebase never
-  // held code written against the older shape, so there's no migration to
-  // do, just a fact worth recording so a future reader isn't misled by
-  // older Stripe examples/tutorials that still reference the removed field.
-  const client = new Stripe(secretKey);
-  globalForStripe.__rightswatchStripe = client;
-  return client;
-}
 
 /**
  * Stripe bills by Price, not by an app-defined `PlanTier` string — a real
  * integration needs a test-mode Product/Price created in the Stripe
- * dashboard for each tier first, with its id set here. Env vars, not a
- * schema column: `Plan` is a small, static, seeded catalog (see
+ * dashboard for each tier first, with its id in the matching env var
+ * (`STRIPE_PRICE_ID_ENV_VAR`, `payment-provider-selection.ts`). Env vars,
+ * not a schema column: `Plan` is a small, static, seeded catalog (see
  * `plan-catalog.ts`'s doc comment), and adding a Stripe-specific column to
  * the schema for three fixed rows would be a bigger, harder-to-undo change
  * than three env vars for the same fact — consistent with how
  * `TIKTOK_CLIENT_KEY`/`_SECRET` are configured.
  */
-const STRIPE_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
-  STARTER: "STRIPE_PRICE_ID_STARTER",
-  GROWTH: "STRIPE_PRICE_ID_GROWTH",
-  AGENCY: "STRIPE_PRICE_ID_AGENCY",
-};
-
 function getPriceId(tier: PlanTier): string {
   const envVar = STRIPE_PRICE_ID_ENV_VAR[tier];
   const priceId = process.env[envVar];
@@ -89,18 +49,6 @@ function getPriceId(tier: PlanTier): string {
     );
   }
   return priceId;
-}
-
-/** See the module doc comment: removed from `Subscription` itself as of the
- *  Stripe "basil" API version (2025-03-31) and moved here. This app only
- *  ever puts one Price on a subscription (one plan per workspace, no
- *  add-ons), so the first item is always the right one. */
-function subscriptionItemPeriodEnd(subscription: Stripe.Subscription): Date {
-  const item = subscription.items.data[0];
-  if (!item) {
-    throw new Error(`Stripe subscription ${subscription.id} has no subscription items`);
-  }
-  return new Date(item.current_period_end * 1000);
 }
 
 export class StripePaymentProvider implements PaymentProvider {
@@ -122,6 +70,15 @@ export class StripePaymentProvider implements PaymentProvider {
       customer: input.customerId,
       items: [{ price: getPriceId(input.planTier) }],
       trial_period_days: TRIAL_LENGTH_DAYS,
+      // The trial starts without a card (same as the mock). Stripe's default
+      // for a trial that ends with no payment method on file is to invoice
+      // anyway and start dunning an invoice that can't be paid — the
+      // customer gets failed-payment emails for a card they never gave.
+      // "cancel" ends the subscription cleanly instead (the webhook syncs it
+      // to CANCELED), and adding a card in the Customer Portal before the
+      // trial ends is what keeps it running. No surprise charges, no
+      // pressure tactics (Master Brief §57: "Avoid dark patterns").
+      trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
     });
     return {
       subscriptionId: subscription.id,
@@ -144,7 +101,10 @@ export class StripePaymentProvider implements PaymentProvider {
     // the mock — `currentPeriodEnd` doesn't change from a plan switch alone
     // (see `PaymentProvider`'s doc comment in `types.ts`). Whether upgrades
     // should prorate at all isn't specified anywhere in the Brief, so this
-    // uses Stripe's own default rather than an invented policy.
+    // uses Stripe's own default rather than an invented policy. The Stripe
+    // webhook (`stripe-subscription-sync.ts`) re-syncs `currentPeriodEnd`
+    // from Stripe regardless, so the stored value can't drift even if that
+    // assumption ever stops holding.
     await stripe.subscriptions.update(input.subscriptionId, {
       items: [{ id: itemId, price: getPriceId(input.planTier) }],
     });
@@ -152,5 +112,11 @@ export class StripePaymentProvider implements PaymentProvider {
 
   async cancelSubscription(subscriptionId: string): Promise<void> {
     await getStripeClient().subscriptions.cancel(subscriptionId);
+  }
+
+  /** Any real Stripe customer; never a demo-era `cus_mock_…` id, which
+   *  Stripe has never seen (see `PaymentProvider.canReuseCustomer`). */
+  canReuseCustomer(customerId: string): boolean {
+    return !isMockCustomerId(customerId);
   }
 }

@@ -86,4 +86,21 @@ describe("InMemorySubscriptionRepository", () => {
     const repo = new InMemorySubscriptionRepository();
     await assert.rejects(() => repo.update("no-such-subscription", { status: "CANCELED" }));
   });
+
+  test("findByStripeSubscriptionId matches the row's current Stripe subscription only", async () => {
+    const repo = new InMemorySubscriptionRepository();
+    const created = await repo.create({
+      workspaceId: "workspace-1",
+      planId: "plan-starter",
+      status: "CANCELED",
+      stripeCustomerId: "cus_1",
+      stripeSubscriptionId: "sub_old",
+      currentPeriodEnd: null,
+    });
+    // Resubscribed: same row and customer, new Stripe subscription.
+    await repo.update(created.id, { status: "TRIALING", stripeSubscriptionId: "sub_new" });
+
+    assert.equal((await repo.findByStripeSubscriptionId("sub_new"))?.id, created.id);
+    assert.equal(await repo.findByStripeSubscriptionId("sub_old"), null);
+  });
 });

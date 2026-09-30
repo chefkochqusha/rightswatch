@@ -4,6 +4,33 @@ import { subscribeWorkspace } from "./subscribe-workspace";
 import { cancelSubscription } from "./cancel-subscription";
 import { InMemoryPlanRepository, InMemorySubscriptionRepository } from "./in-memory-repositories";
 import { MockPaymentProvider } from "./mock-payment-provider";
+import { RoutingPaymentProvider, isMockCustomerId, isMockSubscriptionId } from "./payment-provider-selection";
+import type { PaymentProvider, PlanTier } from "./types";
+
+/** Stands in for `StripePaymentProvider`: mints Stripe-shaped ids and
+ *  records every id it's handed, so a test can prove no demo-era id ever
+ *  reached "Stripe". */
+function fakeStripe(seen: string[]): PaymentProvider {
+  let n = 0;
+  return {
+    async createCustomer() {
+      n += 1;
+      return { customerId: `cus_Real${n}` };
+    },
+    async createSubscription(input: { customerId: string; planTier: PlanTier }) {
+      seen.push(input.customerId);
+      n += 1;
+      return { subscriptionId: `sub_Real${n}`, currentPeriodEnd: new Date("2026-10-14T00:00:00Z") };
+    },
+    async changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier }) {
+      seen.push(input.subscriptionId);
+    },
+    async cancelSubscription(subscriptionId: string) {
+      seen.push(subscriptionId);
+    },
+    canReuseCustomer: (customerId: string) => !isMockCustomerId(customerId),
+  };
+}
 
 function makeDeps() {
   return {
@@ -111,6 +138,78 @@ describe("subscribeWorkspace", () => {
       first.subscription.stripeSubscriptionId,
       "a fresh subscription id is issued on resubscribe",
     );
+  });
+
+  test("a demo-era workspace keeps demo billing until it cancels, then moves to real Stripe on its next subscribe", async () => {
+    const planRepository = new InMemoryPlanRepository();
+    const subscriptionRepository = new InMemorySubscriptionRepository();
+
+    // Subscribed while the app still ran on MockPaymentProvider.
+    const demoEra = await subscribeWorkspace(
+      { workspaceId: "workspace-1", planTier: "STARTER", customerEmail: "owner@example.com" },
+      { planRepository, subscriptionRepository, paymentProvider: new MockPaymentProvider() },
+    );
+    assert.equal(demoEra.ok, true);
+    if (!demoEra.ok) return;
+
+    // Stripe keys land in Vercel: the store now hands out the router.
+    const seenByStripe: string[] = [];
+    const stripeMode = {
+      planRepository,
+      subscriptionRepository,
+      paymentProvider: new RoutingPaymentProvider(fakeStripe(seenByStripe), new MockPaymentProvider()),
+    };
+
+    // A plan switch on the demo subscription stays on the mock...
+    const switched = await subscribeWorkspace(
+      { workspaceId: "workspace-1", planTier: "GROWTH", customerEmail: "owner@example.com" },
+      stripeMode,
+    );
+    assert.equal(switched.ok, true);
+    if (!switched.ok) return;
+    assert.ok(isMockSubscriptionId(switched.subscription.stripeSubscriptionId ?? ""));
+
+    // ...and so does cancelling it.
+    await cancelSubscription({ workspaceId: "workspace-1" }, stripeMode);
+
+    // The next subscribe creates a real customer and a real trial on the same row.
+    const real = await subscribeWorkspace(
+      { workspaceId: "workspace-1", planTier: "GROWTH", customerEmail: "owner@example.com" },
+      stripeMode,
+    );
+    assert.equal(real.ok, true);
+    if (!real.ok) return;
+    assert.equal(real.subscription.id, demoEra.subscription.id, "same row, not a second subscription");
+    assert.equal(real.subscription.status, "TRIALING");
+    assert.equal(real.subscription.stripeCustomerId, "cus_Real1");
+    assert.equal(real.subscription.stripeSubscriptionId, "sub_Real2");
+    assert.equal(
+      seenByStripe.some((id) => id.includes("_mock_")),
+      false,
+      "no demo-era id ever reached Stripe",
+    );
+  });
+
+  test("a real Stripe customer is reused on resubscribe, never replaced", async () => {
+    const seenByStripe: string[] = [];
+    const deps = {
+      planRepository: new InMemoryPlanRepository(),
+      subscriptionRepository: new InMemorySubscriptionRepository(),
+      paymentProvider: new RoutingPaymentProvider(fakeStripe(seenByStripe), new MockPaymentProvider()),
+    };
+    const first = await subscribeWorkspace(
+      { workspaceId: "workspace-1", planTier: "STARTER", customerEmail: "owner@example.com" },
+      deps,
+    );
+    await cancelSubscription({ workspaceId: "workspace-1" }, deps);
+    const again = await subscribeWorkspace(
+      { workspaceId: "workspace-1", planTier: "STARTER", customerEmail: "owner@example.com" },
+      deps,
+    );
+    assert.equal(first.ok && again.ok, true);
+    if (!first.ok || !again.ok) return;
+    assert.equal(again.subscription.stripeCustomerId, first.subscription.stripeCustomerId);
+    assert.notEqual(again.subscription.stripeSubscriptionId, first.subscription.stripeSubscriptionId);
   });
 
   test("two different workspaces subscribing get independent subscriptions", async () => {

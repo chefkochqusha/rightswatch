@@ -45,4 +45,10 @@ export class MockPaymentProvider implements PaymentProvider {
   async cancelSubscription(_subscriptionId: string): Promise<void> {
     // No-op for the same reason.
   }
+
+  /** Any stored id: the mock never looks at the customer it's handed, so
+   *  there's nothing it can't "bill" (see `PaymentProvider.canReuseCustomer`). */
+  canReuseCustomer(_customerId: string): boolean {
+    return true;
+  }
 }

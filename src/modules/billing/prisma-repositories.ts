@@ -83,6 +83,12 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
     return row ? mapSubscription(row) : null;
   }
 
+  async findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<SubscriptionRecord | null> {
+    // `stripeSubscriptionId` is `String? @unique` in the schema.
+    const row = await getPrisma().subscription.findUnique({ where: { stripeSubscriptionId } });
+    return row ? mapSubscription(row) : null;
+  }
+
   async create(input: {
     workspaceId: string;
     planId: string;
@@ -112,7 +118,10 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
   async update(
     id: string,
     changes: Partial<
-      Pick<SubscriptionRecord, "planId" | "status" | "stripeSubscriptionId" | "currentPeriodEnd">
+      Pick<
+        SubscriptionRecord,
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
+      >
     >,
   ): Promise<SubscriptionRecord> {
     const row = await getPrisma().subscription.update({

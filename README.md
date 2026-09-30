@@ -80,6 +80,11 @@ fixture repositories. The real TikTok connector is separately blocked — on
 TikTok API access, not an engineering decision — so the app runs against a
 mock connector until then.
 
+Billing runs on Stripe (test mode) as soon as its five environment
+variables are set in Vercel, and on clearly-labeled demo billing until
+then — no code change either way. `STRIPE_INTEGRATION.md` has the setup
+steps and how to check it works.
+
 `ARCHITECTURE.md` has the full picture: what's built, what's blocked and on
 what, and what's deliberately left out of scope for now.
 

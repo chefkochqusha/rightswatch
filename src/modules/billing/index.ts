@@ -22,12 +22,42 @@ export { InMemoryPlanRepository, InMemorySubscriptionRepository } from "./in-mem
 
 export { MockPaymentProvider, TRIAL_LENGTH_DAYS } from "./mock-payment-provider";
 
-// `StripePaymentProvider` is safe to export from here (unlike
-// `PrismaPlanRepository`/`PrismaSubscriptionRepository` above) — importing
-// the `stripe` package has no crash-at-load-time risk in this sandbox the
-// way the Prisma generated client does. It's just not wired into
-// `app/_lib/billing-store.ts` yet; see its own doc comment for why.
+// `StripePaymentProvider` and the portal adapter are safe to export from
+// here (unlike `PrismaPlanRepository`/`PrismaSubscriptionRepository` above)
+// — importing the `stripe` package has no crash-at-load-time risk in this
+// sandbox the way the Prisma generated client does.
 export { StripePaymentProvider } from "./stripe-payment-provider";
+export { createStripeBillingPortalSession } from "./stripe-billing-portal";
+
+export {
+  STRIPE_PRICE_ID_ENV_VAR,
+  isStripeConfigured,
+  getPaymentMode,
+  missingStripeEnvVars,
+  planTierForPriceId,
+  isMockCustomerId,
+  isMockSubscriptionId,
+  RoutingPaymentProvider,
+} from "./payment-provider-selection";
+export type { PaymentMode } from "./payment-provider-selection";
+
+export {
+  mapStripeSubscriptionStatus,
+  snapshotFromStripeSubscription,
+  syncStripeSubscription,
+} from "./stripe-subscription-sync";
+export type {
+  StripeSubscriptionSnapshot,
+  SyncStripeSubscriptionDependencies,
+  SyncStripeSubscriptionResult,
+} from "./stripe-subscription-sync";
+
+export { handleStripeWebhook, HANDLED_STRIPE_EVENT_TYPES } from "./handle-stripe-webhook";
+export type {
+  HandleStripeWebhookInput,
+  HandleStripeWebhookDependencies,
+  HandleStripeWebhookResult,
+} from "./handle-stripe-webhook";
 
 export { subscribeWorkspace } from "./subscribe-workspace";
 export type {

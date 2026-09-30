@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
-import { subscribeWorkspace, cancelSubscription } from "@/modules/billing";
+import {
+  subscribeWorkspace,
+  cancelSubscription,
+  createStripeBillingPortalSession,
+  isMockCustomerId,
+} from "@/modules/billing";
 import type { PlanTier } from "@/modules/billing";
 
 const PLAN_TIERS: PlanTier[] = ["STARTER", "GROWTH", "AGENCY"];
@@ -48,4 +55,32 @@ export async function cancelSubscriptionAction() {
   );
   revalidatePath("/workspace/billing");
   revalidatePath("/workspace");
+}
+
+/**
+ * "Manage billing & invoices" (Master Brief §18 customer portal, §20):
+ * hands the workspace's Stripe customer to Stripe's hosted portal and sends
+ * the browser there. Only offered — and only allowed — for a real Stripe
+ * customer: a mock-era subscription has nothing on Stripe's side to manage.
+ */
+export async function openBillingPortalAction() {
+  const session = await requireWorkspaceManager();
+  const store = getBillingStore();
+  const subscription = await store.subscriptions.findByWorkspaceId(session.workspace.id);
+  if (store.mode !== "stripe" || !subscription || isMockCustomerId(subscription.stripeCustomerId)) {
+    throw new Error("This workspace has no Stripe billing account to manage.");
+  }
+
+  // Back to this same deployment's billing page — works unchanged on the
+  // production domain, a preview URL, or a custom domain added later.
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
+  const { url } = await createStripeBillingPortalSession({
+    customerId: subscription.stripeCustomerId,
+    returnUrl: `${protocol}://${host}/workspace/billing`,
+  });
+
+  // Outside any try/catch, per the `redirect` docs: it works by throwing.
+  redirect(url);
 }

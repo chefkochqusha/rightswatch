@@ -50,6 +50,14 @@ export interface PlanRepository {
 
 export interface SubscriptionRepository {
   findByWorkspaceId(workspaceId: string): Promise<SubscriptionRecord | null>;
+  /**
+   * How a Stripe webhook finds the row an event is about. Keyed on the
+   * subscription id, never the customer id: a workspace that cancels and
+   * resubscribes keeps its customer but gets a new Stripe subscription, so
+   * a late event about the old one must match nothing rather than
+   * overwrite the new one (see `stripe-subscription-sync.ts`).
+   */
+  findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<SubscriptionRecord | null>;
   create(input: {
     workspaceId: string;
     planId: string;
@@ -58,27 +66,35 @@ export interface SubscriptionRepository {
     stripeSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
   }): Promise<SubscriptionRecord>;
+  /** `stripeCustomerId` is updatable only for one case: a workspace whose
+   *  stored customer the current payment provider can't bill (a demo-era
+   *  `cus_mock_…` id after the switch to Stripe) gets a fresh one on its
+   *  next subscribe — see `PaymentProvider.canReuseCustomer`. */
   update(
     id: string,
     changes: Partial<
       Pick<
         SubscriptionRecord,
-        "planId" | "status" | "stripeSubscriptionId" | "currentPeriodEnd"
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
       >
     >,
   ): Promise<SubscriptionRecord>;
 }
 
 /**
- * The Stripe adapter boundary — same role `PlatformConnector` plays for
- * TikTok. This sandbox has no route to api.stripe.com and no real Stripe
- * keys (`STRIPE_SECRET_KEY` is blank in `.env.example`, never provisioned),
- * the same category of block as the real TikTok connector (Phase 10) and
- * Prisma (network-restricted) — so a `StripePaymentProvider` isn't built
- * yet, but everything downstream (the subscription lifecycle, the billing
- * UI) is real and works against `MockPaymentProvider` today, and swaps to
- * a real implementation with zero changes to `subscribe-workspace.ts` /
- * `cancel-subscription.ts` once real keys exist.
+ * The payment-gateway adapter boundary — same role `PlatformConnector`
+ * plays for TikTok. Two implementations: `MockPaymentProvider` (demo
+ * billing, no network, no real money) and `StripePaymentProvider` (Stripe
+ * test mode). `app/_lib/billing-store.ts` picks between them from the
+ * environment (`payment-provider-selection.ts`), so `subscribe-workspace.ts`
+ * / `cancel-subscription.ts` never know which one they're talking to.
+ *
+ * Deliberately synchronous-looking: each call returns what the caller needs
+ * to persist right away. Anything Stripe changes on its own afterwards (a
+ * trial ending, a failed payment, a cancellation from the Customer Portal)
+ * reaches the database through the webhook instead
+ * (`handle-stripe-webhook.ts`) — Master Brief §18: "Stripe webhook events
+ * must update the internal subscription state."
  */
 export interface PaymentProvider {
   createCustomer(input: { email: string; workspaceId: string }): Promise<{ customerId: string }>;
@@ -90,4 +106,16 @@ export interface PaymentProvider {
    *  never alters `currentPeriodEnd` — the caller keeps the existing one. */
   changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier }): Promise<void>;
   cancelSubscription(subscriptionId: string): Promise<void>;
+  /**
+   * Whether a customer id already stored on a workspace's subscription can
+   * be billed by *this* provider. `subscribeWorkspace` reuses it on a
+   * resubscribe when it can, and creates a fresh customer when it can't.
+   *
+   * The case this exists for: a workspace that subscribed under demo
+   * billing keeps a `cus_mock_…` id that real Stripe has never seen. Once
+   * the app runs on Stripe, cancelling and starting a new trial must create
+   * a real Stripe customer — not hand the mock id to Stripe (a 404), and
+   * not quietly keep the workspace on demo billing forever.
+   */
+  canReuseCustomer(customerId: string): boolean;
 }

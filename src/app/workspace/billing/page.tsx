@@ -6,8 +6,8 @@ import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { WorkspaceHeader } from "@/components/layout/workspace-header";
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge";
 import { formatPlanPrice, SCAN_CADENCE_LABELS } from "@/components/billing/labels";
-import { PLAN_CATALOG } from "@/modules/billing";
-import { choosePlanAction, cancelSubscriptionAction } from "./actions";
+import { PLAN_CATALOG, TRIAL_LENGTH_DAYS, isMockCustomerId } from "@/modules/billing";
+import { choosePlanAction, cancelSubscriptionAction, openBillingPortalAction } from "./actions";
 
 export const metadata = {
   title: "Billing — RightsWatch",
@@ -16,11 +16,12 @@ export const metadata = {
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
 /**
- * The real workspace's plan/subscription page (Master Brief §18–20). Runs
- * entirely against `MockPaymentProvider` — see `modules/billing/types.ts`
- * for why a real Stripe integration isn't wired up yet — but the
- * subscribe / switch-plan / cancel / resubscribe lifecycle underneath it
- * is real, not a static pricing table.
+ * The real workspace's plan/subscription page (Master Brief §18–20). The
+ * subscribe / switch-plan / cancel / resubscribe lifecycle underneath it is
+ * real either way; which payment backend it runs on is decided by the
+ * environment (`app/_lib/billing-store.ts`), and the page always says which
+ * one that is — demo billing is labeled as demo billing, never passed off
+ * as real payments (Master Brief §76).
  */
 export default async function BillingPage() {
   const session = await requireSession();
@@ -29,6 +30,11 @@ export default async function BillingPage() {
   const subscription = await store.subscriptions.findByWorkspaceId(session.workspace.id);
   const currentPlan = subscription ? await store.plans.findById(subscription.planId) : null;
   const isCanceled = subscription?.status === "CANCELED";
+  const isStripeMode = store.mode === "stripe";
+  // A real Stripe customer is what the Customer Portal needs. A workspace
+  // that subscribed under demo billing keeps its mock ids (see
+  // `RoutingPaymentProvider`) and has nothing on Stripe's side to manage.
+  const hasStripeCustomer = Boolean(subscription && !isMockCustomerId(subscription.stripeCustomerId));
 
   const trackedCreators = new Set(
     getWorkspaceScanItems(session.workspace.id).map((item) => item.creatorExternalId),
@@ -47,8 +53,16 @@ export default async function BillingPage() {
         <p className="mt-1 text-sm text-t2">
           {subscription && !isCanceled
             ? "Manage your plan and subscription."
-            : "Choose a plan to start monitoring creators in your workspace."}
+            : `Choose a plan to start monitoring creators in your workspace. Every plan starts with a ${TRIAL_LENGTH_DAYS}-day free trial, no card needed.`}
         </p>
+
+        {!isStripeMode && (
+          <p className="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-[0.8125rem] text-t2">
+            <span className="font-medium text-tx">Demo billing.</span> Plans, trials, switching and
+            cancelling all work, but no payment is taken and no invoices exist. Real billing through
+            Stripe turns on once it&apos;s connected.
+          </p>
+        )}
 
         {subscription && currentPlan && (
           <section className="mt-6 rounded-lg border border-line bg-surface p-5">
@@ -80,15 +94,39 @@ export default async function BillingPage() {
                 </div>
               )}
             </dl>
+            {isStripeMode && hasStripeCustomer && subscription.status === "TRIALING" && (
+              <p className="mt-3 text-[0.8125rem] text-t2">
+                Add a payment method under Manage billing before the trial ends to keep monitoring.
+                Without one, the subscription simply ends. You won&apos;t be charged.
+              </p>
+            )}
+            {isStripeMode && !hasStripeCustomer && !isCanceled && (
+              <p className="mt-3 text-[0.8125rem] text-t2">
+                This subscription was started under demo billing and isn&apos;t connected to Stripe.
+                Cancel it and start a new trial to move to real billing.
+              </p>
+            )}
             {!isCanceled && canManage && (
-              <form action={cancelSubscriptionAction} className="mt-4">
-                <button
-                  type="submit"
-                  className="text-[0.8125rem] font-medium text-mismatch hover:underline"
-                >
-                  Cancel subscription
-                </button>
-              </form>
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                {isStripeMode && hasStripeCustomer && (
+                  <form action={openBillingPortalAction}>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-line px-3 py-1.5 text-[0.8125rem] font-medium text-t2 hover:bg-hover hover:text-tx"
+                    >
+                      Manage billing &amp; invoices
+                    </button>
+                  </form>
+                )}
+                <form action={cancelSubscriptionAction}>
+                  <button
+                    type="submit"
+                    className="text-[0.8125rem] font-medium text-mismatch hover:underline"
+                  >
+                    Cancel subscription
+                  </button>
+                </form>
+              </div>
             )}
             {!isCanceled && !canManage && (
               <p className="mt-4 text-[0.8125rem] text-t2">
