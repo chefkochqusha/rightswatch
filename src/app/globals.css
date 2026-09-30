@@ -99,3 +99,68 @@ body {
   outline: 2px solid var(--ac);
   outline-offset: 2px;
 }
+
+/*
+ * Keyword marquee (task #64 — components/marketing/keyword-marquee.tsx).
+ * The first animation the real app ships (DESIGN_SYSTEM.md "Accessibility"
+ * previously noted there wasn't one yet) — honors `prefers-reduced-motion`
+ * the same way the validated prototype's own motion already did, per that
+ * section's own stated expectation for whenever this day came.
+ *
+ * Each keyframe only ever translates by exactly one copy-width (-50%): the
+ * component renders `items` twice back-to-back, so the reset is invisible
+ * — there's already an identical second copy sitting where the first one
+ * started.
+ */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-left {
+  animation: marquee-left 32s linear infinite;
+}
+
+.animate-marquee-right {
+  animation: marquee-right 36s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-left,
+  .animate-marquee-right {
+    animation: none;
+  }
+}
+
+/*
+ * The marquee's "outline" word treatment (alternating with a plain solid
+ * one). Solid `--t2` by default — still reads clearly as the row's
+ * secondary tone even with no outline at all — upgraded to a transparent
+ * fill + stroke only where `-webkit-text-stroke` actually renders
+ * (Chromium/WebKit; Firefox has never implemented it), via `@supports`
+ * rather than always setting `color: transparent`, which would leave the
+ * text genuinely invisible wherever the stroke isn't supported.
+ */
+.marquee-outline-text {
+  color: var(--t2);
+}
+
+@supports (-webkit-text-stroke: 1px black) {
+  .marquee-outline-text {
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--tx);
+  }
+}

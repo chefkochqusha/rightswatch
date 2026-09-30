@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDemoScanResults } from "@/app/_lib/get-demo-scan-results";
 import { AppHeader } from "@/components/layout/app-header";
+import { KeywordMarquee } from "@/components/marketing/keyword-marquee";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { REASON_LABELS, STATUS_SORT_ORDER } from "@/components/rights/labels";
 import type { RightsAssessmentStatus } from "@/modules/rights-engine/types";
@@ -21,6 +22,25 @@ interface Row {
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
 });
+
+// Task #64's marquee content. Row 1: the Brief's own four target customer
+// segments (§1), worded for a banner rather than a bullet list. Row 2: what
+// the product actually does, held to the same cautious, non-legal-verdict
+// voice as every other line of copy in the app (DESIGN_SYSTEM.md "Copy &
+// tone") — "signal," "flags," "surfaces," never "catches" or "proves."
+const AUDIENCE_KEYWORDS = [
+  "MUSIC PUBLISHERS",
+  "LICENSING AGENCIES",
+  "RIGHTS MANAGERS",
+  "BRAND & AGENCY TEAMS",
+] as const;
+
+const CAPABILITY_KEYWORDS = [
+  "MONITORS TIKTOK CONTENT",
+  "FLAGS COMMERCIAL USE",
+  "SURFACES RIGHTS MISMATCHES",
+  "SIGNALS WHAT NEEDS REVIEW",
+] as const;
 
 export default async function DashboardPage() {
   const scans = await getDemoScanResults();
@@ -55,6 +75,13 @@ export default async function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <AppHeader active="dashboard" />
+
+      <section className="overflow-hidden border-b border-line bg-surface-2">
+        <div className="space-y-3 py-5">
+          <KeywordMarquee items={AUDIENCE_KEYWORDS} direction="left" />
+          <KeywordMarquee items={CAPABILITY_KEYWORDS} direction="right" />
+        </div>
+      </section>
 
       <main className="mx-auto w-full max-w-(--content-width) flex-1 px-6 py-8 [--content-width:1100px]">
         <div className="mb-8">

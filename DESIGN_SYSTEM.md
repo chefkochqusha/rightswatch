@@ -244,6 +244,20 @@ third variant.
 before the text; read rows are plain. The whole row is a single `Link` to
 the underlying item, never a button plus a separate link.
 
+**Keyword marquee** (`components/marketing/keyword-marquee.tsx`) — a
+full-bleed, continuously-scrolling strip of short keywords, `/dashboard`
+only (today's de facto landing page — `/` redirects there). Two rows, each
+scrolling the opposite direction: audience segments (the Brief's own four
+customer types, §1) and capability phrases (held to the same cautious,
+signal-not-verdict voice as everything under "Copy & tone" below). Words
+alternate solid `text-tx` and an "outline" treatment (`marquee-outline-text`
+in `globals.css`: transparent fill + `-webkit-text-stroke`, behind an
+`@supports` check with a solid `text-t2` fallback for browsers that don't
+implement it), separated by a small `bg-accent` dot — the same "solid dot
+as separator" motif `StatusBadge` and notification rows already use, not a
+new icon. This is the app's first shipped animation (see "Accessibility"
+below for how it handles `prefers-reduced-motion`).
+
 ## Copy & tone
 
 The prototype set a deliberately cautious, non-legal-verdict voice that the
@@ -273,10 +287,13 @@ implying a verdict it hasn't earned.
   transitions and the sheet's spring physics), `prefers-contrast: more`
   (solid borders on cards/panels instead of the hairline token), and
   `prefers-reduced-transparency` (drops backdrop blur to a solid surface
-  color). The real app has no animation or blur yet for these to apply to —
-  when it gains any (a transition, a backdrop blur), it should honor the
-  same three media features the prototype already validated, rather than
-  skip them because "there's nothing there yet."
+  color). The real app's first shipped animation — the keyword marquee
+  above — honors `prefers-reduced-motion` the same way (`globals.css`
+  disables both scroll animations under that media query, leaving a static,
+  fully-readable row). Nothing in the real app uses backdrop blur or
+  triggers `prefers-contrast` yet; when something does, it should honor
+  those two the same way, rather than skip them because "there's nothing
+  there yet."
 
 ## What's prototype-only — not yet built
 
