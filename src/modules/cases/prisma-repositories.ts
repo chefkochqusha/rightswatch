@@ -11,13 +11,15 @@ import type {
 /**
  * Prisma-backed repositories (Phase 2) for `Case` and `CaseNote` — drop-in
  * replacements for `InMemoryCaseRepository`/`InMemoryCaseNoteRepository`,
- * matching `types.ts`'s interfaces exactly. Wired into
- * `app/_lib/case-store.ts` now that Neon's schema push is live. Unlike
- * `rights`/`campaigns`/`music` (still fixture-backed — see
- * `ARCHITECTURE.md` → "Open decisions" for why those three are a harder,
- * not-yet-decided swap), `Case` rows are already created through real app
- * actions (`openCase`) against a real, logged-in workspace, so this is a
- * clean swap exactly like `auth`/`billing`/`notifications`/`audit`.
+ * matching `types.ts`'s interfaces exactly.
+ *
+ * NOT wired into `app/_lib/case-store.ts`, on purpose: `Case.
+ * rightsAssessmentId` is a foreign key to `RightsAssessment.id`, so
+ * `create` only succeeds for an assessment that actually exists as a row —
+ * and until the scan pipeline persists its results, none do (the sample
+ * scan's case key is a synthetic `workspaceId::contentId` string). It was
+ * wired in once (6b69b95) and every case creation failed in production
+ * with a foreign-key violation; see `case-store.ts` for the revert.
  *
  * `getPrisma()`, not a top-level `prisma` binding — see
  * `src/lib/prisma-client.ts`'s doc comment for why.

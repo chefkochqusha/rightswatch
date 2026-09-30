@@ -31,10 +31,10 @@ Error: Failed to fetch sha256 checksum at https://binaries.prisma.sh/... - 403 F
 This is expected wherever that host isn't reachable, and safe to ignore for
 local development: every real dependency still installs correctly, and
 `npm run dev`/`npm test`/`tsc`/`eslint` all work with no generated client
-present — the five domain modules that are Prisma-backed in production
-(auth, billing, notifications, audit, cases; see "Current status" below)
-only ever load the generated client lazily, at the moment a repository
-method actually runs. Only signing up, logging in, or otherwise exercising one of
+present — the four domain modules that are Prisma-backed in production
+(auth, billing, notifications, audit; see "Current status" below) only
+ever load the generated client lazily, at the moment a repository method
+actually runs. Only signing up, logging in, or otherwise exercising one of
 those four modules against a real Postgres locally needs a successful
 `prisma generate` first.
 
@@ -67,19 +67,18 @@ anything currently reads it.
 
 Every domain — auth, connectors, music identification, the rights engine,
 campaigns, cases, notifications, billing — is fully built and tested
-end-to-end: real business logic, real UI, real tests. Five of those domains
-are now backed by a real Postgres database on Neon — auth, billing,
-notifications, audit, and cases. The first four are verified in production
-with a real signup → dashboard → logout → login round-trip, not just a
-successful build; `cases` is the same clean, drop-in swap and is
-build-verified on Vercel, with its own live round-trip (an authenticated
-"Run a sample scan") still pending. The rest (connectors, music
-identification, the rights engine, campaigns) still run against in-memory
-or fixture repositories, written to be a drop-in-compatible swap for a
-Prisma-backed one the same way the five above already were. The real
-TikTok connector is separately blocked — on TikTok API access, not an
-engineering decision — so the app runs against a mock connector until
-then.
+end-to-end: real business logic, real UI, real tests. Four of those domains
+are backed by a real Postgres database on Neon — auth, billing,
+notifications, and audit — verified in production with a real signup →
+dashboard → logout → login round-trip, not just a successful build. Cases
+and sample-scan results still live in server memory (a case has a foreign
+key to a persisted rights assessment, and the scan pipeline doesn't
+persist those yet — see `ARCHITECTURE.md` → "Open decisions"), which on
+Vercel means they don't survive a redeploy. The rest (connectors, music
+identification, campaigns, rights records) run against in-memory or
+fixture repositories. The real TikTok connector is separately blocked — on
+TikTok API access, not an engineering decision — so the app runs against a
+mock connector until then.
 
 `ARCHITECTURE.md` has the full picture: what's built, what's blocked and on
 what, and what's deliberately left out of scope for now.
