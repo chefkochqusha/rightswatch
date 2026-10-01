@@ -16,5 +16,7 @@ import { runSampleScanForWorkspace } from "@/app/_lib/workspace-scan-store";
 export async function runSampleScanAction() {
   const session = await requireCaseManager();
   await runSampleScanForWorkspace(session.workspace.id, session.user.id);
-  revalidatePath("/workspace");
+  // The whole workspace layout: a scan can open cases, and each one adds to
+  // the sidebar's unread-notification badge.
+  revalidatePath("/workspace", "layout");
 }

@@ -15,5 +15,6 @@ import { getNotificationStore } from "@/app/_lib/notification-store";
 export async function markAllNotificationsReadAction() {
   const session = await requireSession();
   await getNotificationStore().notifications.markAllRead(session.workspace.id, session.user.id);
-  revalidatePath("/workspace/notifications");
+  // The layout, not just this page: the sidebar's unread badge lives there.
+  revalidatePath("/workspace", "layout");
 }

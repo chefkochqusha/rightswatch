@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { getCurrentSession, requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
 import { getWorkspaceScanItem } from "@/app/_lib/workspace-scan-store";
-import { WorkspaceHeader } from "@/components/layout/workspace-header";
 import { AssessmentSummary } from "@/components/rights/assessment-summary";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CasePanel } from "./case-panel";
@@ -56,50 +55,46 @@ export default async function WorkspaceItemDetailPage({
   if (!item) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <WorkspaceHeader />
+    <div>
+      <Link href="/workspace" className="text-[0.8125rem] text-t2 hover:text-tx">
+        ← Back to overview
+      </Link>
 
-      <main className="mx-auto w-full max-w-(--content-width) flex-1 px-6 py-8 [--content-width:1100px]">
-        <Link href="/workspace" className="text-[0.8125rem] text-t2 hover:text-tx">
-          ← Back to workspace
-        </Link>
+      <div className="mt-4 mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">@{item.creatorUsername}</h1>
+          <p className="mt-1 text-sm text-t2">
+            {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
+            {dateFormatter.format(item.content.publishedAt)}
+          </p>
+        </div>
+        {item.kind === "ASSESSED" && <StatusBadge status={item.assessment.status} />}
+      </div>
 
-        <div className="mt-4 mb-8 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">@{item.creatorUsername}</h1>
-            <p className="mt-1 text-sm text-t2">
-              {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
-              {dateFormatter.format(item.content.publishedAt)}
+      <AssessmentSummary item={item} />
+
+      <div className="mt-4">
+        {item.kind === "ASSESSED" ? (
+          <CasePanel
+            rightsAssessmentId={item.rightsAssessmentId}
+            contentId={contentId}
+            currentUserId={session.user.id}
+            currentUserName={session.user.name ?? session.user.email}
+            canManage={canManageCases(session.role)}
+          />
+        ) : (
+          <section className="rounded-lg border border-line bg-surface p-5">
+            <h2 className="text-sm font-semibold">Case</h2>
+            <p className="mt-2 text-sm text-t2">
+              A case can be opened once a track has been identified and assessed. This item{" "}
+              {item.kind === "NO_MUSIC_MATCH"
+                ? "has no identified track yet"
+                : "failed music identification"}
+              .
             </p>
-          </div>
-          {item.kind === "ASSESSED" && <StatusBadge status={item.assessment.status} />}
-        </div>
-
-        <AssessmentSummary item={item} />
-
-        <div className="mt-4">
-          {item.kind === "ASSESSED" ? (
-            <CasePanel
-              rightsAssessmentId={item.rightsAssessmentId}
-              contentId={contentId}
-              currentUserId={session.user.id}
-              currentUserName={session.user.name ?? session.user.email}
-              canManage={canManageCases(session.role)}
-            />
-          ) : (
-            <section className="rounded-lg border border-line bg-surface p-5">
-              <h2 className="text-sm font-semibold">Case</h2>
-              <p className="mt-2 text-sm text-t2">
-                A case can be opened once a track has been identified and assessed. This item{" "}
-                {item.kind === "NO_MUSIC_MATCH"
-                  ? "has no identified track yet"
-                  : "failed music identification"}
-                .
-              </p>
-            </section>
-          )}
-        </div>
-      </main>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

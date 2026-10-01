@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { Role } from "@/modules/auth";
 import { getSessionUserId, hasSessionCookie } from "./session-cookie";
@@ -25,8 +26,11 @@ export interface CurrentSession {
  * today. Multi-workspace membership (joining a second workspace via
  * invite) is future work and would turn this into a workspace *picker*,
  * not a change to the session shape itself.
+ *
+ * Wrapped in React's `cache`, so the workspace layout and the page it
+ * wraps share one lookup per request instead of querying twice.
  */
-export async function getCurrentSession(): Promise<CurrentSession | null> {
+export const getCurrentSession = cache(async function getCurrentSession(): Promise<CurrentSession | null> {
   const userId = await getSessionUserId();
   if (!userId) return null;
 
@@ -46,7 +50,7 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
     workspace: { id: workspace.id, name: workspace.name, slug: workspace.slug },
     role: membership.role,
   };
-}
+});
 
 /**
  * For Server Components/Actions that must have a session — redirects to

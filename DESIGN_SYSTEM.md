@@ -114,45 +114,42 @@ prototype's `h1` rule is the reference to match, not a size to invent fresh.
 
 ## Nav
 
-Two distinct top-level nav bars exist today — both a single horizontal bar
-under `border-b border-line`, inside a `max-w-(--content-width)` (1100px)
-container — never the prototype's sidebar (see below):
+**The workspace sidebar** (`app/workspace/layout.tsx`,
+`components/layout/workspace-nav.tsx`) — the authenticated app's chrome,
+the prototype's layout carried over: a `15.5rem` sidebar on `bg-surface-2`
+(sticky, full height) beside the content column. The RW mark and a tracked
+`RIGHTSWATCH` wordmark sit at the top; below them the sections in Brief
+§6's order (Overview, Creators, Music Matches, Cases, Rights Library,
+Reports, Team, Billing, Settings), then a second group (Notifications with
+its unread-count pill, `bg-review-bg text-review`, capped at "99+"; Audit
+log). A section appears only once its page exists — no dead navigation
+(Brief §63). Links are `rounded-[0.625rem] px-3 py-2 text-sm font-medium`;
+the active one is `bg-surface text-tx ring-1 ring-line` with
+`aria-current="page"`, the rest `text-t2 hover:bg-hover hover:text-tx`. A
+detail page lights up the section it belongs to (an item's page lights up
+the list it came from).
 
-**`AppHeader`** — Demo Mode's chrome (`/`, `/dashboard`, `/creators`,
-`/assessments/*`). The RW mark and wordmark sit on the left, linking home;
-two nav links (Dashboard, Creators) follow, with a pill active state
-(`rounded-full bg-surface px-3 py-1.5 text-sm text-tx ring-1 ring-line`)
-against an inactive, hoverable one (`rounded-full px-3 py-1.5 text-sm text-t2
-hover:bg-hover hover:text-tx`). A "Demo Mode" pill, then Log in / Sign up,
-sit on the right. The assessment detail page deliberately lights up no nav
-item — it's reached by drilling into a row, not a primary section.
+The content column opens with a top bar: the workspace's name, a `DEMO
+MODE` pill while scans run on demo data (`app/_lib/connector-mode.ts`),
+and on the right who's signed in, their role, and Log out (a form button,
+not a link). Content sits in `max-w-[76rem] px-10 py-8`.
 
-**`WorkspaceHeader`** — the real, authenticated chrome (`/workspace/*`).
-Same RW mark, linking to the workspace home. Nav links: Notifications (with
-an unread-count pill badge, `bg-review-bg text-review`, capped at "99+"),
-Team, Billing — all visible to every role, since each destination page (not
-the header) is what restricts its own mutations. Log out sits on the right,
-as a form button rather than a link.
+Below `md` (768px) the sidebar collapses into a block above the content:
+the mark, then the same links in one horizontally scrolling row (Brief
+§39: "sidebar becomes compact") — the prototype's own small-screen
+behavior.
 
-Cases are not their own nav destination in either header — a case is
-reached by opening an item's row, the same pattern as the assessment-detail
-page above; there's no standalone case list page today.
-
-The prototype's original information architecture was a full sidebar with
-nine sections: Overview, Creators, Music Matches, Cases, Rights Library,
-Reports, Team, Billing, Settings. Only the subset the real app has actually
-built appears in either real header above (Dashboard/Overview, Creators,
-Team, Billing, plus Notifications, which the prototype didn't have). Music
-Matches, a standalone Cases list, Rights Library (a rights-editing UI),
-Reports, and Settings remain prototype-only — see "What's prototype-only"
-below. This document doesn't add them to either real header, since doing so
-would be inventing nav for pages that don't exist yet.
+**`AppHeader`** — Demo Mode's chrome (`/dashboard`, `/creators`,
+`/assessments/*`): a single horizontal bar with the RW mark, two pill nav
+links (Dashboard, Creators), a "Demo Mode" pill, and Log in / Sign up.
 
 ## Spacing, radius & layout
 
-- **Page container:** `mx-auto max-w-(--content-width) px-6`, with
-  `[--content-width:1100px]` set locally per page. `py-4` for header bars,
-  `py-8` for main content.
+- **Page container:** inside the workspace, the layout's content column
+  (`max-w-[76rem] px-4 py-6 md:px-10 md:py-8`) — pages render straight into
+  it. Demo Mode's pages use `mx-auto max-w-(--content-width) px-6` with
+  `[--content-width:1100px]`, `py-4` for the header bar and `py-8` for main
+  content.
 - **Card / section radius:** `rounded-lg` (Tailwind's default, 0.5rem) — not
   the prototype's bespoke `1.125rem`. The real app leans on Tailwind's own
   scale pragmatically rather than matching the prototype pixel-for-pixel
@@ -307,8 +304,8 @@ To keep this document from being read as a backlog in disguise, everything
 below exists only in `rightswatch-overview.html`, not in the real app, and
 isn't implied by anything above:
 
-- Sidebar navigation, and the Music Matches, Rights Library, Reports, and
-  Settings sections (nor a standalone Cases list — see "Nav")
+- The Music Matches, Rights Library, Reports, and Settings sections, and a
+  standalone Cases list (the sidebar itself is built — see "Nav")
 - The slide-over detail panel, its scrim, and its spring-physics
   drag-to-dismiss interaction
 - The "Run scan" button's staged progress bar and status text
