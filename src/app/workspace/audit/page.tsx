@@ -2,6 +2,7 @@ import { requireSession } from "@/app/_lib/current-user";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getAuditStore } from "@/app/_lib/audit-store";
 import { getCaseStore } from "@/app/_lib/case-store";
+import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { WorkspaceHeader } from "@/components/layout/workspace-header";
 import { AuditLogRow } from "@/components/audit/audit-log-row";
 import { buildAuditLogView } from "@/components/audit/audit-log-view";
@@ -53,11 +54,18 @@ export default async function AuditLogPage() {
     if (relatedCase) casesById.set(id, relatedCase);
   }
 
+  const contentIdByRightsAssessmentId = new Map<string, string>();
+  for (const item of await getWorkspaceScanItems(session.workspace.id)) {
+    if (item.rightsAssessmentId) {
+      contentIdByRightsAssessmentId.set(item.rightsAssessmentId, item.content.externalContentId);
+    }
+  }
+
   const rows = buildAuditLogView(entries, {
-    workspaceId: session.workspace.id,
     currentUserId: session.user.id,
     members,
     casesById,
+    contentIdByRightsAssessmentId,
   });
 
   return (

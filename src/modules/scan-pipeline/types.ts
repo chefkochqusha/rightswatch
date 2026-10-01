@@ -15,9 +15,10 @@ import type { RightsAssessmentResult, RightsRecordInput } from '../rights-engine
  * send anything itself, so it stays usable from a demo script, a real
  * BullMQ job, or a test without any side effects of its own.
  *
- * Deduplication (Brief §23: idempotency keyed on `platform +
- * external_content_id`) is a persistence-layer concern — a Prisma
- * `upsert` — and deliberately isn't reimplemented here.
+ * Deduplication (Brief §22: a uniqueness strategy on stable external ids)
+ * is a persistence-layer concern — upserts on the schema's unique keys,
+ * done by `modules/scan-results` — and deliberately isn't reimplemented
+ * here.
  */
 export interface RunScanParams {
   connector: PlatformConnector;

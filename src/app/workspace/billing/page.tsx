@@ -37,7 +37,7 @@ export default async function BillingPage() {
   const hasStripeCustomer = Boolean(subscription && !isMockCustomerId(subscription.stripeCustomerId));
 
   const trackedCreators = new Set(
-    getWorkspaceScanItems(session.workspace.id).map((item) => item.creatorExternalId),
+    (await getWorkspaceScanItems(session.workspace.id)).map((item) => item.creatorExternalId),
   ).size;
 
   return (

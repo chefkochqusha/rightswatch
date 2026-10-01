@@ -37,13 +37,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships          Membership[]
-  sessions             Session[]
-  notificationPrefs    NotificationPreference[]
-  notifications        Notification[]
-  authoredCaseNotes    CaseNote[]
-  assignedCases        Case[]                    @relation("CaseAssignee")
-  auditLogEntries      AuditLog[]
+  memberships       Membership[]
+  sessions          Session[]
+  notificationPrefs NotificationPreference[]
+  notifications     Notification[]
+  authoredCaseNotes CaseNote[]
+  assignedCases     Case[]                   @relation("CaseAssignee")
+  auditLogEntries   AuditLog[]
 
   @@map("users")
 }
@@ -76,17 +76,17 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships    Membership[]
-  creators       Creator[]
-  campaigns      Campaign[]
-  musicTracks    MusicTrack[]
-  rightsRecords  RightsRecord[]
-  cases          Case[]
-  notifications  Notification[]
-  subscription   Subscription?
-  usageRecords   UsageRecord[]
-  connectors     Connector[]
-  auditLogs      AuditLog[]
+  memberships   Membership[]
+  creators      Creator[]
+  campaigns     Campaign[]
+  musicTracks   MusicTrack[]
+  rightsRecords RightsRecord[]
+  cases         Case[]
+  notifications Notification[]
+  subscription  Subscription?
+  usageRecords  UsageRecord[]
+  connectors    Connector[]
+  auditLogs     AuditLog[]
 
   @@map("workspaces")
 }
@@ -124,14 +124,14 @@ enum Platform {
 }
 
 model Creator {
-  id           String   @id @default(cuid())
-  workspaceId  String
-  platform     Platform @default(TIKTOK)
-  externalId   String // stable platform id — never assume it's globally unique across platforms
-  handle       String
-  displayName  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  workspaceId String
+  platform    Platform @default(TIKTOK)
+  externalId  String // stable platform id — never assume it's globally unique across platforms
+  handle      String
+  displayName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   campaigns Campaign[] @relation("CampaignCreators")
@@ -166,17 +166,22 @@ model Campaign {
 // ---------------------------------------------------------------------------
 
 model Content {
-  id                 String   @id @default(cuid())
-  creatorId          String
-  platform           Platform @default(TIKTOK)
-  externalContentId  String
-  publishedAt        DateTime?
-  createdAt          DateTime @default(now())
+  id                String    @id @default(cuid())
+  creatorId         String
+  platform          Platform  @default(TIKTOK)
+  externalContentId String
+  publishedAt       DateTime?
+  createdAt         DateTime  @default(now())
 
   creator           Creator            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   commercialContent CommercialContent?
 
-  @@unique([platform, externalContentId]) // idempotency key, Master Brief §22
+  // Idempotency key (Master Brief §22). Per creator — and a Creator is per
+  // workspace and platform — not global: two workspaces monitoring the same
+  // creator each keep their own row for the same video (Brief §15,
+  // multi-tenancy). Global uniqueness here would have let one workspace's
+  // scan claim a video another workspace had already stored.
+  @@unique([creatorId, externalContentId])
   @@index([creatorId])
   @@map("content")
 }
@@ -187,16 +192,22 @@ model Content {
 // field here — the API doesn't supply one; that's MusicMatch's job, produced
 // by a MusicIdentificationProvider, never assumed to come from the platform.
 model CommercialContent {
-  id               String   @id @default(cuid())
-  contentId        String   @unique
-  label            String? // TikTok's own disclosure label, e.g. "Paid partnership"
-  brandNames       String[]
-  createTimestamp  BigInt? // raw platform value, kept for traceability
-  createDate       DateTime?
-  rawPayload       Json // full normalized-but-unmodified adapter output, for audits
-  createdAt        DateTime @default(now())
+  id              String    @id @default(cuid())
+  contentId       String    @unique
+  label           String? // TikTok's own disclosure label, e.g. "Paid partnership"
+  brandNames      String[]
+  // The connector's normalized forms (`NormalizedCommercialContent`), which
+  // the app displays and the Rights Engine reads: `videoUrls` from the
+  // documented `videos` field; `territory` when a connector can determine
+  // one (null otherwise — the Commercial Content API documents no such field).
+  videoUrls       String[]  @default([])
+  territory       String?
+  createTimestamp BigInt? // raw platform value, kept for traceability
+  createDate      DateTime?
+  rawPayload      Json // full normalized-but-unmodified adapter output, for audits
+  createdAt       DateTime  @default(now())
 
-  content     Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  content      Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
   musicMatches MusicMatch[]
 
   @@map("commercial_content")
@@ -232,8 +243,8 @@ model MusicMatch {
   manual              Boolean  @default(false)
   matchedAt           DateTime @default(now())
 
-  commercialContent CommercialContent  @relation(fields: [commercialContentId], references: [id], onDelete: Cascade)
-  musicTrack        MusicTrack?        @relation(fields: [musicTrackId], references: [id])
+  commercialContent CommercialContent @relation(fields: [commercialContentId], references: [id], onDelete: Cascade)
+  musicTrack        MusicTrack?       @relation(fields: [musicTrackId], references: [id])
   rightsAssessment  RightsAssessment?
 
   @@unique([commercialContentId, musicTrackId, provider]) // idempotency key, Master Brief §22
@@ -246,12 +257,12 @@ model MusicMatch {
 // ---------------------------------------------------------------------------
 
 model RightsRecord {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   workspaceId  String
   musicTrackId String
   territories  String[] // ISO country codes, e.g. ["DE","AT","CH"]
-  commercial   Boolean  @default(false)
-  organic      Boolean  @default(true)
+  commercial   Boolean   @default(false)
+  organic      Boolean   @default(true)
   startDate    DateTime
   // Nullable: an open-ended rights grant (no expiry) is a real, common case
   // — `rights-engine/types.ts`'s own `RightsRecord.endDate` has always been
@@ -261,8 +272,8 @@ model RightsRecord {
   // while every consumer already expected nullable — never caught before
   // because `prisma generate` never ran to completion until Phase 2.
   endDate      DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   musicTrack  MusicTrack         @relation(fields: [musicTrackId], references: [id], onDelete: Cascade)
@@ -321,13 +332,20 @@ enum RightsAssessmentReason {
 }
 
 model RightsAssessment {
-  id             String                  @id @default(cuid())
-  musicMatchId   String                  @unique
-  rightsRecordId String?
-  status         RightsAssessmentStatus
-  reason         RightsAssessmentReason?
-  confidence     Float                   @default(1)
-  assessedAt     DateTime                @default(now())
+  id               String                  @id @default(cuid())
+  musicMatchId     String                  @unique
+  rightsRecordId   String?
+  status           RightsAssessmentStatus
+  reason           RightsAssessmentReason?
+  confidence       Float                   @default(1)
+  // The Rights Engine's own account of its verdict (`RightsAssessmentResult`)
+  // — shown to the analyst, and not reproducible from status and reason
+  // alone (it names the content's territory, a manual override's note…).
+  explanation      String                  @default("")
+  // Every rights record the verdict rests on; `rightsRecordId` above can
+  // point at only one of them.
+  matchedRecordIds String[]                @default([])
+  assessedAt       DateTime                @default(now())
 
   musicMatch   MusicMatch    @relation(fields: [musicMatchId], references: [id], onDelete: Cascade)
   rightsRecord RightsRecord? @relation(fields: [rightsRecordId], references: [id])

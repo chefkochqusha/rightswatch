@@ -23,10 +23,11 @@ export type Platform = 'TIKTOK' | 'INSTAGRAM' | 'YOUTUBE';
  */
 export interface NormalizedCommercialContent {
   platform: Platform;
-  /** The id the platform assigns to this piece of content. Combined with
-   *  `platform`, this is the idempotency key used at ingestion (Brief §23:
-   *  "platform + external_content_id") — a re-run of the same scan must
-   *  resolve to the same Content/CommercialContent row, not a duplicate. */
+  /** The id the platform assigns to this piece of content — the stable
+   *  external id Brief §22 keys idempotency on, so a re-run of the same scan
+   *  resolves to the same Content/CommercialContent row, not a duplicate.
+   *  Stored unique per creator (and so per workspace and platform): see
+   *  `Content` in `prisma/schema.prisma`. */
   externalContentId: string;
   creatorExternalId: string;
   creatorUsername: string;

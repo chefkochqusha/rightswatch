@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
-import { getWorkspaceScanItems, getRightsAssessmentId } from "@/app/_lib/workspace-scan-store";
+import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { getCaseStore } from "@/app/_lib/case-store";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { WorkspaceHeader } from "@/components/layout/workspace-header";
@@ -32,7 +32,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 export default async function WorkspacePage() {
   const session = await requireSession();
   const canManage = canManageCases(session.role);
-  const items = getWorkspaceScanItems(session.workspace.id);
+  const items = await getWorkspaceScanItems(session.workspace.id);
 
   const sorted = [...items].sort((a, b) => {
     const aRank = a.kind === "ASSESSED" ? STATUS_SORT_ORDER[a.assessment.status] : -1;
@@ -45,9 +45,10 @@ export default async function WorkspacePage() {
   const rows = await Promise.all(
     sorted.map(async (item) => ({
       item,
-      existingCase: await caseStore.cases.findByRightsAssessmentId(
-        getRightsAssessmentId(session.workspace.id, item.content.externalContentId),
-      ),
+      // Only an assessed item has an assessment for a case to belong to.
+      existingCase: item.rightsAssessmentId
+        ? await caseStore.cases.findByRightsAssessmentId(item.rightsAssessmentId)
+        : null,
     })),
   );
 

@@ -76,11 +76,9 @@ Everything else in `.env.example` is optional — see `ARCHITECTURE.md` →
 
 The core is built and tested end to end: auth, the rights engine, the scan
 pipeline (against a mocked TikTok connector and mocked music
-identification), cases, notifications, the audit log and billing. Auth
-(with database-backed sessions), billing, notifications and audit run on
-Postgres (Neon). Cases and sample-scan results still live in server memory
-until the scan pipeline persists its own results — in progress — so on
-Vercel they don't survive a redeploy (`ARCHITECTURE.md` → "Open decisions").
+identification), cases, notifications, the audit log and billing.
+Everything they store is in Postgres (Neon): auth with database-backed
+sessions, scan results, cases, notifications, the audit log and billing.
 
 Still to build from the Master Brief: the Rights Library and creator
 management (fixture data today), a cases list and report export, the
@@ -102,8 +100,8 @@ what, and what's deliberately left out of scope for now.
   `/creators`, `/assessments/*`) and the real workspace (`/workspace/*`,
   `/login`, `/signup`, `/invite/accept`).
 - `src/modules/` — domain logic, independent of Next.js: connectors, music
-  identification, the rights engine, campaigns, cases, notifications,
-  billing, auth. Each depends only on its own repository/provider
+  identification, the rights engine, campaigns, the scan pipeline and its
+  stored results, cases, notifications, audit, billing, auth. Each depends only on its own repository/provider
   interfaces, never a concrete storage technology — see `ARCHITECTURE.md` →
   "Module-layer architecture".
 - `src/components/` — shared UI, documented in `DESIGN_SYSTEM.md`.

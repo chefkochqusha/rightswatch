@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
 import { getCaseStore } from "@/app/_lib/case-store";
 import { getAuditStore } from "@/app/_lib/audit-store";
-import { getWorkspaceScanItem, getRightsAssessmentId } from "@/app/_lib/workspace-scan-store";
+import { getWorkspaceScanItem } from "@/app/_lib/workspace-scan-store";
 import { openCase, addCaseNote, updateCase } from "@/modules/cases";
 import type { CaseStatus } from "@/modules/cases";
 
@@ -25,15 +25,11 @@ const CASE_STATUSES: CaseStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED", "DISMISS
  */
 async function requireAssessedItem(contentId: string) {
   const session = await requireCaseManager();
-  const item = getWorkspaceScanItem(session.workspace.id, contentId);
+  const item = await getWorkspaceScanItem(session.workspace.id, contentId);
   if (!item || item.kind !== "ASSESSED") {
     throw new Error("No rights assessment exists for this content item.");
   }
-  return {
-    session,
-    item,
-    rightsAssessmentId: getRightsAssessmentId(session.workspace.id, contentId),
-  };
+  return { session, item, rightsAssessmentId: item.rightsAssessmentId };
 }
 
 export async function openCaseAction(formData: FormData) {

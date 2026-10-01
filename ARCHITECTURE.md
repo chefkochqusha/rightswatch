@@ -86,33 +86,33 @@ made once and referenced everywhere rather than re-litigated per file.
   WebAssembly build of the engine. So Prisma writes, constraints and foreign
   keys are exercised for real before a deploy — what would have caught the
   `cases` regression below. Only Neon itself is out of reach from here.
-- **Four repository domains are Prisma-backed and live**, verified against
-  production Neon with a real signup → dashboard → logout → login
-  round-trip, not just a successful build: `auth`
+- **Six repository domains are Prisma-backed and live.** Four were
+  verified against production Neon with a real signup → dashboard → logout
+  → login round-trip, not just a successful build: `auth`
   (`User`/`Workspace`/`Membership`), `billing` (`Plan`/`Subscription`),
-  `notifications` (`Notification`), and `audit` (`AuditLog`).
-- **`cases` is not, even though `PrismaCaseRepository` exists.**
-  `Case.rightsAssessmentId` is a foreign key to `RightsAssessment.id`, and
-  nothing persists `RightsAssessment` rows yet — the scan pipeline's
-  results still live in `workspace-scan-store.ts`'s process memory, keyed
-  by a synthetic `workspaceId::contentId` string. Wiring `case-store.ts` to
-  Postgres anyway (6b69b95) turned every "Run a sample scan" and "Open a
-  case" into a foreign-key violation in production; reverted to the
-  in-memory repositories until the scan pipeline persists its own
-  `Content → CommercialContent → MusicMatch → RightsAssessment` chain.
-  Recorded here on purpose: a repository swap is only a drop-in if every
-  foreign key its rows carry points at rows something actually writes —
-  check the schema's relations, not just the interface's shape.
-- **In-memory state is per serverless instance on Vercel.** It's lost on
-  every redeploy and never shared between instances, so everything
-  user-visible that still lives there — sample-scan results and cases —
-  is ephemeral in production, while the notifications and audit entries
-  that point at them are durable. That mismatch is a known bug being fixed
-  by persisting the scan pipeline (see above), not an accepted trade-off.
-  Every other repository interface in `src/modules/*` (`RightsRepository`,
-  `CampaignRepository`, and the `connectors`/`music`/`creators`
-  boundaries) remains in-memory (`InMemory*`) or fixture (`Fixture*`),
-  kept field-compatible with the Prisma schema.
+  `notifications` (`Notification`), and `audit` (`AuditLog`). The rest —
+  `auth`'s `Session`, `scan-results` (the scan pipeline's `Creator →
+  Content → CommercialContent → MusicMatch → RightsAssessment` chain, plus
+  `MusicTrack`) and `cases` (`Case`/`CaseNote`) — were verified end to end
+  against a local Postgres carrying the real schema, constraints and
+  foreign keys, then deployed.
+- **Why `cases` came last.** `Case.rightsAssessmentId` is a foreign key to
+  `RightsAssessment.id`. A first attempt (6b69b95) pointed `case-store.ts`
+  at Postgres while assessments still lived in process memory under a
+  synthetic `workspaceId::contentId` id, and every "Run a sample scan" and
+  "Open a case" failed with a foreign-key violation in production until it
+  was reverted. Cases moved to Postgres only together with
+  `modules/scan-results`, which writes the rows they point at. Recorded
+  here on purpose: a repository swap is only a drop-in if every foreign key
+  its rows carry points at rows something actually writes — check the
+  schema's relations, not just the interface's shape.
+- **Nothing user-visible lives in process memory any more.** The one
+  remaining in-memory piece is the login rate limiters (see "Auth &
+  authorization"), which hold per serverless instance rather than globally.
+  What the scan *reads* is still fixtures — `MockTikTokConnector`,
+  `FixtureMusicIdentificationProvider`, `FixtureRightsRepository`,
+  `FixtureCampaignRepository` — kept field-compatible with the Prisma
+  schema until the features below replace them; what it *writes* is real.
 - **Rights, creators and campaigns are workspace data the Brief has users
   manage — not built yet, rather than reference data synced from
   elsewhere.** An earlier version of this document said the opposite,
@@ -120,8 +120,8 @@ made once and referenced everywhere rather than re-litigated per file.
   "one of the most important product areas" (structured per-track rights a
   workspace maintains), and §8 makes creators first-class records users
   add, pause, resume and assign to campaigns. Their `Fixture*` stand-ins
-  are placeholders for those features, which are on the build list along
-  with persisting scan results. `Connector`/`ConnectorCredential` arrive
+  are placeholders for those features, which are on the build list.
+  `Connector`/`ConnectorCredential` arrive
   with the real TikTok connector, which is what has something to store
   in them.
 - **`getPrisma()`, never a top-level `prisma` constant**
@@ -214,13 +214,15 @@ exception of `rights-engine` (a pure function with nothing to swap — see
   repository/provider *interfaces*. The interface, never a concrete class,
   is what the rest of the app depends on.
 - **An in-memory or fixture implementation** of each interface.
-  `InMemory*Repository` is for data this app itself creates and mutates
-  (users, cases, notifications); `Fixture*Repository`/`Fixture*Provider` is
-  for read-only reference data a workspace already has on file, reset to
-  the same seed data every time by design (rights records, campaigns, music
-  identification, TikTok content). Which shape a module gets mirrors which
-  Prisma models are expected to get real CRUD versus which are reference
-  data a real integration would sync in from elsewhere.
+  `InMemory*Repository` mirrors a Prisma-backed one for data this app
+  creates and mutates (users, cases, scan results, notifications), so
+  business logic is unit-tested without a database;
+  `Fixture*Repository`/`Fixture*Provider` serves fixed seed data (rights
+  records, campaigns, music identification, TikTok content) where the real
+  source isn't built yet. A fixture is a placeholder, not a statement about
+  where that data lives: rights records and campaigns are workspace data
+  users manage (Brief §10, §8), and the connector and music provider are
+  external integrations.
 - **Business-logic functions** (`sign-up.ts`, `open-case.ts`, `run-scan.ts`,
   `notify-case-opened.ts`, and so on) that take their dependencies as an
   explicit `deps` parameter typed to the interfaces above, never importing
@@ -242,7 +244,8 @@ Server Actions, or pages that use it.
 | `rights-engine` | Pure rights-assessment function — no storage, nothing to swap | §11, §43 |
 | `rights` | Read-only lookup of a workspace's `RightsRecord`s by track | §42 |
 | `campaigns` | Read-only lookup of a creator's campaign memberships | §11 |
-| `scan-pipeline` | Wires connector → music ID → rights engine into one scan | §8, §21–§23 |
+| `scan-pipeline` | Wires connector → music ID → rights engine into one scan | §21, §50 |
+| `scan-results` | Stores a scan's `Creator → Content → … → RightsAssessment` chain, idempotently | §22, §43, §50 |
 | `cases` | Turns a flagged assessment into actionable, assignable work | §43 |
 | `notifications` | In-app notifications for workspace members | schema only — not itself Brief-numbered |
 | `billing` | Plans and subscriptions | §18–§20 |
@@ -315,22 +318,23 @@ its secrets are server-side environment variables, never `NEXT_PUBLIC_*`
 ones.
 
 **Current reality:** the schema is complete relative to the Brief, live on
-Neon, and four domain modules query it for real — `auth`, `billing`,
-`notifications`, `audit` (see "Open decisions" → Data layer for which, how
-that was verified, and why `cases` had to be reverted). Every other domain
-module is still backed by an in-memory or fixture repository, with
-plain-data types kept deliberately field-compatible with this schema.
+Neon, and six domain modules query it for real — `auth`, `billing`,
+`notifications`, `audit`, `scan-results` and `cases` (see "Open decisions"
+→ Data layer for how each was verified, and why `cases` came last). The
+scan's inputs — connector, music identification, rights records and
+campaigns — are still fixtures, with plain-data types kept deliberately
+field-compatible with this schema.
 
 ### Entities, by domain
 
 | Domain | Models | Built today? |
 |---|---|---|
 | Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`), `Session` | Yes — Prisma-backed (Neon), `modules/auth`. `Session` is a documented addition to §43's "at minimum" list (see "Auth & authorization") |
-| Creators & content | `Creator`, `Content`, `CommercialContent` (+`Platform`) | Represented via `connectors` module types; no Prisma-backed rows |
-| Campaigns | `Campaign` | Yes — fixture-backed lookup (`modules/campaigns`) |
-| Music | `MusicTrack`, `MusicMatch` | Represented via `music` module types; no Prisma-backed rows |
-| Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`). `RightsAssessment`: computed on the fly by `rights-engine`, never persisted. `RightsRule`: unbuilt (see below) |
-| Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, with a full UI — status transitions, assignment, and notes — on the item detail page; in-memory until `RightsAssessment` rows are persisted (`Case` has a foreign key to it — see "Open decisions" → Data layer). `CaseEvidence`: out of scope (no object-storage decision) |
+| Creators & content | `Creator`, `Content`, `CommercialContent` (+`Platform`) | Yes — Prisma-backed, written by every scan (`modules/scan-results`). Creators aren't user-managed yet (Brief §8's watchlist is on the build list); a scan creates the ones it sees |
+| Campaigns | `Campaign` | Fixture-backed lookup (`modules/campaigns`) |
+| Music | `MusicTrack`, `MusicMatch` | Yes — Prisma-backed, written by every scan (`modules/scan-results`); one `MusicMatch` per (content, track, provider), plus a track-less one recording "nothing identified" |
+| Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`) until the Rights Library (Brief §10) is built. `RightsAssessment`: computed by `rights-engine`, persisted by `modules/scan-results` with its explanation and the rights records it matched. `RightsRule`: unbuilt (see below) |
+| Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, Prisma-backed, with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
 | Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon); payment gateway is Stripe once configured, demo billing until then (see "Open decisions" → Payments). `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
@@ -345,21 +349,25 @@ actually evaluates today (territories, commercial/organic, term), and
 shows up. Nothing builds against `RightsRule.kind`/`.value` speculatively
 before then.
 
-Idempotency is a schema-level concern in several places — `Content` is
-unique on `(platform, externalContentId)`, `MusicMatch` on
-`(commercialContentId, musicTrackId, provider)`, `WebhookEvent` on `(source,
-externalId)` — all so a re-delivered webhook or a re-run scan never
-duplicates a row. The schema's own inline comments cite all three as Brief
-§22; `scan-pipeline/types.ts` cites the same content-deduplication concept as
-Brief §23. That's a small, pre-existing inconsistency in citation between
-the two files — left as-is here rather than silently resolved without the
-Brief itself in hand to check against. `Case.rightsAssessmentId` is
-`@unique` for the same idempotency reason, generalizing the theme to an
-entity neither citation's list explicitly named (see `openCase`'s own doc
-comment) — application-level deduplication (`scan-pipeline`, `openCase`,
-`notifyCaseOpened`) exists today because there's no real database enforcing
-it yet; once Prisma is live, some of that logic becomes a Prisma `upsert`
-instead (already called out in `scan-pipeline/types.ts`).
+Idempotency (Brief §22) is a schema-level concern in several places —
+`Creator` is unique on `(workspaceId, platform, externalId)`, `Content` on
+`(creatorId, externalContentId)`, `CommercialContent` on `contentId`,
+`MusicMatch` on `(commercialContentId, musicTrackId, provider)`,
+`WebhookEvent` on `(source, externalId)` — so a re-delivered webhook or a
+re-run scan never duplicates a row, and `modules/scan-results` writes the
+scan chain as upserts on exactly these keys. `Content`'s key is per creator
+rather than §22's example of `platform + external_content_id` globally: a
+`Creator` belongs to one workspace, and two workspaces monitoring the same
+creator each keep their own copy of a video (§15, multi-tenancy) — a global
+key would let one workspace's scan claim a row another had already stored.
+Two gaps the database can't close on its own: a "no track identified" match
+has a null `musicTrackId`, which a unique index treats as distinct from
+every other null, so `scan-results` looks that row up before writing it;
+and `MusicTrack` has no unique key at all, so a scan matches an existing
+track by ISRC, else by title and artist. `Case.rightsAssessmentId` is
+`@unique` for the same reason (§51: "Do not spam duplicate cases. Use an
+idempotency key."), which is what makes `openCase` safe to call on every
+scan.
 
 `RightsAssessmentReason`'s 8-value vocabulary (Brief §11) is fully
 implemented by the real `rights-engine` module's `assess.ts` today — all 8
@@ -458,7 +466,7 @@ listed under "Known gaps"):
 
 ## Scan pipeline
 
-(Brief §8, §21–§23)
+(Brief §21, §22, §50)
 
 The full production pipeline, in order: **Scheduler → Scan Job → TikTok
 Connector → Normalize → Deduplicate → Music Identification → Rights Engine →
@@ -468,10 +476,15 @@ Case Creation → Notifications.**
 chain — Connector → Normalize → Music Identification → Rights Engine — as a
 single function with no side effects of its own, so it's equally usable from
 a demo script, a real BullMQ job, or a test. Deduplication is deliberately
-not reimplemented inside it: Brief §23 keys it as a persistence-layer
-concern (a Prisma `upsert` on the idempotency keys described under
-"Database architecture"), so it belongs wherever the results are actually
-persisted, not in a side-effect-free pipeline step.
+not reimplemented inside it: Brief §22 asks for a uniqueness strategy on
+stable external ids, which is the database's job, so it happens where the
+results are persisted — `modules/scan-results`, whose `saveScan` upserts the
+whole `Creator → Content → CommercialContent → MusicMatch →
+RightsAssessment` chain on the keys described under "Database
+architecture". Saving the same scan twice touches the same rows, keeps
+every `RightsAssessment` id (and so every Case) attached, and never
+deletes: a later scan that identifies nothing, or fails, can't erase an
+earlier identification.
 
 `Scheduler` and `Scan Job` don't exist yet — nothing schedules scans on a
 cadence. Two callers invoke `runScan()` directly today:
@@ -479,10 +492,11 @@ cadence. Two callers invoke `runScan()` directly today:
 - **`get-demo-scan-results.ts`** — Demo Mode's public pages, recomputed
   fresh on every request, nothing persisted.
 - **`workspace-scan-store.ts`** — the real, authenticated workspace's "Run a
-  sample scan" button. This is the one caller that also carries out the
-  pipeline's last two documented steps, Case Creation and Notifications (see
-  those sections below), against a real, logged-in workspace rather than an
-  anonymous demo visitor.
+  sample scan" button. This is the one caller that stores its results
+  (`modules/scan-results`, Postgres) and carries out the pipeline's last
+  two documented steps, Case Creation and Notifications (see those sections
+  below), against a real, logged-in workspace rather than an anonymous demo
+  visitor.
 
 **Campaign matching** feeds into the Rights Engine's `campaignId` input: a
 creator can belong to zero, one, or many campaigns (`Campaign.creators` is
@@ -564,10 +578,10 @@ with no management gate, the same as the case table and notifications
 (see "Auth & authorization"). It resolves each entry's actor, and the
 counterpart of an assignee-change, by looking the id up against the
 workspace's own membership list (same pattern as `team/page.tsx`), and
-links a "case"-targeted entry back to `/workspace/items/[contentId]` by
-reversing `getRightsAssessmentId` (`getContentIdFromRightsAssessmentId` in
-`workspace-scan-store.ts`) — degrading to plain, unlinked text rather than
-guessing whenever a case or an id can't be resolved. Because `action` and
+links a "case"-targeted entry back to `/workspace/items/[contentId]` through
+the case's `rightsAssessmentId`, looked up against the workspace's stored
+scan items — degrading to plain, unlinked text rather than guessing
+whenever a case or an id can't be resolved. Because `action` and
 `targetType` are open strings by design (see `modules/audit/types.ts`),
 the page's formatting logic (`components/audit/audit-log-view.ts`) has a
 generic fallback for anything it hasn't been taught a richer description
@@ -605,8 +619,8 @@ and `UsageRecord` (periodic usage snapshots) are both modeled in the schema
 but deliberately unbuilt: nothing in this codebase has a concrete
 entitlement key or a billing-period usage rollup to populate them with yet,
 and the one usage figure the UI actually needs (tracked creators vs.
-`creatorCap`) is read live off `workspace-scan-store.ts` rather than a
-stored snapshot. Building either now would be speculative scope.
+`creatorCap`) is counted live from the workspace's stored scan results
+rather than a stored snapshot. Building either now would be speculative scope.
 
 ## Demo Mode vs. the real workspace
 
@@ -621,13 +635,13 @@ Two parallel surfaces exist on purpose:
 A freshly signed-up workspace has no real TikTok connection yet — Phase 10
 is still gated on TikTok's reply — so it would otherwise sit empty. "Run a
 sample scan" (`workspace-scan-store.ts`) bridges this: it runs the exact
-same fixture pipeline Demo Mode uses, but persists the results *into that
-real workspace* and opens real Cases against them, which is what makes them
-meaningful (a real `workspaceId`, a real logged-in acting user) in a way the
+same fixture pipeline Demo Mode uses, but stores the results *in that real
+workspace* (Postgres, `modules/scan-results`) and opens real Cases against
+them, which is what makes them meaningful (a real `workspaceId`, real
+`RightsAssessment` rows, a real logged-in acting user) in a way the
 anonymous public demo's output isn't. The only thing Phase 10 changes is
-swapping `MockTikTokConnector` for a real one and the in-memory `Map` in
-`workspace-scan-store.ts` for real Prisma-backed tables — the pipeline call
-itself doesn't change.
+swapping `MockTikTokConnector` for a real one — storage and the pipeline
+call stay as they are.
 
 ## Routing, errors & metadata
 

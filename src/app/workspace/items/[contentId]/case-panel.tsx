@@ -1,5 +1,4 @@
 import { getCaseStore } from "@/app/_lib/case-store";
-import { getRightsAssessmentId } from "@/app/_lib/workspace-scan-store";
 import { CaseStatusBadge } from "@/components/cases/case-status-badge";
 import { CASE_STATUS_LABELS } from "@/components/cases/labels";
 import type { CaseStatus } from "@/modules/cases";
@@ -35,20 +34,21 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
  * against a stale page that still shows these forms.
  */
 export async function CasePanel({
-  workspaceId,
+  rightsAssessmentId,
   contentId,
   currentUserId,
   currentUserName,
   canManage,
 }: {
-  workspaceId: string;
+  /** The assessment this item's case belongs to (1:1 by schema). */
+  rightsAssessmentId: string;
+  /** Posted back by the case forms, which re-resolve the item themselves. */
   contentId: string;
   currentUserId: string;
   currentUserName: string;
   canManage: boolean;
 }) {
   const store = getCaseStore();
-  const rightsAssessmentId = getRightsAssessmentId(workspaceId, contentId);
   const existingCase = await store.cases.findByRightsAssessmentId(rightsAssessmentId);
 
   if (!existingCase) {

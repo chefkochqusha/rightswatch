@@ -33,7 +33,7 @@ export async function generateMetadata({
   const { contentId } = await params;
   const session = await getCurrentSession();
   if (!session) return {};
-  const item = getWorkspaceScanItem(session.workspace.id, contentId);
+  const item = await getWorkspaceScanItem(session.workspace.id, contentId);
   if (!item) return { title: "Page not found — RightsWatch" };
   return { title: `@${item.creatorUsername} — RightsWatch` };
 }
@@ -52,7 +52,7 @@ export default async function WorkspaceItemDetailPage({
 }) {
   const { contentId } = await params;
   const session = await requireSession();
-  const item = getWorkspaceScanItem(session.workspace.id, contentId);
+  const item = await getWorkspaceScanItem(session.workspace.id, contentId);
   if (!item) notFound();
 
   return (
@@ -80,7 +80,7 @@ export default async function WorkspaceItemDetailPage({
         <div className="mt-4">
           {item.kind === "ASSESSED" ? (
             <CasePanel
-              workspaceId={session.workspace.id}
+              rightsAssessmentId={item.rightsAssessmentId}
               contentId={contentId}
               currentUserId={session.user.id}
               currentUserName={session.user.name ?? session.user.email}

@@ -13,13 +13,12 @@ import type {
  * replacements for `InMemoryCaseRepository`/`InMemoryCaseNoteRepository`,
  * matching `types.ts`'s interfaces exactly.
  *
- * NOT wired into `app/_lib/case-store.ts`, on purpose: `Case.
- * rightsAssessmentId` is a foreign key to `RightsAssessment.id`, so
- * `create` only succeeds for an assessment that actually exists as a row —
- * and until the scan pipeline persists its results, none do (the sample
- * scan's case key is a synthetic `workspaceId::contentId` string). It was
- * wired in once (6b69b95) and every case creation failed in production
- * with a foreign-key violation; see `case-store.ts` for the revert.
+ * `Case.rightsAssessmentId` is a foreign key to `RightsAssessment.id`, so
+ * `create` only succeeds for an assessment that exists as a row — which is
+ * why this was only wired into `app/_lib/case-store.ts` once
+ * `modules/scan-results` stored the scan pipeline's assessments. (Wired in
+ * before that, 6b69b95, every case creation failed in production with a
+ * foreign-key violation.)
  *
  * `getPrisma()`, not a top-level `prisma` binding — see
  * `src/lib/prisma-client.ts`'s doc comment for why.

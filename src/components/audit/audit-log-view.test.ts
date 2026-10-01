@@ -35,17 +35,18 @@ function makeEntry(overrides: Partial<AuditLogRecord>): AuditLogRecord {
   };
 }
 
-const noContext = { workspaceId: "workspace-1", currentUserId: "user-1" };
+const noContext = { currentUserId: "user-1", contentIdByRightsAssessmentId: new Map<string, string>() };
 
 describe("buildAuditLogView", () => {
   test("case.opened reads as a plain 'Opened a case' entry, linked to its case", () => {
     const members = new Map([["user-1", makeUser("user-1", "Priya Shah", "priya@example.com")]]);
-    const casesById = new Map([["case-1", makeCase("case-1", "workspace-1::tt-cc-3001")]]);
+    const casesById = new Map([["case-1", makeCase("case-1", "assessment-1")]]);
     const [view] = buildAuditLogView([makeEntry({})], {
       ...noContext,
       currentUserId: "someone-else",
       members,
       casesById,
+      contentIdByRightsAssessmentId: new Map([["assessment-1", "tt-cc-3001"]]),
     });
     assert.equal(view.actorLabel, "Priya Shah");
     assert.equal(view.description, "Opened a case");

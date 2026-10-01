@@ -1,7 +1,6 @@
 import type { AuditLogRecord } from "@/modules/audit";
 import type { CaseRecord } from "@/modules/cases";
 import type { UserRecord } from "@/modules/auth";
-import { getContentIdFromRightsAssessmentId } from "@/app/_lib/workspace-scan-store";
 import { getAuditActionLabel, getCaseStatusLabelOrRaw } from "./labels";
 
 /**
@@ -86,28 +85,31 @@ function describeAction(
 /**
  * Only ever resolves a link for `targetType === "case"`, the only target
  * type any real caller writes today (`modules/audit/types.ts`). Anything
- * else — including a "case" entry whose case can't be found in `casesById`
- * for some reason — degrades to no link rather than a broken one.
+ * else — a "case" entry whose case can't be found, or whose assessment no
+ * longer maps to a stored item — degrades to no link rather than a broken
+ * one.
  */
 function resolveHref(
   entry: AuditLogRecord,
-  workspaceId: string,
   casesById: Map<string, CaseRecord>,
+  contentIdByRightsAssessmentId: Map<string, string>,
 ): string | null {
   if (entry.targetType !== "case") return null;
   const relatedCase = casesById.get(entry.targetId);
   if (!relatedCase) return null;
-  const contentId = getContentIdFromRightsAssessmentId(workspaceId, relatedCase.rightsAssessmentId);
+  const contentId = contentIdByRightsAssessmentId.get(relatedCase.rightsAssessmentId);
   return contentId ? `/workspace/items/${encodeURIComponent(contentId)}` : null;
 }
 
 export function buildAuditLogView(
   entries: AuditLogRecord[],
   context: {
-    workspaceId: string;
     currentUserId: string;
     members: Map<string, UserRecord>;
     casesById: Map<string, CaseRecord>;
+    /** The workspace's stored scan items, by their assessment id — how a
+     *  case entry links back to the item it's about. */
+    contentIdByRightsAssessmentId: Map<string, string>;
   },
 ): AuditLogEntryView[] {
   return entries.map((entry) => ({
@@ -115,6 +117,6 @@ export function buildAuditLogView(
     createdAt: entry.createdAt,
     actorLabel: describeUser(entry.actorId, context.members, context.currentUserId, "System"),
     description: describeAction(entry, context.members, context.currentUserId),
-    href: resolveHref(entry, context.workspaceId, context.casesById),
+    href: resolveHref(entry, context.casesById, context.contentIdByRightsAssessmentId),
   }));
 }

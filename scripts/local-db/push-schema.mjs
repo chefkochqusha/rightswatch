@@ -22,7 +22,9 @@
  * Prints the engine's result. Any `warnings` (possible data loss) or
  * `unexecutable` steps mean nothing was applied — the same changes Vercel's
  * `prisma db push` would refuse without --accept-data-loss — so this is
- * where to find that out before deploying a schema change.
+ * where to find that out before deploying a schema change. Passing
+ * `--accept-data-loss` here applies them anyway, exactly like the CLI flag;
+ * only do that once the warning has been read and judged safe.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -95,9 +97,10 @@ const engine = await SchemaEngine.new(
   bindMigrationAwareSqlAdapterFactory(factory),
 );
 const result = await engine.schemaPush({
-  force: false,
+  force: process.argv.includes("--accept-data-loss"),
   schema: { files: [{ path: "schema.prisma", content: schema }] },
   filters: { externalTables: [], externalEnums: [] },
 });
 console.log(JSON.stringify(result, null, 2));
-process.exit(result.warnings?.length || result.unexecutable?.length ? 2 : 0);
+const blocked = result.unexecutable?.length || (result.warnings?.length && result.executedSteps === 0);
+process.exit(blocked ? 2 : 0);
