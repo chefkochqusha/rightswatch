@@ -85,7 +85,9 @@ The overview is a feed (KPIs, your songs, latest videos with music) and `/` is t
 
 Cases (Brief §12) have a list at `/workspace/cases` (priority, six statuses, assignee, search) and a panel on each post.
 
-Still to build from the Master Brief: report export, settings, password reset and
+Reports (Brief §25, §26) are at `/workspace/reports`: verdict split, songs and creators to review, case counts, and a CSV download (spreadsheet-safe, audit-logged).
+
+Still to build from the Master Brief: settings, password reset and
 email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 
