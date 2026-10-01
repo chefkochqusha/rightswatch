@@ -185,6 +185,11 @@ export class PrismaWorkspaceRepository implements WorkspaceRepository {
     return row ? mapWorkspace(row) : null;
   }
 
+  async findAll(): Promise<WorkspaceRecord[]> {
+    const rows = await getPrisma().workspace.findMany({ orderBy: { createdAt: "asc" } });
+    return rows.map(mapWorkspace);
+  }
+
   async create(input: { name: string; slug: string }): Promise<WorkspaceRecord> {
     const row = await getPrisma().workspace.create({ data: { name: input.name, slug: input.slug } });
     return mapWorkspace(row);

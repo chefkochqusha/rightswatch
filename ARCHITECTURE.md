@@ -150,6 +150,22 @@ made once and referenced everywhere rather than re-litigated per file.
   §21's field list, documented on the model: a scan always works for one
   workspace. (`WebhookEvent`, the other operations table, is live — see
   "Payments".)
+- **Scheduled scans** don't need the queue. `vercel.json` has a daily cron
+  (04:30 UTC, the only frequency Vercel's free plan allows) calling
+  `/api/cron/scans`, which refuses everything unless the request carries
+  `Authorization: Bearer <CRON_SECRET>` (and refuses all of it while the
+  variable is unset). `runDueScans` (`app/_lib/scheduled-scans.ts`) asks
+  `modules/jobs/due-scans.ts` to scan each workspace whose plan cadence says
+  it's due — "daily" counts as due after 20 hours and "every_6h" after 5, so a
+  run that started a few minutes late yesterday still counts today;
+  "configurable" runs daily until it has a setting. A workspace's failing scan
+  doesn't stop the others, a failed run doesn't postpone the next try, and no
+  new workspace starts after a 200 s budget. The scan is a normal `Job` with
+  no triggering user, so the cases it opens are audit-logged without an actor.
+  **It does nothing while the connector is the demo one**: demo scans produce
+  invented posts, and a customer's workspace shouldn't be topped up with them
+  on a timer. The Growth plan's six-hour cadence needs a more frequent
+  trigger than the free Vercel plan allows; on that plan it runs daily.
 
 ### Object storage
 

@@ -78,7 +78,7 @@ export async function runWorkspaceScan(
   workspaceId: string,
   /** Who started it — recorded on the job, and the actor of any case it
    *  opens in the audit log. */
-  triggeredByUserId: string,
+  triggeredByUserId: string | null,
 ): Promise<RunWorkspaceScanResult> {
   const allowance = await getCreatorAllowance(workspaceId);
   if (allowance.cap <= 0) return { ok: false, error: "NO_PLAN" };
@@ -124,7 +124,7 @@ export async function runWorkspaceScan(
 
 async function scanCreators(
   workspaceId: string,
-  triggeredByUserId: string,
+  triggeredByUserId: string | null,
   creators: CreatorRecord[],
   now: Date,
   payload: ScanJobPayload,

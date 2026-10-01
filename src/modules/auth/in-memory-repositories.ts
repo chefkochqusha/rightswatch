@@ -90,6 +90,10 @@ export class InMemoryWorkspaceRepository implements WorkspaceRepository {
     return this.byId.get(id) ?? null;
   }
 
+  async findAll(): Promise<WorkspaceRecord[]> {
+    return [...this.byId.values()].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
   async create(input: { name: string; slug: string }): Promise<WorkspaceRecord> {
     const now = new Date();
     const workspace: WorkspaceRecord = {

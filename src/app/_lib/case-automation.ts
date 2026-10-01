@@ -16,11 +16,11 @@ import { getAuditStore } from "./audit-store";
  * one a human has since resolved; only genuinely new cases are announced to
  * every member (a notification is visibility, not a mutation —
  * ARCHITECTURE.md → "Auth & authorization") and audit-logged, with whoever
- * set the run off as the actor.
+ * set the run off as the actor (nobody, for a scheduled run).
  */
 export async function openCasesForFlaggedItems(
   workspaceId: string,
-  actorUserId: string,
+  actorUserId: string | null,
   items: StoredScanItem[],
 ): Promise<number> {
   const caseRepository = getCaseStore().cases;

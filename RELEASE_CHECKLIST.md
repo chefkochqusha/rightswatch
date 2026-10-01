@@ -53,8 +53,14 @@ or a business decision at release time, it gets a line here.
   tested with a stubbed `fetch`, not yet against the live service — try one
   reset email and one confirmation email on the first deploy. The
   "please confirm your email" banner only appears once these are set.
-- [ ] **Upstash Redis** via the Vercel Marketplace — scheduled scans and a
-  login rate limit shared across serverless instances.
+- [ ] **`CRON_SECRET`** — any long random value, set in Vercel. Vercel Cron
+  calls `/api/cron/scans` once a day with it; without it the endpoint refuses
+  every call. Scheduled scans only do anything once the real TikTok connector
+  is on. The Growth plan promises scans every 6 hours: Vercel's free plan
+  allows only daily cron jobs, so either move to a paid Vercel plan and change
+  the schedule in `vercel.json`, or change the plan wording.
+- [ ] **Upstash Redis** via the Vercel Marketplace — a login rate limit shared
+  across serverless instances (and a real job queue, if scans outgrow cron).
 - [ ] **Custom domain** (optional).
 - [ ] **Fresh `SESSION_SECRET`**: a new random value of at least 32 characters
   in Vercel (Settings → Environment Variables), then redeploy. Logs everyone

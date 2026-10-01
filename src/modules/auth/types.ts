@@ -100,6 +100,8 @@ export interface WorkspaceRepository {
   findBySlug(slug: string): Promise<WorkspaceRecord | null>;
   findById(id: string): Promise<WorkspaceRecord | null>;
   create(input: { name: string; slug: string }): Promise<WorkspaceRecord>;
+  /** Every workspace, oldest first — for the scheduled scan, which has no signed-in person. */
+  findAll(): Promise<WorkspaceRecord[]>;
 }
 
 export interface MembershipRepository {
