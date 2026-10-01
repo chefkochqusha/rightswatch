@@ -49,7 +49,7 @@ const VERDICTS = [
 
 const FAQ = [
   {
-    q: "Does RightsWatch tell me a post is infringing?",
+    q: "Does RightsWatch say a post breaks the rules?",
     a: "No. It tells you a post is a potential rights mismatch against the records you entered, and it says why. Whether that is a problem, and what to do about it, is for you and your counsel to decide.",
   },
   {

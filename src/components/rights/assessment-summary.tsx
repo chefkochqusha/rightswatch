@@ -43,7 +43,7 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
                 {matchMethodLabel(item.musicMatch.provider, item.musicMatch.manual)}
               </p>
               <p className="mt-1 text-xs text-t2">
-                Confidence in the music identification, not that an infringement occurred.
+                How sure the music identification is. It says nothing about whether the use is allowed.
               </p>
             </div>
           </section>
