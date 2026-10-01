@@ -10,6 +10,8 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
+    "db:local": "prisma dev --name rightswatch-local",
+    "db:local:push": "node scripts/local-db/push-schema.mjs",
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {

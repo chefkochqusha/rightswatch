@@ -51,7 +51,7 @@ targets").
 | UI | React 19, Tailwind CSS v4 | Built |
 | Language | TypeScript | Built |
 | Validation | Zod | Built (where used) |
-| ORM | Prisma (`prisma/schema.prisma`) | Schema complete; client generates and runs on Vercel's build (still can't run locally in this sandbox) — see "Open decisions" |
+| ORM | Prisma (`prisma/schema.prisma`) | Schema complete; generated and pushed to Neon on every Vercel build, and verifiable locally against a real Postgres — see "Open decisions" and "Testing & verification conventions" |
 | Database | PostgreSQL, hosted on Neon | Provisioned and live (Vercel marketplace integration) — see "Open decisions" |
 | Background jobs | BullMQ on Upstash Redis | Chosen, not wired — see "Open decisions" |
 | Auth | Session-based, signed cookie (Brief §40) | Built, Prisma-backed (Neon) |
@@ -72,14 +72,20 @@ made once and referenced everywhere rather than re-litigated per file.
 - **PostgreSQL hosted on Neon** — not Supabase, not a self-managed AWS RDS
   instance. Also a standing project decision, made to fit a single modular,
   serverless-friendly Next.js app rather than cited from the Brief.
-- **Current reality:** `prisma generate` cannot run in this build sandbox —
-  it needs to download a query-engine binary, and this sandbox's outbound
-  network access is allowlisted to package registries and GitHub only. It
-  runs fine on Vercel's own build, which is where the generated client
-  actually gets produced and exercised; schema sync happens via `prisma db
-  push` on every build rather than versioned `migrate` files, since this
-  sandbox can reach neither Postgres nor the `migrate dev` shadow-database
-  tooling directly.
+- **Schema sync:** `prisma db push` on every Vercel build (package.json's
+  `build`), not versioned `migrate` files. A push that would lose data
+  stops the build instead of applying, so every schema change is pushed to
+  a local Postgres first (`npm run db:local:push`), where the same warnings
+  show up before deploying.
+- **Local Postgres, despite the sandbox:** the build sandbox can't download
+  Prisma's native schema-engine binary (binaries.prisma.sh isn't reachable),
+  but nothing else needs the network. `prisma generate` never runs that
+  engine — pointed at any executable via `PRISMA_SCHEMA_ENGINE_BINARY`, it
+  generates the real client; `prisma dev` runs a local Postgres; and
+  `scripts/local-db/push-schema.mjs` pushes the schema with Prisma's own
+  WebAssembly build of the engine. So Prisma writes, constraints and foreign
+  keys are exercised for real before a deploy — what would have caught the
+  `cases` regression below. Only Neon itself is out of reach from here.
 - **Four repository domains are Prisma-backed and live**, verified against
   production Neon with a real signup → dashboard → logout → login
   round-trip, not just a successful build: `auth`
@@ -107,20 +113,17 @@ made once and referenced everywhere rather than re-litigated per file.
   `CampaignRepository`, and the `connectors`/`music`/`creators`
   boundaries) remains in-memory (`InMemory*`) or fixture (`Fixture*`),
   kept field-compatible with the Prisma schema.
-- **`rights`/`campaigns`/`music` and `connectors` are not simple drop-in
-  swaps waiting for their turn.** Their `Fixture*`/mock implementations
-  aren't a stand-in for a not-yet-written `Prisma*Repository` the way
-  `InMemoryCaseRepository` was — per "Module-layer architecture" above,
-  they're deliberately read-only reference data "a real integration would
-  sync in from elsewhere," and nothing in the app today creates or edits a
-  `RightsRecord`/`Campaign`/`MusicTrack`/`Connector` row at all. A real swap
-  needs a real source to sync from first — a publisher's actual rights
-  catalog, or the real TikTok connector — before there's anything
-  meaningful to persist; seeding a Prisma table with today's static demo
-  fixture content would just relocate the same data, not add real
-  functionality. Tracked as tasks #56 and #60, intentionally left open
-  rather than closed with speculative CRUD or an unused repository with no
-  caller.
+- **Rights, creators and campaigns are workspace data the Brief has users
+  manage — not built yet, rather than reference data synced from
+  elsewhere.** An earlier version of this document said the opposite,
+  after reading only the start of the Brief: §10 calls the Rights Library
+  "one of the most important product areas" (structured per-track rights a
+  workspace maintains), and §8 makes creators first-class records users
+  add, pause, resume and assign to campaigns. Their `Fixture*` stand-ins
+  are placeholders for those features, which are on the build list along
+  with persisting scan results. `Connector`/`ConnectorCredential` arrive
+  with the real TikTok connector, which is what has something to store
+  in them.
 - **`getPrisma()`, never a top-level `prisma` constant**
   (`src/lib/prisma-client.ts`): the generated client, its driver adapter, and
   the `pg` pool all load via a `require()` deferred until `getPrisma()`
@@ -704,6 +707,14 @@ an ordering relative to Phases 4–10 that doesn't exist.
   directly in a script.
 - Screenshots are taken for anything with a UI, as part of "done" rather
   than assumed from reading the code.
+- Anything that writes to the database is also run end to end against a
+  local Postgres — `npm run db:local`, then `npm run db:local:push` and
+  `npx prisma db seed` with `DATABASE_URL` pointed at it (usage in
+  `scripts/local-db/push-schema.mjs`), then the dev server on that
+  database driven by a headless browser — so constraints, foreign keys and
+  transactions are exercised before deploying, not first in production.
+  Unit tests run against the in-memory repositories and can't see any of
+  those.
 
 ## Environment configuration
 
@@ -727,15 +738,12 @@ Worth distinguishing "blocked" from "deliberately not built yet," so neither
 reads as an oversight:
 
 **Blocked on something outside this codebase's control:**
-- Running Prisma directly from this sandbox — `prisma generate`/`migrate`,
-  and any query against Neon, both need network access this sandbox doesn't
-  have; Vercel's own build is the only place either actually runs (see
-  "Open decisions" → Data layer). This no longer blocks Prisma-backed
-  persistence itself, which is live for four repository domains — it
-  blocks only verifying it from here rather than via a real deployment.
-  It's also why the `cases` foreign-key regression above shipped: nothing
-  in this sandbox can run a Prisma write against a real Postgres, so the
-  constraint was only ever enforced in production.
+- Querying Neon itself from this sandbox — its hostname isn't reachable
+  from here, so production data is only ever touched by the deployed app.
+  Everything else about Prisma now runs locally against a real Postgres
+  (see "Open decisions" → Data layer). That wasn't true when the `cases`
+  foreign-key regression above shipped, which is why the constraint was
+  first enforced in production; it's caught locally now.
 - The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
   (TikTok webhooks, the other `WebhookEvent` source, come with it)
 - Stripe going live — built and tested; waiting on a Stripe account, three

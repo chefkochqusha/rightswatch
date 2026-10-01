@@ -28,28 +28,35 @@ from `binaries.prisma.sh`) with something like:
 Error: Failed to fetch sha256 checksum at https://binaries.prisma.sh/... - 403 Forbidden
 ```
 
-This is expected wherever that host isn't reachable, and safe to ignore for
-local development: every real dependency still installs correctly, and
-`npm run dev`/`npm test`/`tsc`/`eslint` all work with no generated client
-present — the four domain modules that are Prisma-backed in production
-(auth, billing, notifications, audit; see "Current status" below) only
-ever load the generated client lazily, at the moment a repository method
-actually runs. Only signing up, logging in, or otherwise exercising one of
-those four modules against a real Postgres locally needs a successful
-`prisma generate` first.
-
-To try the real, authenticated workspace (sign up, run a sample scan, open
-cases, invite teammates) on a fresh checkout, copy the environment file and
-set a session secret:
+The only thing it fails to download is Prisma's native schema engine, which
+`generate` never actually runs — it just refuses to start without one. So
+in a restricted environment, point it at any executable instead:
 
 ```bash
-cp .env.example .env
+PRISMA_SCHEMA_ENGINE_BINARY=/bin/true npx prisma generate
 ```
 
-then set `SESSION_SECRET` in `.env` to any long random string. Everything
-else in `.env.example` is optional today — see `ARCHITECTURE.md` →
-"Environment configuration" for what each variable does and whether
-anything currently reads it.
+`npm run dev`/`npm test`/`tsc`/`eslint` all work with or without a
+generated client (the Prisma-backed repositories load it lazily, at the
+moment a query runs). Signing up, logging in, or anything else that writes
+to the database needs a Postgres and a generated client.
+
+To run the real, authenticated workspace (sign up, run a sample scan, open
+cases, invite teammates) locally, start a local Postgres and push the
+schema to it — `scripts/local-db/push-schema.mjs` explains each step:
+
+```bash
+cp .env.example .env              # then set SESSION_SECRET to a long random string
+npm run db:local                  # local Postgres (prisma dev); leave it running
+export DATABASE_URL="postgres://postgres:postgres@localhost:55432/template1?sslmode=disable"
+npm run db:local:push             # create the tables
+npx prisma db seed                # the plan catalog
+npm run dev
+```
+
+Everything else in `.env.example` is optional — see `ARCHITECTURE.md` →
+"Environment configuration" for what each variable does, and
+`RELEASE_CHECKLIST.md` for what gets set up at launch.
 
 ## Scripts
 
@@ -60,25 +67,26 @@ anything currently reads it.
 | `npm start` | Serve a production build |
 | `npm run lint` | ESLint |
 | `npm test` | Run the test suite (Node's built-in test runner via `tsx`) |
-| `npm run db:migrate` | `prisma migrate dev` — needs a real `DATABASE_URL` and a working `prisma generate`; not usable until both are in place (see above) |
-| `npm run db:push` | `prisma db push` — syncs the schema to whatever Postgres connection is configured, no migration history needed; what production actually runs, on every build |
+| `npm run db:migrate` | `prisma migrate dev` — needs the native schema engine, so not usable where `binaries.prisma.sh` is unreachable; the project syncs with `db push` instead |
+| `npm run db:push` | `prisma db push` — syncs the schema to the configured Postgres, no migration history needed; what production runs on every build |
+| `npm run db:local` | A local Postgres via `prisma dev`, for running the app end to end |
+| `npm run db:local:push` | Pushes the schema to that local Postgres without the native engine (`scripts/local-db/push-schema.mjs`); refuses any non-local database |
 
 ## Current status
 
-Every domain — auth, connectors, music identification, the rights engine,
-campaigns, cases, notifications, billing — is fully built and tested
-end-to-end: real business logic, real UI, real tests. Four of those domains
-are backed by a real Postgres database on Neon — auth, billing,
-notifications, and audit — verified in production with a real signup →
-dashboard → logout → login round-trip, not just a successful build. Cases
-and sample-scan results still live in server memory (a case has a foreign
-key to a persisted rights assessment, and the scan pipeline doesn't
-persist those yet — see `ARCHITECTURE.md` → "Open decisions"), which on
-Vercel means they don't survive a redeploy. The rest (connectors, music
-identification, campaigns, rights records) run against in-memory or
-fixture repositories. The real TikTok connector is separately blocked — on
-TikTok API access, not an engineering decision — so the app runs against a
-mock connector until then.
+The core is built and tested end to end: auth, the rights engine, the scan
+pipeline (against a mocked TikTok connector and mocked music
+identification), cases, notifications, the audit log and billing. Auth
+(with database-backed sessions), billing, notifications and audit run on
+Postgres (Neon). Cases and sample-scan results still live in server memory
+until the scan pipeline persists its own results — in progress — so on
+Vercel they don't survive a redeploy (`ARCHITECTURE.md` → "Open decisions").
+
+Still to build from the Master Brief: the Rights Library and creator
+management (fixture data today), a cases list and report export, the
+landing and pricing pages, password reset and email verification, the real
+TikTok connector, and scheduled scans. Everything that needs an account,
+money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 
 Billing runs on Stripe (test mode) as soon as its five environment
 variables are set in Vercel, and on clearly-labeled demo billing until
