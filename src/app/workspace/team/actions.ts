@@ -1,6 +1,5 @@
 "use server";
 
-import { getAuthStore } from "@/app/_lib/auth-store";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { inviteTeammate } from "@/modules/auth";
@@ -24,7 +23,6 @@ export async function inviteTeammateAction(
   const role = String(formData.get("role") ?? "") as Role;
 
   const session = await requireWorkspaceManager();
-  const store = getAuthStore();
   const result = await inviteTeammate(
     {
       workspaceId: session.workspace.id,
@@ -32,20 +30,14 @@ export async function inviteTeammateAction(
       email,
       role,
     },
-    { userRepository: store.users, secret: getSessionSecret() },
+    { secret: getSessionSecret() },
   );
 
   if (!result.ok) {
     if (result.error === "INVALID_EMAIL") {
       return { fieldErrors: { email: "Enter a valid email address." } };
     }
-    if (result.error === "INVALID_ROLE") {
-      return { fieldErrors: { role: "Choose a role to invite them as." } };
-    }
-    return {
-      formError:
-        "That email already has a RightsWatch account — ask them to log in instead of inviting them.",
-    };
+    return { fieldErrors: { role: "Choose a role to invite them as." } };
   }
 
   return { issuedToken: result.token, invitedEmail: email.trim().toLowerCase() };

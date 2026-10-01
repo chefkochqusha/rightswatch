@@ -1,18 +1,13 @@
 /**
  * A small in-memory fixed-window rate limiter for login attempts, keyed by
- * an arbitrary string (this module uses the normalized email). Not
- * distributed — like `in-memory-repositories.ts`, this is a stand-in for
- * production infrastructure. A real deployment would move this to
- * Upstash Redis (already chosen for BullMQ — ARCHITECTURE.md "Open
- * decisions") via a sliding-window script; this interface is shaped so a
- * `RedisRateLimiter` is a drop-in replacement with no change to
- * `log-in.ts` or the Server Action that calls it.
+ * an arbitrary string — `log-in.ts` keeps two: one per email+IP pair and one
+ * per IP across all emails.
  *
- * Deliberately scoped to login only, not signup: signup abuse (disposable
- * emails, scripted account creation) is a different problem best solved
- * with IP-based throttling or CAPTCHA, and this app doesn't yet have a
- * settled convention for trusting a forwarded-IP header from its eventual
- * host — that's future work, not an oversight.
+ * Not distributed: on Vercel each serverless instance keeps its own counts,
+ * so this slows an attacker down rather than stopping one outright. A real
+ * deployment moves it to Upstash Redis (RELEASE_CHECKLIST.md); this
+ * interface is shaped so a `RedisRateLimiter` is a drop-in replacement with
+ * no change to `log-in.ts` or the Server Action that calls it.
  */
 export interface RateLimiter {
   /** Records one failed attempt for `key`. */
@@ -23,9 +18,22 @@ export interface RateLimiter {
   isBlocked(key: string, now?: number): { blocked: boolean; retryAfterMs: number };
 }
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const BLOCK_MS = 15 * 60 * 1000; // 15 minutes
+export interface RateLimiterOptions {
+  /** Failures within `windowMs` that trigger a block. Default 5. */
+  maxAttempts?: number;
+  /** Default 15 minutes. */
+  windowMs?: number;
+  /** Default 15 minutes. */
+  blockMs?: number;
+}
+
+const DEFAULT_MAX_ATTEMPTS = 5;
+const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_BLOCK_MS = 15 * 60 * 1000;
+/** Above this many tracked keys, each new failure first sweeps out entries
+ *  that no longer hold a recent failure or an active block — so a stream of
+ *  failures under fresh keys can't grow the map without bound. */
+const PRUNE_THRESHOLD = 1000;
 
 interface Entry {
   /** Timestamps of failures still inside the current window. */
@@ -35,14 +43,25 @@ interface Entry {
 
 export class InMemoryRateLimiter implements RateLimiter {
   private readonly entries = new Map<string, Entry>();
+  private readonly maxAttempts: number;
+  private readonly windowMs: number;
+  private readonly blockMs: number;
+
+  constructor(options: RateLimiterOptions = {}) {
+    this.maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+    this.windowMs = options.windowMs ?? DEFAULT_WINDOW_MS;
+    this.blockMs = options.blockMs ?? DEFAULT_BLOCK_MS;
+  }
 
   recordFailure(key: string, now: number = Date.now()): void {
+    if (this.entries.size >= PRUNE_THRESHOLD) this.prune(now);
+
     const entry = this.entries.get(key) ?? { failures: [], blockedUntil: null };
-    entry.failures = entry.failures.filter((timestamp) => now - timestamp < WINDOW_MS);
+    entry.failures = entry.failures.filter((timestamp) => now - timestamp < this.windowMs);
     entry.failures.push(now);
 
-    if (entry.failures.length >= MAX_ATTEMPTS) {
-      entry.blockedUntil = now + BLOCK_MS;
+    if (entry.failures.length >= this.maxAttempts) {
+      entry.blockedUntil = now + this.blockMs;
       entry.failures = [];
     }
     this.entries.set(key, entry);
@@ -61,5 +80,18 @@ export class InMemoryRateLimiter implements RateLimiter {
       return { blocked: false, retryAfterMs: 0 };
     }
     return { blocked: true, retryAfterMs: entry.blockedUntil - now };
+  }
+
+  /** How many keys are tracked — for tests of pruning, not for callers. */
+  get size(): number {
+    return this.entries.size;
+  }
+
+  private prune(now: number): void {
+    for (const [key, entry] of this.entries) {
+      const blockActive = entry.blockedUntil !== null && now < entry.blockedUntil;
+      const recentFailure = entry.failures.some((timestamp) => now - timestamp < this.windowMs);
+      if (!blockActive && !recentFailure) this.entries.delete(key);
+    }
   }
 }

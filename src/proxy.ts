@@ -48,7 +48,12 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (AUTH_PAGES.includes(pathname) && session) {
+  // A validly signed cookie can still name a session that's over (logged
+  // out elsewhere, or its account is gone) — this file can't tell without a
+  // database, `requireSession()` can. When it sends a browser here with
+  // `?expired=1`, let the login page render instead of bouncing back to
+  // `/workspace`, which would loop.
+  if (AUTH_PAGES.includes(pathname) && session && !request.nextUrl.searchParams.has("expired")) {
     return NextResponse.redirect(new URL("/workspace", request.url));
   }
 

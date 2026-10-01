@@ -1,33 +1,37 @@
 import { hashPassword } from "./password";
-import type { UserRecord, UserRepository } from "./types";
+import type { NewAccount, UserRepository } from "./types";
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MIN_PASSWORD_LENGTH = 8;
 
-export interface CreateUserAccountInput {
+export interface PrepareUserAccountInput {
   email: string;
   password: string;
   name: string | null;
 }
 
-export interface CreateUserAccountDependencies {
+export interface PrepareUserAccountDependencies {
   userRepository: UserRepository;
 }
 
-export type CreateUserAccountResult =
-  | { ok: true; user: UserRecord }
+export type PrepareUserAccountResult =
+  | { ok: true; account: NewAccount }
   | { ok: false; error: "INVALID_EMAIL" | "WEAK_PASSWORD" | "EMAIL_ALREADY_REGISTERED" };
 
 /**
- * The account-creation core shared by `signUp` (creates a new workspace
- * too) and `acceptInvite` (joins an existing one instead) — extracted so
- * the two never validate email/password or hash a password differently.
- * Knows nothing about workspaces or memberships on purpose.
+ * The account core shared by `signUp` (new workspace) and `acceptInvite`
+ * (existing workspace), so the two never validate an email or hash a
+ * password differently. Knows nothing about workspaces or memberships.
+ *
+ * Writes nothing: the account is created together with its membership in
+ * one atomic `AccountRepository.createAccount` (see `types.ts` for why).
+ * The early email check here gives the common duplicate a friendly error;
+ * the database's unique constraint still decides a race.
  */
-export async function createUserAccount(
-  input: CreateUserAccountInput,
-  deps: CreateUserAccountDependencies,
-): Promise<CreateUserAccountResult> {
+export async function prepareUserAccount(
+  input: PrepareUserAccountInput,
+  deps: PrepareUserAccountDependencies,
+): Promise<PrepareUserAccountResult> {
   const email = input.email.trim().toLowerCase();
 
   if (!EMAIL_PATTERN.test(email)) {
@@ -42,12 +46,12 @@ export async function createUserAccount(
     return { ok: false, error: "EMAIL_ALREADY_REGISTERED" };
   }
 
-  const passwordHash = await hashPassword(input.password);
-  const user = await deps.userRepository.create({
-    email,
-    passwordHash,
-    name: input.name?.trim() || null,
-  });
-
-  return { ok: true, user };
+  return {
+    ok: true,
+    account: {
+      email,
+      passwordHash: await hashPassword(input.password),
+      name: input.name?.trim() || null,
+    },
+  };
 }

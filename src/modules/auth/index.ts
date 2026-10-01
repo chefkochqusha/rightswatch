@@ -1,63 +1,76 @@
-export { hashPassword, verifyPassword } from './password';
-export { createSessionToken, verifySessionToken } from './session';
-export type { SessionPayload } from './session';
+export { hashPassword, verifyPassword, needsRehash, simulatePasswordCheck } from "./password";
+export { createSessionToken, verifySessionToken } from "./session";
+export type { SessionPayload } from "./session";
+export {
+  startSession,
+  resolveSession,
+  endSession,
+  hashSessionId,
+  SESSION_DURATION_MS,
+} from "./session-lifecycle";
+export type { SessionLifecycleDependencies } from "./session-lifecycle";
+export { deriveKey } from "./derive-key";
+export { UniqueConstraintError } from "./errors";
 
 export type {
   Role,
   UserRecord,
   WorkspaceRecord,
   MembershipRecord,
+  SessionRecord,
+  NewAccount,
   UserRepository,
   WorkspaceRepository,
   MembershipRepository,
-} from './types';
+  AccountRepository,
+  SessionRepository,
+} from "./types";
 
-export { slugify, generateUniqueSlug } from './slug';
+export { slugify, generateUniqueSlug } from "./slug";
 
 export {
   InMemoryUserRepository,
   InMemoryWorkspaceRepository,
   InMemoryMembershipRepository,
-} from './in-memory-repositories';
+  InMemoryAccountRepository,
+  InMemorySessionRepository,
+} from "./in-memory-repositories";
 
-// `PrismaUserRepository`/`PrismaWorkspaceRepository`/
-// `PrismaMembershipRepository` are deliberately NOT re-exported here — same
-// reasoning as `modules/notifications/index.ts`: they transitively import
-// `@/lib/prisma-client`, which needs the generated Prisma client (absent in
-// this build sandbox) and a DB connection string, and this barrel is used
-// by every in-memory-only consumer (including every test in this module).
-// Import them directly from "@/modules/auth/prisma-repositories" once
-// they're wired into `app/_lib/auth-store.ts`.
+// The `Prisma*Repository` classes are deliberately NOT re-exported here:
+// they transitively import `@/lib/prisma-client`, and this barrel is used by
+// every in-memory-only consumer (including every test in this module).
+// Import them directly from "@/modules/auth/prisma-repositories" — as
+// `app/_lib/auth-store.ts` does.
 
-export { createUserAccount } from './create-user-account';
+export { prepareUserAccount, EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from "./prepare-user-account";
 export type {
-  CreateUserAccountInput,
-  CreateUserAccountDependencies,
-  CreateUserAccountResult,
-} from './create-user-account';
+  PrepareUserAccountInput,
+  PrepareUserAccountDependencies,
+  PrepareUserAccountResult,
+} from "./prepare-user-account";
 
-export { signUp } from './sign-up';
-export type { SignUpInput, SignUpDependencies, SignUpResult } from './sign-up';
+export { signUp } from "./sign-up";
+export type { SignUpInput, SignUpDependencies, SignUpResult } from "./sign-up";
 
-export { logIn } from './log-in';
-export type { LogInInput, LogInDependencies, LogInResult } from './log-in';
+export { logIn } from "./log-in";
+export type { LogInInput, LogInDependencies, LogInResult } from "./log-in";
 
-export { createInviteToken, verifyInviteToken } from './invite-token';
-export type { InviteTokenPayload } from './invite-token';
+export { createInviteToken, verifyInviteToken, INVITABLE_ROLES } from "./invite-token";
+export type { InviteTokenPayload } from "./invite-token";
 
-export { inviteTeammate } from './invite-teammate';
+export { inviteTeammate } from "./invite-teammate";
 export type {
   InviteTeammateInput,
   InviteTeammateDependencies,
   InviteTeammateResult,
-} from './invite-teammate';
+} from "./invite-teammate";
 
-export { acceptInvite } from './accept-invite';
+export { acceptInvite } from "./accept-invite";
 export type {
   AcceptInviteInput,
   AcceptInviteDependencies,
   AcceptInviteResult,
-} from './accept-invite';
+} from "./accept-invite";
 
-export { InMemoryRateLimiter } from './rate-limiter';
-export type { RateLimiter } from './rate-limiter';
+export { InMemoryRateLimiter } from "./rate-limiter";
+export type { RateLimiter, RateLimiterOptions } from "./rate-limiter";

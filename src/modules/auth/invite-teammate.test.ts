@@ -2,12 +2,11 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { inviteTeammate } from "./invite-teammate";
 import { verifyInviteToken } from "./invite-token";
-import { InMemoryUserRepository } from "./in-memory-repositories";
 
 const SECRET = "test-secret-do-not-use-in-real-env";
 
 function makeDeps() {
-  return { userRepository: new InMemoryUserRepository(), secret: SECRET };
+  return { secret: SECRET };
 }
 
 describe("inviteTeammate", () => {
@@ -64,25 +63,15 @@ describe("inviteTeammate", () => {
     assert.deepEqual(result, { ok: false, error: "INVALID_EMAIL" });
   });
 
-  test("rejects inviting an email that already has a RightsWatch account", async () => {
-    const deps = makeDeps();
-    await deps.userRepository.create({ email: "existing@acme.com", passwordHash: "hash", name: null });
-
+  test("never consults which emails have accounts — it has no way to, so it can't leak it", async () => {
+    // The dependencies are the secret alone. An email that already has an
+    // account is turned away when the invite is accepted (`acceptInvite`),
+    // where only the link's holder sees it.
+    assert.deepEqual(Object.keys(makeDeps()), ["secret"]);
     const result = await inviteTeammate(
       { workspaceId: "workspace-1", workspaceName: "Acme", email: "existing@acme.com", role: "VIEWER" },
-      deps,
+      makeDeps(),
     );
-    assert.deepEqual(result, { ok: false, error: "EMAIL_HAS_EXISTING_ACCOUNT" });
-  });
-
-  test("rejects an existing account even when the email's case differs", async () => {
-    const deps = makeDeps();
-    await deps.userRepository.create({ email: "existing@acme.com", passwordHash: "hash", name: null });
-
-    const result = await inviteTeammate(
-      { workspaceId: "workspace-1", workspaceName: "Acme", email: "Existing@Acme.com", role: "VIEWER" },
-      deps,
-    );
-    assert.deepEqual(result, { ok: false, error: "EMAIL_HAS_EXISTING_ACCOUNT" });
+    assert.equal(result.ok, true);
   });
 });

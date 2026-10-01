@@ -1,8 +1,13 @@
 import { randomUUID } from "node:crypto";
+import { UniqueConstraintError } from "./errors";
 import type {
+  AccountRepository,
   MembershipRecord,
   MembershipRepository,
+  NewAccount,
   Role,
+  SessionRecord,
+  SessionRepository,
   UserRecord,
   UserRepository,
   WorkspaceRecord,
@@ -45,11 +50,7 @@ export class InMemoryUserRepository implements UserRepository {
     return this.byId.get(id) ?? null;
   }
 
-  async create(input: {
-    email: string;
-    passwordHash: string;
-    name: string | null;
-  }): Promise<UserRecord> {
+  async create(input: NewAccount): Promise<UserRecord> {
     const now = new Date();
     const user: UserRecord = {
       id: randomUUID(),
@@ -61,6 +62,11 @@ export class InMemoryUserRepository implements UserRepository {
     };
     this.byId.set(user.id, user);
     return user;
+  }
+
+  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+    const user = this.byId.get(id);
+    if (user) this.byId.set(id, { ...user, passwordHash, updatedAt: new Date() });
   }
 }
 
@@ -129,5 +135,78 @@ export class InMemoryMembershipRepository implements MembershipRepository {
 
   async findForWorkspace(workspaceId: string): Promise<MembershipRecord[]> {
     return Array.from(this.byId.values()).filter((m) => m.workspaceId === workspaceId);
+  }
+}
+
+/**
+ * Writes through the three repositories above. Every check happens before
+ * any write, so a rejected call leaves nothing behind — the in-memory
+ * equivalent of the Prisma version's single nested (atomic) write, including
+ * its failures: a duplicate email or slug throws `UniqueConstraintError`,
+ * and joining a workspace that doesn't exist throws, as Prisma's `connect`
+ * does.
+ */
+export class InMemoryAccountRepository implements AccountRepository {
+  constructor(
+    private readonly users: InMemoryUserRepository,
+    private readonly workspaces: InMemoryWorkspaceRepository,
+    private readonly memberships: InMemoryMembershipRepository,
+  ) {}
+
+  async createAccount(input: {
+    user: NewAccount;
+    role: Role;
+    workspace: { existingId: string } | { newName: string; newSlug: string };
+  }): Promise<{ user: UserRecord; workspace: WorkspaceRecord; membership: MembershipRecord }> {
+    if (await this.users.findByEmail(input.user.email)) {
+      throw new UniqueConstraintError("email");
+    }
+
+    let existing: WorkspaceRecord | null = null;
+    if ("existingId" in input.workspace) {
+      existing = await this.workspaces.findById(input.workspace.existingId);
+      if (!existing) throw new Error(`Workspace ${input.workspace.existingId} does not exist.`);
+    } else if (await this.workspaces.findBySlug(input.workspace.newSlug)) {
+      throw new UniqueConstraintError("slug");
+    }
+
+    const user = await this.users.create(input.user);
+    const workspace =
+      existing ??
+      ("newName" in input.workspace
+        ? await this.workspaces.create({ name: input.workspace.newName, slug: input.workspace.newSlug })
+        : null);
+    if (!workspace) throw new Error("Unreachable: no workspace to join or create.");
+
+    const membership = await this.memberships.create({
+      userId: user.id,
+      workspaceId: workspace.id,
+      role: input.role,
+    });
+    return { user, workspace, membership };
+  }
+}
+
+export class InMemorySessionRepository implements SessionRepository {
+  private readonly byId = new Map<string, SessionRecord>();
+
+  async create(input: { id: string; userId: string; expiresAt: Date }): Promise<SessionRecord> {
+    const session: SessionRecord = { ...input, createdAt: new Date() };
+    this.byId.set(session.id, session);
+    return session;
+  }
+
+  async findById(id: string): Promise<SessionRecord | null> {
+    return this.byId.get(id) ?? null;
+  }
+
+  async delete(id: string): Promise<void> {
+    this.byId.delete(id);
+  }
+
+  async deleteExpiredForUser(userId: string, now: Date): Promise<void> {
+    for (const [id, session] of this.byId) {
+      if (session.userId === userId && session.expiresAt.getTime() <= now.getTime()) this.byId.delete(id);
+    }
   }
 }

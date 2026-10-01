@@ -40,11 +40,53 @@ export interface MembershipRecord {
 export interface UserRepository {
   findByEmail(email: string): Promise<UserRecord | null>;
   findById(id: string): Promise<UserRecord | null>;
-  create(input: {
-    email: string;
-    passwordHash: string;
-    name: string | null;
-  }): Promise<UserRecord>;
+  create(input: NewAccount): Promise<UserRecord>;
+  /** Re-stores a password at the current hashing cost after a successful
+   *  login (`password.ts`'s `needsRehash`). */
+  updatePasswordHash(id: string, passwordHash: string): Promise<void>;
+}
+
+/** A validated, already-hashed new account — what `prepareUserAccount`
+ *  produces and `AccountRepository.createAccount` writes. */
+export interface NewAccount {
+  email: string;
+  passwordHash: string;
+  name: string | null;
+}
+
+/**
+ * Creating an account is one write, not three. A user, their membership and
+ * (for signup) their new workspace are created together or not at all:
+ * written separately, a failure between steps left a user with no
+ * membership, who could neither reach a workspace nor sign up again with
+ * that email (raised by an independent security review).
+ */
+export interface AccountRepository {
+  /** Throws `UniqueConstraintError` (`errors.ts`) on a duplicate email or
+   *  workspace slug; nothing is written in that case. */
+  createAccount(input: {
+    user: NewAccount;
+    role: Role;
+    workspace: { existingId: string } | { newName: string; newSlug: string };
+  }): Promise<{ user: UserRecord; workspace: WorkspaceRecord; membership: MembershipRecord }>;
+}
+
+/** Mirrors the `Session` model in `prisma/schema.prisma`. `id` is the SHA-256
+ *  of the random session id carried in the cookie (`session-lifecycle.ts`). */
+export interface SessionRecord {
+  id: string;
+  userId: string;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
+export interface SessionRepository {
+  create(input: { id: string; userId: string; expiresAt: Date }): Promise<SessionRecord>;
+  findById(id: string): Promise<SessionRecord | null>;
+  /** A no-op when there's no such row — logging out twice isn't an error. */
+  delete(id: string): Promise<void>;
+  /** Housekeeping at each login, so a user's expired rows don't pile up. */
+  deleteExpiredForUser(userId: string, now: Date): Promise<void>;
 }
 
 export interface WorkspaceRepository {

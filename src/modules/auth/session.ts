@@ -1,23 +1,30 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { deriveKey } from "./derive-key";
 
 /**
- * Session-based auth (Brief §40 tech stack: "session-based auth"). This is
- * a signed cookie value, not a database-backed session id and not a JWT —
- * a small HMAC-SHA256-signed payload carrying just enough to identify who
- * is logged in and until when, verifiable with no database round-trip and
- * no third-party JWT library (and so none of the classic JWT footguns —
- * algorithm confusion, `alg: none`, and so on — since there is only ever
- * one algorithm here). `SESSION_SECRET` (see `.env.example`) is the only
- * secret involved, and it never leaves the server (Brief §44).
+ * The session cookie's value (Brief §40: "session-based auth"): a small
+ * HMAC-SHA256-signed payload, not a JWT — so none of the classic JWT
+ * footguns (algorithm confusion, `alg: none`), since there is only ever one
+ * algorithm here. `SESSION_SECRET` is the only secret involved, and it never
+ * leaves the server (Brief §44); the signing key is derived from it per
+ * purpose (`derive-key.ts`), so an invite link can never pass as a session.
+ *
+ * The signature makes the token verifiable without a database round-trip,
+ * which is what `proxy.ts`'s optimistic redirect check needs. Whether the
+ * session is still *live* — not logged out — is a separate, database-backed
+ * question answered in `session-lifecycle.ts`, keyed on `sessionId`.
  */
 export interface SessionPayload {
   userId: string;
+  /** Random per-login id. Its SHA-256 is the `Session` row's primary key
+   *  (`session-lifecycle.ts`); the raw value exists only in the cookie. */
+  sessionId: string;
   /** Unix-ms timestamp after which this token must be rejected. */
   expiresAt: number;
 }
 
 export function createSessionToken(payload: SessionPayload, secret: string): string {
-  const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   return `${body}.${sign(body, secret)}`;
 }
 
@@ -31,7 +38,7 @@ export function verifySessionToken(
   secret: string,
   now: number = Date.now(),
 ): SessionPayload | null {
-  const parts = token.split('.');
+  const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [body, signature] = parts;
 
@@ -44,7 +51,7 @@ export function verifySessionToken(
 
   let payload: unknown;
   try {
-    payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
   } catch {
     return null;
   }
@@ -54,14 +61,16 @@ export function verifySessionToken(
 }
 
 function sign(body: string, secret: string): string {
-  return createHmac('sha256', secret).update(body).digest('base64url');
+  return createHmac("sha256", deriveKey(secret, "session-token")).update(body).digest("base64url");
 }
 
 function isSessionPayload(value: unknown): value is SessionPayload {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as SessionPayload;
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as SessionPayload).userId === 'string' &&
-    typeof (value as SessionPayload).expiresAt === 'number'
+    typeof v.userId === "string" &&
+    typeof v.sessionId === "string" &&
+    v.sessionId.length > 0 &&
+    typeof v.expiresAt === "number"
   );
 }

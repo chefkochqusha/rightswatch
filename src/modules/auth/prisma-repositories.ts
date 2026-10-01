@@ -1,9 +1,14 @@
 import { getPrisma } from "@/lib/prisma-client";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { UniqueConstraintError } from "./errors";
 import type {
+  AccountRepository,
   MembershipRecord,
   MembershipRepository,
+  NewAccount,
   Role,
+  SessionRecord,
+  SessionRepository,
   UserRecord,
   UserRepository,
   WorkspaceRecord,
@@ -63,11 +68,7 @@ export class PrismaUserRepository implements UserRepository {
     return row ? mapUser(row) : null;
   }
 
-  async create(input: {
-    email: string;
-    passwordHash: string;
-    name: string | null;
-  }): Promise<UserRecord> {
+  async create(input: NewAccount): Promise<UserRecord> {
     const row = await getPrisma().user.create({
       data: {
         email: input.email.toLowerCase(),
@@ -77,6 +78,92 @@ export class PrismaUserRepository implements UserRepository {
     });
     return mapUser(row);
   }
+
+  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+    await getPrisma().user.update({ where: { id }, data: { passwordHash } });
+  }
+}
+
+/**
+ * The user, their membership and (for signup) the new workspace in one
+ * nested `user.create` — Prisma runs a nested write as a single
+ * transaction, so a failure anywhere (a slug taken a moment ago, a dropped
+ * connection) leaves no user behind without a membership.
+ */
+export class PrismaAccountRepository implements AccountRepository {
+  async createAccount(input: {
+    user: NewAccount;
+    role: Role;
+    workspace: { existingId: string } | { newName: string; newSlug: string };
+  }): Promise<{ user: UserRecord; workspace: WorkspaceRecord; membership: MembershipRecord }> {
+    try {
+      const row = await getPrisma().user.create({
+        data: {
+          email: input.user.email.toLowerCase(),
+          passwordHash: input.user.passwordHash,
+          name: input.user.name,
+          memberships: {
+            create: {
+              role: toPrismaRole(input.role),
+              workspace:
+                "existingId" in input.workspace
+                  ? { connect: { id: input.workspace.existingId } }
+                  : { create: { name: input.workspace.newName, slug: input.workspace.newSlug } },
+            },
+          },
+        },
+        include: { memberships: { include: { workspace: true } } },
+      });
+      const membership = row.memberships[0];
+      if (!membership) throw new Error("Account write returned no membership.");
+      return {
+        user: mapUser(row),
+        workspace: mapWorkspace(membership.workspace),
+        membership: mapMembership(membership),
+      };
+    } catch (error) {
+      const field = uniqueViolationField(error);
+      if (field) throw new UniqueConstraintError(field);
+      throw error;
+    }
+  }
+}
+
+export class PrismaSessionRepository implements SessionRepository {
+  async create(input: { id: string; userId: string; expiresAt: Date }): Promise<SessionRecord> {
+    const row = await getPrisma().session.create({ data: input });
+    return mapSession(row);
+  }
+
+  async findById(id: string): Promise<SessionRecord | null> {
+    const row = await getPrisma().session.findUnique({ where: { id } });
+    return row ? mapSession(row) : null;
+  }
+
+  async delete(id: string): Promise<void> {
+    // `deleteMany`, not `delete`: the latter throws when the row is already
+    // gone, and logging out twice (two tabs) isn't an error.
+    await getPrisma().session.deleteMany({ where: { id } });
+  }
+
+  async deleteExpiredForUser(userId: string, now: Date): Promise<void> {
+    await getPrisma().session.deleteMany({ where: { userId, expiresAt: { lte: now } } });
+  }
+}
+
+/**
+ * Prisma reports a unique-constraint violation as error code P2002. Which
+ * constraint it was is read from the error's metadata as text rather than a
+ * fixed path, since its shape differs between Prisma's query engine and its
+ * driver adapters — `signUp` re-checks the email anyway when this can't say.
+ */
+function uniqueViolationField(error: unknown): "email" | "slug" | "unknown" | null {
+  if (typeof error !== "object" || error === null) return null;
+  if ((error as { code?: unknown }).code !== "P2002") return null;
+  const meta = JSON.stringify((error as { meta?: unknown }).meta ?? {});
+  if (meta.includes("email")) return "email";
+  if (meta.includes("slug")) return "slug";
+  return "unknown";
 }
 
 export class PrismaWorkspaceRepository implements WorkspaceRepository {
@@ -176,4 +263,8 @@ function mapMembership(row: {
     role: fromPrismaRole(row.role),
     createdAt: row.createdAt,
   };
+}
+
+function mapSession(row: { id: string; userId: string; expiresAt: Date; createdAt: Date }): SessionRecord {
+  return { id: row.id, userId: row.userId, expiresAt: row.expiresAt, createdAt: row.createdAt };
 }

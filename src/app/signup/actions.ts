@@ -33,7 +33,7 @@ export async function signUpAction(
     {
       userRepository: store.users,
       workspaceRepository: store.workspaces,
-      membershipRepository: store.memberships,
+      accountRepository: store.accounts,
     },
   );
 

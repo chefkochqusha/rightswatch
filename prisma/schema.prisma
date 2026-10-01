@@ -38,6 +38,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   memberships          Membership[]
+  sessions             Session[]
   notificationPrefs    NotificationPreference[]
   notifications        Notification[]
   authoredCaseNotes    CaseNote[]
@@ -45,6 +46,27 @@ model User {
   auditLogEntries      AuditLog[]
 
   @@map("users")
+}
+
+// Master Brief §17 ("session management") and §40 ("secure session-based
+// auth"): the server-side half of a login, so logging out actually ends it.
+// Not in §43's entity list, which is explicitly "at minimum" — this is the
+// documented addition (ARCHITECTURE.md → "Auth & authorization"). Without a
+// row to delete, a copied session cookie stayed valid for its full 7 days
+// after logout. The cookie still carries a signed token (userId, session
+// id, expiry) so proxy.ts can keep its fast, database-free optimistic
+// check; this row is what requireSession() confirms. `id` is the SHA-256 of
+// the random session id in the cookie, never the id itself.
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 model Workspace {

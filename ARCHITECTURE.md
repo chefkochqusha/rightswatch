@@ -322,7 +322,7 @@ plain-data types kept deliberately field-compatible with this schema.
 
 | Domain | Models | Built today? |
 |---|---|---|
-| Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`) | Yes — Prisma-backed (Neon), `modules/auth` |
+| Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`), `Session` | Yes — Prisma-backed (Neon), `modules/auth`. `Session` is a documented addition to §43's "at minimum" list (see "Auth & authorization") |
 | Creators & content | `Creator`, `Content`, `CommercialContent` (+`Platform`) | Represented via `connectors` module types; no Prisma-backed rows |
 | Campaigns | `Campaign` | Yes — fixture-backed lookup (`modules/campaigns`) |
 | Music | `MusicTrack`, `MusicMatch` | Represented via `music` module types; no Prisma-backed rows |
@@ -375,19 +375,31 @@ VIEWER. Signup creates exactly one workspace with the creator as OWNER
 multi-workspace membership via accepting a second invite is real future
 work, not built — see "Known gaps").
 
-This follows the Next.js App Router auth guide's structure directly:
+This follows the Next.js App Router auth guide's structure directly,
+including its "Database Sessions" shape:
 
-- **`proxy.ts`** does only "optimistic" checks: decode the signed session
-  cookie, redirect if it's missing on a protected route. It runs on every
+- **Sessions are database-backed.** The `session` cookie holds an
+  HMAC-signed token (`modules/auth/session.ts`) naming a random session id;
+  a `Session` row (keyed on that id's SHA-256, never the id itself) says
+  whether it's still live (`modules/auth/session-lifecycle.ts`). Logging out
+  deletes the row, so a copied cookie stops working at once instead of
+  staying valid for its 7 days. `Session` isn't in Brief §43's entity list,
+  which is explicitly "at minimum" — it's the documented addition that
+  Brief §17 ("session management") needs.
+- **`proxy.ts`** does only "optimistic" checks: verify the cookie's
+  signature, redirect if it's missing on a protected route. It runs on every
   request, including prefetches, so it never touches a repository. Demo
   Mode (`/`, `/dashboard`, `/creators`, `/assessments/*`) is deliberately
   untouched here, since it's meant to be public with no signup at all.
 - **`app/_lib/current-user.ts`** is the Data Access Layer:
-  `getCurrentSession()` / `requireSession()` do the real, secure check
-  (confirming the user and membership still exist), and every page and
-  Server Action that needs a session calls this rather than re-deriving one.
-  Server Actions never assume `proxy.ts` already ran — a matcher change
-  could silently exclude them.
+  `getCurrentSession()` / `requireSession()` do the real, secure check (the
+  session row is live; the user and membership still exist), and every page
+  and Server Action that needs a session calls this rather than re-deriving
+  one. Server Actions never assume `proxy.ts` already ran — a matcher change
+  could silently exclude them. When a cookie is sent but no longer resolves,
+  `requireSession()` redirects to `/login?expired=1`, which `proxy.ts` lets
+  through; without the flag the two would bounce a stale cookie between
+  `/login` and `/workspace` forever.
 - **`app/_lib/authorize.ts`** centralizes "who can do X":
   `canManageWorkspace` / `requireWorkspaceManager` (OWNER, ADMIN — team
   invites, billing) and `canManageCases` / `requireCaseManager` (OWNER,
@@ -403,14 +415,43 @@ case, inviting a teammate, changing billing — are gated. This is a
 deliberate, consistently applied distinction (it's what settles who receives
 a notification — see "Notifications"), not an oversight.
 
-Login attempts are rate-limited by a process-local, in-memory fixed-window
-limiter (`modules/auth/rate-limiter.ts`), scoped to login only — signup
-abuse is a different problem (disposable emails, scripted account creation)
-best solved with IP-based throttling or CAPTCHA, and this project has no
-settled convention yet for trusting a forwarded-IP header from a host that
-hasn't been chosen (see "Known gaps"). A real deployment moves the rate
-limiter to Upstash Redis; the interface is already shaped for a drop-in
-`RedisRateLimiter`.
+**Credentials and tokens** (hardened after an independent security review —
+no critical or high findings; every medium and low one is addressed here or
+listed under "Known gaps"):
+
+- **Passwords:** Node's built-in scrypt at OWASP's minimum (N=2^14, r=8,
+  p=5), stored as `scrypt$N$r$p$salt$hash` so the cost can be raised later.
+  Older `salt:hash` values (p=1) still verify and are re-hashed at the
+  current cost on their owner's next successful login.
+- **One secret, separate keys:** session cookies and invite links are both
+  signed `body.signature` tokens, each with its own HKDF-derived key
+  (`modules/auth/derive-key.ts`), so neither can ever pass as the other.
+- **No account enumeration:** login answers an unknown email with the same
+  error *and the same scrypt work* as a wrong password. The invite form no
+  longer checks whether an email is registered — an invite for an existing
+  account is turned away at acceptance, shown only to the link's holder.
+  Signup still says "an account with that email already exists"; hiding it
+  needs email verification (see "Known gaps").
+- **Invites:** the role is re-checked when the link is read, not only when
+  it's minted, so a token can never carry OWNER. Links are stateless, so
+  they can't be revoked before their 7-day expiry (no `Invite` table).
+- **Atomic account creation:** a user, their membership and (for signup)
+  their workspace are one nested Prisma write (`AccountRepository`). Written
+  separately, a failure between steps left a user with no membership who
+  could neither reach a workspace nor sign up again; a slug taken by a
+  concurrent signup is now simply retried.
+- **Login rate limiting:** two in-memory fixed-window limiters
+  (`modules/auth/rate-limiter.ts`) — 5 failures per email + client IP, and
+  30 per IP across all emails. Keying on the email alone let anyone lock any
+  account out; now an attacker's failures block only the attacker's
+  address, and a successful login never resets the per-IP count. The client
+  IP is the first `x-forwarded-for` entry, which Vercel sets itself and
+  doesn't let clients spoof. Both limiters are per serverless instance; a
+  shared one needs Upstash Redis (`RELEASE_CHECKLIST.md`), and the interface
+  is already shaped for a drop-in `RedisRateLimiter`.
+- **`SESSION_SECRET`:** a short or placeholder value is logged once per
+  process rather than refused, so a deployment that might be using one
+  isn't taken down; a fresh random value is part of `RELEASE_CHECKLIST.md`.
 
 ## Scan pipeline
 
@@ -672,7 +713,7 @@ local development and never commit real values.
 | Variable(s) | Purpose | Current status |
 |---|---|---|
 | `DATABASE_URL` | Postgres connection (local dev fallback) | Used for local Postgres only — production reads Neon's own `storagee_*` vars instead (see "Open decisions" → Data layer) |
-| `SESSION_SECRET` | Signs the session cookie | Required for real auth to work at all |
+| `SESSION_SECRET` | Every signing key (session cookie, invite links) is derived from it | Required for auth to work at all; at least 32 random characters, replaced with a fresh value before launch (`RELEASE_CHECKLIST.md`) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank until Phase 10 — mock connector used instead |
 | `REDIS_URL` | BullMQ (Upstash Redis, or any Redis-compatible URL) | Unused — nothing queues jobs yet |
@@ -717,6 +758,12 @@ reads as an oversight:
   per-process, in-memory limiter only sees one serverless instance's
   traffic; this waits on the same shared store (Upstash Redis) the login
   limiter should move to
+- Email verification and password reset — Brief §17 asks for their
+  architecture; next on the build list. Until then signup is the one place
+  that still reveals whether an email is registered (see "Auth &
+  authorization")
+- Revoking an invite link before it expires — needs an `Invite` table the
+  schema doesn't have; links are stateless and expire after 7 days
 - A custom favicon / brand mark — `src/app/favicon.ico` is still the
   default `create-next-app` icon (unmodified since the original scaffold);
   there's no logo yet to replace it with

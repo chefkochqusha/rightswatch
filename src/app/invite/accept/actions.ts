@@ -35,7 +35,7 @@ export async function acceptInviteAction(
     { token, password, name: name || null },
     {
       userRepository: store.users,
-      membershipRepository: store.memberships,
+      accountRepository: store.accounts,
       secret: getSessionSecret(),
     },
   );
@@ -45,7 +45,12 @@ export async function acceptInviteAction(
       return { fieldErrors: { password: "Password must be at least 8 characters." } };
     }
     if (result.error === "EMAIL_ALREADY_REGISTERED") {
-      return { formError: "This invite has already been used to create an account. Log in instead." };
+      // Covers both an invite that was already accepted and an email that
+      // had an account before it was invited — see `acceptInvite`'s comment.
+      return {
+        formError:
+          "This email already has a RightsWatch account — log in with it. An existing account can't join a second workspace yet; ask for an invite to a different email.",
+      };
     }
     return {
       formError: "This invite link isn't valid anymore — ask whoever invited you to send a new one.",

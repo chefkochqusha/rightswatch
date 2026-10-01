@@ -1,31 +1,41 @@
 import { InMemoryRateLimiter } from "@/modules/auth";
+import type {
+  AccountRepository,
+  MembershipRepository,
+  RateLimiter,
+  SessionRepository,
+  UserRepository,
+  WorkspaceRepository,
+} from "@/modules/auth";
 import {
+  PrismaAccountRepository,
   PrismaMembershipRepository,
+  PrismaSessionRepository,
   PrismaUserRepository,
   PrismaWorkspaceRepository,
 } from "@/modules/auth/prisma-repositories";
 
 /**
- * One shared identity store per server process. Prisma-backed as of Phase
- * 2 (Neon is live — see `prisma.config.ts`/`src/lib/prisma-client.ts`):
- * real signup/login/team-invite accounts are now durable Postgres rows,
- * not process memory. `modules/auth/in-memory-repositories.ts` still
- * exists and is still exercised by this module's own tests, but nothing
- * in `modules/auth`, the signup/login Server Actions, or the pages needed
- * to change for this swap — they all depend only on the repository
- * interfaces in `modules/auth/types.ts`.
+ * One shared identity store per server process. Users, workspaces,
+ * memberships and sessions are durable Postgres rows (Neon); nothing in
+ * `modules/auth` or the Server Actions depends on that — only on the
+ * repository interfaces in `modules/auth/types.ts`.
  *
- * `InMemoryRateLimiter` deliberately stays as-is: login brute-force
- * protection is Redis-bound per the Master Brief, not part of this swap.
+ * The two login rate limiters stay in memory, per serverless instance — see
+ * `modules/auth/rate-limiter.ts` for what that does and doesn't stop, and
+ * RELEASE_CHECKLIST.md for moving them to Upstash Redis.
  */
 interface AuthStore {
-  users: PrismaUserRepository;
-  workspaces: PrismaWorkspaceRepository;
-  memberships: PrismaMembershipRepository;
-  /** Login brute-force protection (see `modules/auth/rate-limiter.ts`) —
-   *  shared across requests for the same reason the repositories are: a
-   *  fresh one per request would never accumulate any failures. */
-  loginRateLimiter: InMemoryRateLimiter;
+  users: UserRepository;
+  workspaces: WorkspaceRepository;
+  memberships: MembershipRepository;
+  accounts: AccountRepository;
+  sessions: SessionRepository;
+  /** Login failures per email + client IP: 5 per 15 minutes. */
+  loginRateLimiter: RateLimiter;
+  /** Login failures per client IP, across all emails: 30 per 15 minutes —
+   *  enough headroom for an office behind one address, not for spraying. */
+  loginIpRateLimiter: RateLimiter;
 }
 
 const globalForAuth = globalThis as unknown as { __rightswatchAuthStore?: AuthStore };
@@ -36,7 +46,10 @@ export function getAuthStore(): AuthStore {
       users: new PrismaUserRepository(),
       workspaces: new PrismaWorkspaceRepository(),
       memberships: new PrismaMembershipRepository(),
+      accounts: new PrismaAccountRepository(),
+      sessions: new PrismaSessionRepository(),
       loginRateLimiter: new InMemoryRateLimiter(),
+      loginIpRateLimiter: new InMemoryRateLimiter({ maxAttempts: 30 }),
     };
   }
   return globalForAuth.__rightswatchAuthStore;

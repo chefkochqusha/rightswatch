@@ -1,8 +1,6 @@
-import { EMAIL_PATTERN } from "./create-user-account";
-import { createInviteToken } from "./invite-token";
-import type { Role, UserRepository } from "./types";
-
-const INVITABLE_ROLES: Role[] = ["ADMIN", "ANALYST", "VIEWER"];
+import { EMAIL_PATTERN } from "./prepare-user-account";
+import { createInviteToken, INVITABLE_ROLES } from "./invite-token";
+import type { Role } from "./types";
 
 export interface InviteTeammateInput {
   workspaceId: string;
@@ -12,30 +10,26 @@ export interface InviteTeammateInput {
 }
 
 export interface InviteTeammateDependencies {
-  userRepository: UserRepository;
-  /** `SESSION_SECRET` — the invite token is signed with the same secret
-   *  session cookies are, since both are HMAC payloads this server alone
-   *  must be able to produce and verify. */
+  /** `SESSION_SECRET` — the invite link is signed with a key derived from it
+   *  (`derive-key.ts`), never with the session-cookie key itself. */
   secret: string;
 }
 
 export type InviteTeammateResult =
   | { ok: true; token: string }
-  | { ok: false; error: "INVALID_EMAIL" | "INVALID_ROLE" | "EMAIL_HAS_EXISTING_ACCOUNT" };
+  | { ok: false; error: "INVALID_EMAIL" | "INVALID_ROLE" };
 
 /**
  * OWNER can't be invited — Phase 5 gives a workspace exactly one OWNER, set
  * at signup, and adding a second is a bigger tenancy decision than this
  * feature makes on its own.
  *
- * Rejects an email that already has a RightsWatch account rather than
- * letting the invite fail later at acceptance: `current-user.ts` gives a
- * user exactly one membership today ("first membership" is unambiguous"),
- * so accepting a second workspace's invite would silently break that
- * assumption. Multi-workspace membership is future work (see that file's
- * comment) — this only ever creates a *brand-new* account that joins
- * straight into the invited workspace, never a second membership on an
- * existing one.
+ * Deliberately doesn't check whether the email already has an account. It
+ * used to, and said so: since anyone can sign up for free and become an
+ * OWNER, the invite form was an unthrottled oracle for which emails are
+ * registered (raised by an independent security review). An invite for an
+ * existing account is now rejected when it's accepted instead
+ * (`acceptInvite`), shown only to whoever holds the link.
  */
 export async function inviteTeammate(
   input: InviteTeammateInput,
@@ -48,11 +42,6 @@ export async function inviteTeammate(
   }
   if (!INVITABLE_ROLES.includes(input.role)) {
     return { ok: false, error: "INVALID_ROLE" };
-  }
-
-  const existing = await deps.userRepository.findByEmail(email);
-  if (existing) {
-    return { ok: false, error: "EMAIL_HAS_EXISTING_ACCOUNT" };
   }
 
   const token = createInviteToken(

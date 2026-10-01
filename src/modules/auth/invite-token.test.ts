@@ -1,6 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { createInviteToken, verifyInviteToken } from "./invite-token";
+import { createSessionToken } from "./session";
 
 const SECRET = "test-secret-do-not-use-in-real-env";
 const BASE_PAYLOAD = {
@@ -45,7 +46,7 @@ describe("invite tokens", () => {
     const token = createInviteToken(BASE_PAYLOAD, SECRET);
     const [, signature] = token.split(".");
     const tamperedBody = Buffer.from(
-      JSON.stringify({ ...BASE_PAYLOAD, role: "OWNER", expiresAt: Date.now() + 60_000 }),
+      JSON.stringify({ ...BASE_PAYLOAD, role: "ADMIN", expiresAt: Date.now() + 60_000 }),
     ).toString("base64url");
     assert.equal(verifyInviteToken(`${tamperedBody}.${signature}`, SECRET), null);
   });
@@ -54,5 +55,18 @@ describe("invite tokens", () => {
     assert.equal(verifyInviteToken("not-a-token", SECRET), null);
     assert.equal(verifyInviteToken("", SECRET), null);
     assert.equal(verifyInviteToken("a.b.c", SECRET), null);
+  });
+
+  test("a genuinely signed token for a role that's never invitable (OWNER) is rejected on read", () => {
+    const token = createInviteToken({ ...BASE_PAYLOAD, role: "OWNER" }, SECRET);
+    assert.equal(verifyInviteToken(token, SECRET), null);
+  });
+
+  test("a session cookie is never accepted as an invite link", () => {
+    const session = createSessionToken(
+      { userId: "user-1", sessionId: "s1", expiresAt: Date.now() + 60_000 },
+      SECRET,
+    );
+    assert.equal(verifyInviteToken(session, SECRET), null);
   });
 });

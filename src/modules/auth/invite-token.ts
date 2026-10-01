@@ -1,19 +1,32 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { deriveKey } from "./derive-key";
 import type { Role } from "./types";
 
 /**
- * Signed, stateless invite links — deliberately the same HMAC-SHA256
- * shape as `session.ts`'s tokens (kept as its own small file rather than
- * sharing code with `session.ts`, so the already-hardened session path
- * stays untouched). Stateless means there is no server-side invite record
- * to look up, which has two honest consequences worth knowing: an invite
- * can't be revoked once issued (it's valid until it expires, same
- * limitation a session token already has), and there's no "pending
- * invites" list to show — only membership once one is actually accepted.
+ * Signed, stateless invite links — the same HMAC-SHA256 `body.signature`
+ * shape as `session.ts`'s tokens, but signed with their own derived key
+ * (`derive-key.ts`): an invite link can never verify as a session cookie or
+ * the other way round.
+ *
+ * Stateless means there is no server-side invite record, with two honest
+ * consequences: an invite can't be revoked once issued (it's valid until it
+ * expires), and there's no "pending invites" list to show — only membership,
+ * once one is accepted. An `Invite` table would fix both; it isn't in the
+ * schema, and the link only ever reaches the person the inviter chose to
+ * share it with.
  *
  * 7-day expiry is a reasonable default (not a figure from the Brief).
  */
 const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * OWNER is never invitable — a workspace has exactly one, set at signup.
+ * Enforced where tokens are minted (`inviteTeammate`) *and* where they're
+ * read (`verifyInviteToken` below): the token is the only source of truth
+ * for the role at acceptance, so it's checked again there rather than
+ * trusted because it was checked once already.
+ */
+export const INVITABLE_ROLES: readonly Role[] = ["ADMIN", "ANALYST", "VIEWER"];
 
 export interface InviteTokenPayload {
   workspaceId: string;
@@ -35,9 +48,9 @@ export function createInviteToken(
 }
 
 /**
- * Verifies a token's signature and expiry, returning the payload only when
- * both check out. `now` defaults to the real clock but can be injected for
- * deterministic tests of expiry without sleeping.
+ * Verifies a token's signature, expiry and role, returning the payload only
+ * when all three check out. `now` defaults to the real clock but can be
+ * injected for deterministic tests of expiry without sleeping.
  */
 export function verifyInviteToken(
   token: string,
@@ -67,7 +80,7 @@ export function verifyInviteToken(
 }
 
 function sign(body: string, secret: string): string {
-  return createHmac("sha256", secret).update(body).digest("base64url");
+  return createHmac("sha256", deriveKey(secret, "invite-token")).update(body).digest("base64url");
 }
 
 function isInviteTokenPayload(value: unknown): value is InviteTokenPayload {
@@ -77,7 +90,7 @@ function isInviteTokenPayload(value: unknown): value is InviteTokenPayload {
     typeof v.workspaceId === "string" &&
     typeof v.workspaceName === "string" &&
     typeof v.email === "string" &&
-    typeof v.role === "string" &&
+    INVITABLE_ROLES.includes(v.role) &&
     typeof v.expiresAt === "number"
   );
 }
