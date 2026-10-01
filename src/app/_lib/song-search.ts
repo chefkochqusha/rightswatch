@@ -69,3 +69,8 @@ export async function searchSongs(query: string): Promise<SongSearchResponse> {
   }
   return response;
 }
+
+/** Which provider answers song searches, for the settings page. */
+export function getMusicSearchMode(): "musicbrainz" | "demo" {
+  return process.env.MUSIC_SEARCH_PROVIDER?.trim().toLowerCase() === "demo" ? "demo" : "musicbrainz";
+}

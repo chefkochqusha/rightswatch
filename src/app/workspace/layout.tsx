@@ -48,6 +48,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
   const secondary: WorkspaceNavItem[] = [
     { href: "/workspace/notifications", label: "Notifications", badge: unreadCount },
     { href: "/workspace/audit", label: "Audit log" },
+    { href: "/workspace/settings", label: "Settings" },
   ];
 
   return (

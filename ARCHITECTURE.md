@@ -521,6 +521,13 @@ listed under "Known gaps"):
   once: after the password changes, the same link is dead. A reset also
   deletes every session of that user (`SessionRepository.deleteAllForUser`).
   Reset requests are rate limited (3 per window, in memory like the login limits).
+- **Settings** (`/workspace/settings`): a status board of what the
+  workspace is connected to (TikTok, song search, music in posts, email,
+  payments — read from the server's configuration, nothing secret shown) and
+  the signed-in person's account. "Change password" (`modules/auth/change-password.ts`)
+  asks for the current password first, rate limits wrong guesses per user,
+  ends every session of the user and starts a fresh one for the browser that
+  made the change. It is disabled in the public demo.
 - **`SESSION_SECRET`:** a short or placeholder value is logged once per
   process rather than refused, so a deployment that might be using one
   isn't taken down; a fresh random value is part of `RELEASE_CHECKLIST.md`.
