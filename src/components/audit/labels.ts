@@ -21,6 +21,12 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "creator.resumed": "Resumed monitoring of a creator",
   "creator.removed": "Removed a creator from the watchlist",
   "creator.updated": "Updated a creator's details",
+  "song.added": "Added a song to the catalogue",
+  "song.removed": "Took a song out of the catalogue",
+  "song.updated": "Updated a song's catalogue details",
+  "rights.added": "Added a rights record",
+  "rights.updated": "Changed a rights record",
+  "rights.removed": "Deleted a rights record",
 };
 
 /** The same actions, naming the creator — when the entry recorded who. */
@@ -32,6 +38,21 @@ const CREATOR_ACTION_TEMPLATES: Partial<Record<string, (handle: string) => strin
   "creator.removed": (handle) => `Removed @${handle} from the watchlist`,
   "creator.updated": (handle) => `Updated @${handle}'s details`,
 };
+
+/** The same actions, naming the song — when the entry recorded its title. */
+const SONG_ACTION_TEMPLATES: Partial<Record<string, (title: string) => string>> = {
+  "song.added": (title) => `Added “${title}” to the catalogue`,
+  "song.removed": (title) => `Took “${title}” out of the catalogue`,
+  "song.updated": (title) => `Updated the catalogue details of “${title}”`,
+  "rights.added": (title) => `Added a rights record to “${title}”`,
+  "rights.updated": (title) => `Changed a rights record on “${title}”`,
+  "rights.removed": (title) => `Deleted a rights record from “${title}”`,
+};
+
+export function getSongActionLabel(action: string, title: string | null): string {
+  const template = SONG_ACTION_TEMPLATES[action];
+  return template && title ? template(title) : getAuditActionLabel(action);
+}
 
 export function getCreatorActionLabel(action: string, handle: string | null): string {
   const template = CREATOR_ACTION_TEMPLATES[action];

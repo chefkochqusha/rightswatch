@@ -5,6 +5,7 @@ import { MockTikTokConnector } from '../connectors/tiktok/mock-connector';
 import { FixtureMusicIdentificationProvider } from '../music/fixture-provider';
 import { FixtureRightsRepository } from '../rights/fixture-repository';
 import { FixtureCampaignRepository } from '../campaigns/fixture-repository';
+import { findDemoCatalogueTrack } from '../demo-data/catalog';
 import type {
   ConnectorFetchParams,
   ConnectorFetchResult,
@@ -22,6 +23,8 @@ import type {
 const SINCE = new Date('2026-09-01T00:00:00Z');
 const UNTIL = new Date('2026-09-30T23:59:59Z');
 const demoConnector = () => new MockTikTokConnector({ now: () => UNTIL });
+// Fakes whose every identified track counts as a catalogue song.
+const inCatalogue = async (match: { trackId: string }) => match.trackId;
 
 function demoParams(creatorUsername: string, creatorCountry: string | null) {
   const rightsRepo = new FixtureRightsRepository();
@@ -32,6 +35,7 @@ function demoParams(creatorUsername: string, creatorCountry: string | null) {
     getRightsRecordsForTrack: (trackId: string) => rightsRepo.getRecordsForTrack(trackId),
     getCampaignIdsForCreator: async (id: string) =>
       (await campaignRepo.findForCreator(id)).map((c) => c.id),
+    findCatalogueTrack: findDemoCatalogueTrack,
     creatorExternalId: creatorUsername,
     creatorUsername,
     creatorCountry,
@@ -124,6 +128,7 @@ describe('runScan (territory signal)', () => {
         },
       ],
       getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: inCatalogue,
       creatorExternalId: 'creator-1',
       creatorUsername: 'creator.one',
       creatorCountry,
@@ -170,6 +175,7 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       musicProvider: new FixtureMusicIdentificationProvider(),
       getRightsRecordsForTrack: (trackId) => rightsRepo.getRecordsForTrack(trackId),
       getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: inCatalogue,
       creatorExternalId: 'lena.creates',
       creatorUsername: 'lena.creates',
       since: SINCE,
@@ -191,6 +197,7 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       },
       getRightsRecordsForTrack: async () => [],
       getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: inCatalogue,
       creatorExternalId: 'lena.creates',
       creatorUsername: 'lena.creates',
       since: SINCE,
@@ -212,6 +219,7 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       musicProvider: failingProvider,
       getRightsRecordsForTrack: async () => [],
       getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: inCatalogue,
       creatorExternalId: 'maxstudio',
       creatorUsername: 'maxstudio',
       since: SINCE,
@@ -290,6 +298,7 @@ describe('runScan (campaign id resolution)', () => {
         },
       ],
       getCampaignIdsForCreator,
+      findCatalogueTrack: inCatalogue,
       creatorExternalId: 'creator-1',
       creatorUsername: 'creator.one',
       since: new Date('2000-01-01'),
@@ -334,5 +343,59 @@ describe('runScan (campaign id resolution)', () => {
       assert.equal(result.items[0].assessment.status, 'UNKNOWN');
       assert.equal(result.items[0].assessment.reason, 'MANUAL_REVIEW_REQUIRED');
     }
+  });
+});
+
+describe('runScan (catalogue)', () => {
+  const oneSongProvider: MusicIdentificationProvider = {
+    providerName: 'fixed',
+    async identify(): Promise<MusicIdentificationResult> {
+      return {
+        error: null,
+        matches: [{ trackId: 'provider-42', title: 'Paper Planes', artist: 'Juno Vale', isrc: 'DEMO12610001', confidence: 0.9, provider: 'fixed', manual: false }],
+      };
+    },
+  };
+
+  test("a song outside the catalogue is OTHER_MUSIC: kept, and never assessed", async () => {
+    const asked: string[] = [];
+    const result = await runScan({
+      connector: demoConnector(),
+      musicProvider: oneSongProvider,
+      getRightsRecordsForTrack: async (trackId) => {
+        asked.push(trackId);
+        return [];
+      },
+      getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: async () => null,
+      creatorExternalId: 'lena.creates',
+      creatorUsername: 'lena.creates',
+      since: SINCE,
+      until: UNTIL,
+    });
+    assert.deepEqual(result.items.map((item) => item.kind), ['OTHER_MUSIC', 'OTHER_MUSIC']);
+    const [first] = result.items;
+    if (first.kind === 'OTHER_MUSIC') assert.equal(first.musicMatch.title, 'Paper Planes');
+    assert.deepEqual(asked, []);
+  });
+
+  test('a catalogue song is assessed under its catalogue id', async () => {
+    const asked: string[] = [];
+    const result = await runScan({
+      connector: demoConnector(),
+      musicProvider: oneSongProvider,
+      getRightsRecordsForTrack: async (trackId) => {
+        asked.push(trackId);
+        return [];
+      },
+      getCampaignIdsForCreator: async () => [],
+      findCatalogueTrack: async (match) => (match.isrc === 'DEMO12610001' ? 'catalogue-7' : null),
+      creatorExternalId: 'lena.creates',
+      creatorUsername: 'lena.creates',
+      since: SINCE,
+      until: UNTIL,
+    });
+    assert.ok(result.items.every((item) => item.kind === 'ASSESSED' && item.musicMatch.trackId === 'catalogue-7'));
+    assert.deepEqual(asked, ['catalogue-7', 'catalogue-7']);
   });
 });

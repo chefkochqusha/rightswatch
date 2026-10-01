@@ -136,7 +136,11 @@ export default async function WorkspacePage() {
                           <StatusBadge status={item.assessment.status} />
                         ) : (
                           <span className="text-[0.8125rem] text-t2">
-                            {item.kind === "NO_MUSIC_MATCH" ? "No track identified" : "Identification didn't complete"}
+                            {item.kind === "OTHER_MUSIC"
+                              ? "Not in your catalogue"
+                              : item.kind === "NO_MUSIC_MATCH"
+                                ? "No track identified"
+                                : "Identification didn't complete"}
                           </span>
                         )}
                       </td>
@@ -146,7 +150,7 @@ export default async function WorkspacePage() {
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        {item.kind === "ASSESSED" ? (
+                        {item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC" ? (
                           <>
                             <span className="block text-tx">{item.musicMatch.title}</span>
                             <span className="block text-[0.8125rem] text-t2">{item.musicMatch.artist}</span>

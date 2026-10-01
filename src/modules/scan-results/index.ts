@@ -1,4 +1,4 @@
-export type { ScanItemInput, StoredScanItem, ScanResultRepository } from "./types";
+export type { ScanItemInput, StoredScanItem, ScanResultRepository, TrackMatchForAssessment } from "./types";
 export { IDENTIFICATION_NOT_COMPLETED } from "./types";
 export { InMemoryScanResultRepository } from "./in-memory-repository";
 

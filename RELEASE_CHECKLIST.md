@@ -19,6 +19,12 @@ or a business decision at release time, it gets a line here.
 - [ ] **TikTok API terms**: confirm commercial monitoring use is permitted
   (Master Brief §4: access and eligibility are an external dependency to be
   validated, never assumed).
+- [ ] **MusicBrainz and Cover Art Archive** (song search and cover art in the
+  Rights Library): the core song data is public domain (CC0), but check the
+  terms for commercial use — MetaBrainz asks commercial users of its web
+  service to support it — and name both in the privacy policy. Cover art is
+  fetched by the server, never by the visitor's browser, so no visitor data
+  goes to the Internet Archive.
 
 ## Services & credentials
 

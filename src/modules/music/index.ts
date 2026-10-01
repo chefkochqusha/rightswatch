@@ -4,4 +4,4 @@ export type {
   MusicIdentificationResult,
   MusicIdentificationProvider,
 } from './types';
-export { FixtureMusicIdentificationProvider } from './fixture-provider';
+export { FixtureMusicIdentificationProvider, type FixtureCatalogueSong } from './fixture-provider';

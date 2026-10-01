@@ -1,7 +1,7 @@
 import type { AuditLogRecord } from "@/modules/audit";
 import type { CaseRecord } from "@/modules/cases";
 import type { UserRecord } from "@/modules/auth";
-import { getAuditActionLabel, getCaseStatusLabelOrRaw, getCreatorActionLabel } from "./labels";
+import { getAuditActionLabel, getCaseStatusLabelOrRaw, getCreatorActionLabel, getSongActionLabel } from "./labels";
 
 /**
  * The audit log page's view-model: everything `AuditLogRow` needs, already
@@ -19,6 +19,8 @@ export interface AuditLogEntryView {
   actorLabel: string;
   description: string;
   href: string | null;
+  /** What the link opens, for its text: "View case", "View song"… */
+  hrefLabel: string | null;
 }
 
 function getMetadataString(metadata: Record<string, unknown> | null, key: string): string | null {
@@ -78,6 +80,9 @@ function describeAction(
       if (entry.targetType === "creator") {
         return getCreatorActionLabel(entry.action, getMetadataString(entry.metadata, "handle"));
       }
+      if (entry.targetType === "song") {
+        return getSongActionLabel(entry.action, getMetadataString(entry.metadata, "title"));
+      }
       // Covers "case.opened" today, and — deliberately, since `action` is
       // an open string — anything a future caller ever writes that this
       // file hasn't been taught a richer description for.
@@ -96,14 +101,22 @@ function resolveHref(
   casesById: Map<string, CaseRecord>,
   contentIdByRightsAssessmentId: Map<string, string>,
 ): string | null {
-  // A removed creator's page still exists — its history stays.
+  // A removed creator's page still exists — its history stays; so does a
+  // song's once it's out of the catalogue.
   if (entry.targetType === "creator") return `/workspace/creators/${encodeURIComponent(entry.targetId)}`;
+  if (entry.targetType === "song") return `/workspace/rights/${encodeURIComponent(entry.targetId)}`;
   if (entry.targetType !== "case") return null;
   const relatedCase = casesById.get(entry.targetId);
   if (!relatedCase) return null;
   const contentId = contentIdByRightsAssessmentId.get(relatedCase.rightsAssessmentId);
   return contentId ? `/workspace/items/${encodeURIComponent(contentId)}` : null;
 }
+
+const HREF_LABELS: Partial<Record<string, string>> = {
+  case: "View case",
+  creator: "View creator",
+  song: "View song",
+};
 
 export function buildAuditLogView(
   entries: AuditLogRecord[],
@@ -116,11 +129,15 @@ export function buildAuditLogView(
     contentIdByRightsAssessmentId: Map<string, string>;
   },
 ): AuditLogEntryView[] {
-  return entries.map((entry) => ({
-    id: entry.id,
-    createdAt: entry.createdAt,
-    actorLabel: describeUser(entry.actorId, context.members, context.currentUserId, "System"),
-    description: describeAction(entry, context.members, context.currentUserId),
-    href: resolveHref(entry, context.casesById, context.contentIdByRightsAssessmentId),
-  }));
+  return entries.map((entry) => {
+    const href = resolveHref(entry, context.casesById, context.contentIdByRightsAssessmentId);
+    return {
+      id: entry.id,
+      createdAt: entry.createdAt,
+      actorLabel: describeUser(entry.actorId, context.members, context.currentUserId, "System"),
+      description: describeAction(entry, context.members, context.currentUserId),
+      href,
+      hrefLabel: href ? (HREF_LABELS[entry.targetType] ?? "View") : null,
+    };
+  });
 }

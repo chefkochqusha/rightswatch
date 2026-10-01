@@ -7,7 +7,7 @@ import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCaseStore } from "@/app/_lib/case-store";
 import { getJobStore } from "@/app/_lib/job-store";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
-import { FixtureCampaignRepository } from "@/modules/campaigns";
+import { getLibraryStore } from "@/app/_lib/library-store";
 import { SCAN_JOB_TYPE, creatorScanHistory, type ScanJobPayload } from "@/modules/jobs";
 import { buttonStyles } from "@/components/ui/button";
 import { ExternalIcon } from "@/components/ui/icons";
@@ -51,7 +51,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
     getScanResultStore().results.findForCreator(workspaceId, creator.id),
     getCaseStore().cases.findForWorkspace(workspaceId),
     getJobStore().jobs.findRecent<ScanJobPayload>(workspaceId, SCAN_JOB_TYPE, 20),
-    new FixtureCampaignRepository().findForCreator(creator.externalId),
+    getLibraryStore().campaigns.findForCreatorId(workspaceId, creator.id),
   ]);
 
   const matches = items.filter((item) => item.kind === "ASSESSED");
@@ -208,9 +208,11 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
                     <td className="px-4 py-3 text-t2">
                       {item.kind === "ASSESSED"
                         ? `${item.musicMatch.title}, ${item.musicMatch.artist}`
-                        : item.kind === "NO_MUSIC_MATCH"
-                          ? "No track identified"
-                          : "Identification didn't complete"}
+                        : item.kind === "OTHER_MUSIC"
+                          ? `${item.musicMatch.title}, ${item.musicMatch.artist} (not in your catalogue)`
+                          : item.kind === "NO_MUSIC_MATCH"
+                            ? "No track identified"
+                            : "Identification didn't complete"}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Link

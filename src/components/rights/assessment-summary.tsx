@@ -84,6 +84,18 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
             )}
           </section>
         </div>
+      ) : item.kind === "OTHER_MUSIC" ? (
+        <section className="rounded-lg border border-line bg-surface p-5">
+          <h2 className="text-sm font-semibold">Not in your catalogue</h2>
+          <p className="mt-2 text-sm text-tx">
+            {item.musicMatch.title}
+            {item.musicMatch.artist && `, ${item.musicMatch.artist}`}
+          </p>
+          <p className="mt-1 text-sm text-t2">
+            {formatConfidence(item.musicMatch.confidence)} identification confidence. This song isn&apos;t in the
+            catalogue, so its rights weren&apos;t checked.
+          </p>
+        </section>
       ) : (
         <section className="rounded-lg border border-line bg-surface p-5">
           <h2 className="text-sm font-semibold">

@@ -9,6 +9,7 @@ import {
   DEMO_CREATORS,
   DEMO_NEW_SINCE,
   DEMO_WINDOW_START,
+  findDemoCatalogueTrack,
   type DemoCreatorProfile,
 } from '../demo-data';
 
@@ -47,6 +48,7 @@ export async function computeDemoSnapshot(salt?: string): Promise<DemoSnapshot> 
       musicProvider,
       getRightsRecordsForTrack: (trackId) => rights.getRecordsForTrack(trackId),
       getCampaignIdsForCreator: async (id) => (await campaigns.findForCreator(id)).map((c) => c.id),
+      findCatalogueTrack: findDemoCatalogueTrack,
       creatorExternalId: creator.handle,
       creatorUsername: creator.handle,
       creatorCountry: creator.country,

@@ -247,8 +247,10 @@ Server Actions, or pages that use it.
 | `connectors` | Platform adapter boundary (TikTok today; Instagram/YouTube named as future extension points) | §1–§5, §9, §44 |
 | `music` | Music identification provider boundary | §1, §43 |
 | `rights-engine` | Pure rights-assessment function — no storage, nothing to swap | §11, §43 |
-| `rights` | Read-only lookup of a workspace's `RightsRecord`s by track | §42 |
-| `campaigns` | Read-only lookup of a creator's campaign memberships | §11 |
+| `catalog` | The song catalogue — the Rights Library's songs: add, take out, details; telling two descriptions of a song apart | §10, §43 |
+| `catalog-search` | Finding a song to add by searching a music database (MusicBrainz) or the fixed demo catalogue | §10 |
+| `rights` | A song's rights records: the form's validation, storage, and the Rights Engine's view of them (plus the demo dataset's fixture lookup) | §10, §42 |
+| `campaigns` | A workspace's campaigns and who's on them; the scan's per-creator lookup | §2, §11 |
 | `creators` | The watchlist: add, pause, resume, remove, edit; plan limits on monitoring | §8, §19 |
 | `demo-data` | The fictional dataset every demo adapter reads: catalogue, creators, posts (see "Demo data") | §48, §62 |
 | `scan-pipeline` | Wires connector → music ID → rights engine into one scan | §21, §50 |
@@ -362,11 +364,13 @@ its secrets are server-side environment variables, never `NEXT_PUBLIC_*`
 ones.
 
 **Current reality:** the schema is complete relative to the Brief, live on
-Neon, and six domain modules query it for real — `auth`, `billing`,
-`notifications`, `audit`, `scan-results` and `cases` (see "Open decisions"
-→ Data layer for how each was verified, and why `cases` came last). The
-scan's inputs — connector, music identification, rights records and
-campaigns — are still fixtures, with plain-data types kept deliberately
+Neon, and the domain modules query it for real — among them `auth`,
+`billing`, `notifications`, `audit`, `creators`, `catalog`, `rights`,
+`campaigns`, `scan-results` and `cases` (see "Open decisions" → Data layer
+for how the first of them were verified, and why `cases` came last). Of a
+scan's inputs, the catalogue, rights records and campaigns are the
+workspace's own; the connector and music identification are still the
+demo dataset's fixtures, with plain-data types kept deliberately
 field-compatible with this schema.
 
 ### Entities, by domain
@@ -375,9 +379,9 @@ field-compatible with this schema.
 |---|---|---|
 | Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`), `Session` | Yes — Prisma-backed (Neon), `modules/auth`. `Session` is a documented addition to §43's "at minimum" list (see "Auth & authorization") |
 | Creators & content | `Creator` (+`CreatorStatus`), `Content`, `CommercialContent` (+`Platform`) | Yes — Prisma-backed. `Creator` is the watchlist members manage (`modules/creators`, see "Creator management"), with two documented additions to §8's fields: `lastError` and `removedAt`. `Content`/`CommercialContent` are written by every scan (`modules/scan-results`) for watchlist creators only — a scan never adds a creator |
-| Campaigns | `Campaign` | Fixture-backed lookup (`modules/campaigns`) |
-| Music | `MusicTrack`, `MusicMatch` | Yes — Prisma-backed, written by every scan (`modules/scan-results`); one `MusicMatch` per (content, track, provider), plus a track-less one recording "nothing identified" |
-| Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`) until the Rights Library (Brief §10) is built. `RightsAssessment`: computed by `rights-engine`, persisted by `modules/scan-results` with its explanation and the rights records it matched. `RightsRule`: unbuilt (see below) |
+| Campaigns | `Campaign` | Yes — Prisma-backed (`modules/campaigns`): what a rights record can be scoped to, and the scan's per-creator lookup. Created by the demo data loader; managing them in the UI is still to come (see "Known gaps") |
+| Music | `MusicTrack`, `MusicMatch` | Yes — Prisma-backed. `MusicTrack` is a song the workspace knows; `inCatalogue` marks the ones it administers — the Rights Library — with §10's track fields and where the song came from (`source`, `externalId`, `artworkUrl`) as documented additions. Scans write `MusicMatch` (`modules/scan-results`): one per (content, track, provider), plus a track-less one recording "nothing identified" |
+| Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: yes — Prisma-backed, the Rights Library's records per song (`modules/rights`), with §10's `notes` and `source`. `RightsAssessment`: computed by `rights-engine`, persisted by `modules/scan-results` with its explanation and the rights records it matched, and re-computed in place when a song's records change. `RightsRule`: unbuilt (see below) |
 | Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, Prisma-backed, with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
 | Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon); payment gateway is Stripe once configured, demo billing until then (see "Open decisions" → Payments). `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
@@ -407,8 +411,9 @@ key would let one workspace's scan claim a row another had already stored.
 Two gaps the database can't close on its own: a "no track identified" match
 has a null `musicTrackId`, which a unique index treats as distinct from
 every other null, so `scan-results` looks that row up before writing it;
-and `MusicTrack` has no unique key at all, so a scan matches an existing
-track by ISRC, else by title and artist. `Case.rightsAssessmentId` is
+and `MusicTrack` has no unique key at all, so an identified song is matched
+to one the workspace knows by ISRC, else by source id, else by title and
+artist compared loosely (`modules/catalog/identity.ts`). `Case.rightsAssessmentId` is
 `@unique` for the same reason (§51: "Do not spam duplicate cases. Use an
 idempotency key."), which is what makes `openCase` safe to call on every
 scan.
@@ -542,14 +547,25 @@ callers invoke `runScan()` directly today:
   - **Who:** the watchlist's monitored creators, oldest first, up to the
     plan's limit (§19); any past it are left out and counted on the job,
     not silently dropped.
+  - **What is assessed:** posts using a song in the workspace's catalogue
+    (`runScan`'s `findCatalogueTrack`). A song outside it is recorded as
+    `OTHER_MUSIC` — identified, not assessed — under a `MusicTrack` with
+    `inCatalogue` false, so adding it later brings those posts in (see
+    "Rights Library").
   - **Which window:** since the creator was last reached, with a day's
-    overlap; for a creator never scanned, the last 30 days — in demo mode,
-    back to the start of the demo scenarios instead, so a new workspace
-    sees all of them.
+    overlap; for a creator never scanned, the last 30 days. In demo mode
+    every scan covers the whole demo window instead, back to the start of
+    the demo scenarios: a new workspace sees all of them, and a song added
+    since the last scan is found in posts that scan already checked — as a
+    real provider's stored identifications would find it.
   - **One creator at a time**, so a failing creator (a connector error)
     marks only that creator `ERROR` with the reason and the rest go on.
   - **Recorded as a `Job`** (§21) with per-creator results, which is what
     a creator's monitoring history reads.
+
+The engine step itself is `assessCommercialContent()`, shared by `runScan()`
+and by re-assessing a song between scans (`app/_lib/reassess.ts`), so both
+always reach the same verdict for the same post.
 
 **Campaign matching** feeds into the Rights Engine's `campaignId` input: a
 creator can belong to zero, one, or many campaigns (`Campaign.creators` is
@@ -624,6 +640,57 @@ audit-logged (§14's first example is "user added creator").
   Content API reports no territory for a post, so the creator's country
   stands in when a rights record covers specific territories, and the
   assessment's explanation says so (see "Rights engine").
+
+## Rights Library
+
+(Brief §10)
+
+The songs a workspace administers and what their licences cover —
+`modules/catalog`, `modules/rights`, `/workspace/rights` and a page per
+song. The ANALYST tier and up manage it ("monitoring + cases + rights");
+every change is audit-logged against the song (`song.*`, `rights.*`).
+
+- **Adding songs is a search**, the way a music app finds them: results
+  appear while typing — title, artist or ISRC — through
+  `GET /api/v1/songs/search` (members only; errors in one shape, §45).
+  The provider is chosen by `MUSIC_SEARCH_PROVIDER` (`catalog-search`):
+  MusicBrainz, an open music database (core data CC0, no key), by default;
+  a fixed, fictional catalogue (`demo`) for tests and offline development.
+  MusicBrainz asks for a User-Agent naming the app and about one request
+  per second: `app/_lib/song-search.ts` caches queries for ten minutes and
+  paces requests, answering "busy" rather than queueing for long. A song
+  that can't be found is added by hand.
+- **One song, one record.** `findSameTrack` recognises a song by ISRC,
+  then by source id, then by loosely compared title and artist — so a song
+  isn't added twice, and a scan that hears a catalogue song under a
+  slightly different name still finds it.
+- **Cover art** comes from the Cover Art Archive, through this app's own
+  `GET /api/v1/artwork/{releaseId}` — only a MusicBrainz release id, only
+  raster images, cached for a year — so viewing the catalogue doesn't hand
+  members' IP addresses to a third party (§59). A song without a cover
+  gets a generated one (`components/music/artwork.ts`), the same for that
+  song everywhere.
+- **Rights records** are structured, never one boolean (§10): usage
+  (commercial, organic), territory (worldwide or a list of countries), a
+  term (an end date covers that whole day), and a campaign scope.
+  `parseRightsRecordForm` validates what a member enters; the form never
+  guesses a start date.
+- **Verdicts follow the library.** Adding a song a scan already heard, or
+  adding, changing or deleting one of its records, re-assesses its posts
+  straight away (`reassess.ts`): same engine step as a scan, verdicts
+  stored over the old ones (so cases stay attached), and §51's case
+  automation for anything newly flagged. Taking a song out of the
+  catalogue stops future checks; its records, verdicts and cases stay
+  (§13), and adding it again brings them back.
+- **Heard in your creators' posts:** songs a scan identified that aren't
+  in the catalogue, with how many posts used them, one click from joining.
+- **Demo data** (demo mode only): one action loads the demo dataset into a
+  workspace — its 48 creators, Northstar's six songs with their rights
+  records, and the two campaigns — and scans, which reproduces Brief §48's
+  September numbers in a real workspace. In demo mode the music provider
+  also "hears" songs a workspace added itself in the dataset's generated
+  posts (`demoCatalogueSongFor`), so searching for a song, adding it and
+  scanning shows it being found.
 
 ## Case management
 
@@ -730,7 +797,9 @@ scan" (`workspace-scan-store.ts`) runs the same demo connector and fixture
 providers as Demo Mode, over the workspace's own watchlist. The demo
 connector has posts for any username — the scenarios for §62's six
 creators (one click adds them), generated ones for anyone else — so a
-creator a member adds is scanned like any other. The results are stored in
+creator a member adds is scanned like any other; and the demo provider
+hears the workspace's own catalogue songs in generated posts (see "Rights
+Library"). The results are stored in
 that workspace and real Cases are opened against them (a real
 `workspaceId`, real `RightsAssessment` rows, a real acting user). The only
 thing Phase 10 changes is swapping `MockTikTokConnector` for a real one —
@@ -833,6 +902,7 @@ local development and never commit real values.
 | `DATABASE_URL` | Postgres connection (local dev fallback) | Used for local Postgres only — production reads Neon's own `storagee_*` vars instead (see "Open decisions" → Data layer) |
 | `SESSION_SECRET` | Every signing key (session cookie, invite links) is derived from it | Required for auth to work at all; at least 32 random characters, replaced with a fresh value before launch (`RELEASE_CHECKLIST.md`) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
+| `MUSIC_SEARCH_PROVIDER` | Song search for the Rights Library: `musicbrainz` (default) or `demo` | Unset in production (MusicBrainz); `demo` for local checks and tests, where the public service isn't reachable |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank until Phase 10 — mock connector used instead |
 | `REDIS_URL` | BullMQ (Upstash Redis, or any Redis-compatible URL) | Unused — nothing queues jobs yet |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
@@ -879,10 +949,10 @@ reads as an oversight:
   authorization")
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
-- Assigning creators to campaigns (§2, and §8's "group creators" and
-  "assign campaign") — arrives with the Rights Library, whose records are
-  what a campaign scopes; until then a creator's campaigns are the demo
-  dataset's, shown read-only on its page
+- Managing campaigns (§2, and §8's "group creators" and "assign
+  campaign") — campaigns are real workspace data now, and a rights record
+  can be scoped to them, but only the demo data loader creates them and
+  signs creators up; a creator's page shows its campaigns read-only
 - A custom favicon / brand mark — `src/app/favicon.ico` is still the
   default `create-next-app` icon (unmodified since the original scaffold);
   there's no logo yet to replace it with

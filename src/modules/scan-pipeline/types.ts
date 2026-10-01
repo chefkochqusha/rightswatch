@@ -35,6 +35,15 @@ export interface RunScanParams {
    *  either; see the call site in run-scan.ts for how this list is reduced
    *  to the single `campaignId` the Rights Engine's input expects. */
   getCampaignIdsForCreator: (creatorExternalId: string) => Promise<string[]>;
+  /**
+   * Which of the workspace's catalogue songs an identified track is, if any
+   * — its catalogue id, or `null` for a song the workspace doesn't
+   * administer. Only catalogue songs are assessed: the Rights Library
+   * (Brief §10) is what a scan checks posts against, and a rights check on
+   * someone else's song would be meaningless. Same plain-function pattern
+   * as the two above, so this module doesn't import `modules/catalog`.
+   */
+  findCatalogueTrack: (match: NormalizedMusicMatch) => Promise<string | null>;
   creatorExternalId: string;
   creatorUsername: string;
   /** The country recorded for this creator (ISO 3166-1 alpha-2), if any.
@@ -58,8 +67,17 @@ export type ScanItemResult =
       error: string;
     }
   | {
+      /** A song was identified, but it isn't in the workspace's catalogue:
+       *  nothing to assess. Kept, because adding the song later brings
+       *  this post in (`modules/catalog`). */
+      kind: 'OTHER_MUSIC';
+      content: NormalizedCommercialContent;
+      musicMatch: NormalizedMusicMatch;
+    }
+  | {
       kind: 'ASSESSED';
       content: NormalizedCommercialContent;
+      /** `trackId` is the catalogue song's id. */
       musicMatch: NormalizedMusicMatch;
       assessment: RightsAssessmentResult;
     };

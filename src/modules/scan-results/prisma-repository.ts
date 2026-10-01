@@ -2,20 +2,23 @@ import { getPrisma } from "@/lib/prisma-client";
 import type { Prisma } from "@/generated/prisma/client";
 import type { NormalizedCommercialContent, Platform } from "../connectors/types";
 import type { NormalizedMusicMatch } from "../music/types";
-import type { RightsAssessmentReason, RightsAssessmentStatus } from "../rights-engine/types";
+import type { RightsAssessmentReason, RightsAssessmentResult, RightsAssessmentStatus } from "../rights-engine/types";
+import { findSameTrack, normalizeIsrc } from "../catalog/identity";
 import { IDENTIFICATION_NOT_COMPLETED } from "./types";
-import type { ScanItemInput, ScanResultRepository, StoredScanItem } from "./types";
+import type { ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
 
 /**
  * Scan results in Postgres (see `types.ts` for the chain and the contract).
  * Each item's chain is written in its own transaction — Creator, Content and
- * CommercialContent always; then the MusicTrack, MusicMatch and
- * RightsAssessment an identification produced — upserted on the schema's own
- * unique keys, so saving a scan twice touches the same rows (Brief §22).
+ * CommercialContent always; then the MusicMatch an identification produced,
+ * and the RightsAssessment for a catalogue song — upserted on the schema's
+ * own unique keys, so saving a scan twice touches the same rows (Brief §22).
  *
- * Tracks: a workspace's `MusicTrack` for an identification is found by ISRC
- * when the provider gives one, otherwise by title and artist, and created
- * only when there isn't one yet.
+ * Tracks: an assessed item already carries its catalogue song's id (the
+ * scan resolved it). A song outside the catalogue is recorded as one the
+ * workspace knows but doesn't administer (`inCatalogue` false) — found by
+ * ISRC, source id, or title and artist (`catalog/identity.ts`), and created
+ * only when it's new — so adding it to the catalogue later finds its posts.
  *
  * `getPrisma()`, never a top-level `prisma` binding — see
  * `src/lib/prisma-client.ts`.
@@ -35,16 +38,32 @@ const CONTENT_INCLUDE = {
 
 type ContentRow = Prisma.ContentGetPayload<{ include: typeof CONTENT_INCLUDE }>;
 
+/** What `findSameTrack` needs of a workspace's known songs. */
+interface KnownTrack {
+  id: string;
+  title: string;
+  artist: string | null;
+  isrc: string | null;
+  externalId: string | null;
+}
+
 export class PrismaScanResultRepository implements ScanResultRepository {
   async saveScan(input: {
     workspaceId: string;
     musicProviderName: string;
     items: ScanItemInput[];
   }): Promise<StoredScanItem[]> {
+    // Read once per scan, and added to as songs are recorded below.
+    const known: KnownTrack[] = await getPrisma().musicTrack.findMany({
+      where: { workspaceId: input.workspaceId },
+      select: { id: true, title: true, artist: true, isrc: true, externalId: true },
+      orderBy: { createdAt: "asc" },
+    });
+
     const stored: StoredScanItem[] = [];
     for (const item of input.items) {
       const contentRowId = await getPrisma().$transaction((tx) =>
-        writeItem(tx, input.workspaceId, input.musicProviderName, item),
+        writeItem(tx, input.workspaceId, input.musicProviderName, item, known),
       );
       const row = await getPrisma().content.findUniqueOrThrow({
         where: { id: contentRowId },
@@ -63,7 +82,7 @@ export class PrismaScanResultRepository implements ScanResultRepository {
       include: CONTENT_INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    return rows.map(toStoredItem).filter((item): item is StoredScanItem => item !== null);
+    return toStoredItems(rows);
   }
 
   async findForCreator(workspaceId: string, creatorId: string): Promise<StoredScanItem[]> {
@@ -72,7 +91,7 @@ export class PrismaScanResultRepository implements ScanResultRepository {
       include: CONTENT_INCLUDE,
       orderBy: { publishedAt: "desc" },
     });
-    return rows.map(toStoredItem).filter((item): item is StoredScanItem => item !== null);
+    return toStoredItems(rows);
   }
 
   async findByContentId(workspaceId: string, externalContentId: string): Promise<StoredScanItem | null> {
@@ -85,6 +104,64 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     });
     return row ? toStoredItem(row) : null;
   }
+
+  async findForTrack(workspaceId: string, trackId: string): Promise<StoredScanItem[]> {
+    const rows = await getPrisma().content.findMany({
+      where: {
+        creator: { workspaceId },
+        commercialContent: { musicMatches: { some: { musicTrackId: trackId } } },
+      },
+      include: CONTENT_INCLUDE,
+      orderBy: { publishedAt: "desc" },
+    });
+    // A post another song outranks (a newer identification) is that song's.
+    return toStoredItems(rows).filter(
+      (item) => (item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC") && item.musicMatch.trackId === trackId,
+    );
+  }
+
+  async reassessTrack(input: {
+    workspaceId: string;
+    trackId: string;
+    assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+  }): Promise<StoredScanItem[]> {
+    const matches = await getPrisma().musicMatch.findMany({
+      where: {
+        musicTrackId: input.trackId,
+        musicTrack: { workspaceId: input.workspaceId },
+        commercialContent: { content: { creator: { workspaceId: input.workspaceId } } },
+      },
+      include: {
+        musicTrack: true,
+        commercialContent: { include: { content: { include: { creator: true } } } },
+      },
+    });
+
+    for (const match of matches) {
+      if (!match.musicTrack) continue;
+      const row = match.commercialContent.content;
+      const assessment = await input.assess({
+        content: toContent(row, match.commercialContent),
+        musicMatch: toMusicMatch(match, match.musicTrack),
+        creatorId: row.creator.id,
+        creatorExternalId: row.creator.externalId,
+        creatorUsername: row.creator.handle,
+      });
+      const verdict = toVerdict(assessment);
+      await getPrisma().rightsAssessment.upsert({
+        where: { musicMatchId: match.id },
+        create: { musicMatchId: match.id, ...verdict },
+        update: { ...verdict, assessedAt: new Date() },
+      });
+    }
+
+    const rows = await getPrisma().content.findMany({
+      where: { id: { in: matches.map((match) => match.commercialContent.contentId) } },
+      include: CONTENT_INCLUDE,
+      orderBy: { publishedAt: "desc" },
+    });
+    return toStoredItems(rows);
+  }
 }
 
 async function writeItem(
@@ -92,6 +169,7 @@ async function writeItem(
   workspaceId: string,
   musicProviderName: string,
   item: ScanItemInput,
+  known: KnownTrack[],
 ): Promise<string> {
   const { content } = item;
 
@@ -125,19 +203,22 @@ async function writeItem(
     update: commercialFields,
   });
 
-  if (item.kind === "ASSESSED") {
-    const track = await findOrCreateTrack(tx, workspaceId, item.musicMatch);
+  if (item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC") {
+    const trackId =
+      item.kind === "ASSESSED"
+        ? await catalogueTrackId(tx, workspaceId, item.musicMatch.trackId)
+        : await recordIdentifiedTrack(tx, workspaceId, item.musicMatch, known);
     const match = await tx.musicMatch.upsert({
       where: {
         commercialContentId_musicTrackId_provider: {
           commercialContentId: commercial.id,
-          musicTrackId: track.id,
+          musicTrackId: trackId,
           provider: item.musicMatch.provider,
         },
       },
       create: {
         commercialContentId: commercial.id,
-        musicTrackId: track.id,
+        musicTrackId: trackId,
         provider: item.musicMatch.provider,
         confidence: item.musicMatch.confidence,
         manual: item.musicMatch.manual,
@@ -148,17 +229,14 @@ async function writeItem(
         matchedAt: new Date(),
       },
     });
-    const verdict = {
-      status: item.assessment.status,
-      reason: item.assessment.reason,
-      explanation: item.assessment.explanation,
-      matchedRecordIds: item.assessment.matchedRecordIds,
-    };
-    await tx.rightsAssessment.upsert({
-      where: { musicMatchId: match.id },
-      create: { musicMatchId: match.id, ...verdict },
-      update: { ...verdict, assessedAt: new Date() },
-    });
+    if (item.kind === "ASSESSED") {
+      const verdict = toVerdict(item.assessment);
+      await tx.rightsAssessment.upsert({
+        where: { musicMatchId: match.id },
+        create: { musicMatchId: match.id, ...verdict },
+        update: { ...verdict, assessedAt: new Date() },
+      });
+    }
   } else if (item.kind === "NO_MUSIC_MATCH") {
     // "Identified, no track" is a match row with no track. The compound
     // unique key can't dedupe it (Postgres treats the null track ids as
@@ -180,31 +258,54 @@ async function writeItem(
   return contentRow.id;
 }
 
-async function findOrCreateTrack(tx: Prisma.TransactionClient, workspaceId: string, match: NormalizedMusicMatch) {
-  const existing = await tx.musicTrack.findFirst({
-    where: match.isrc
-      ? { workspaceId, isrc: match.isrc }
-      : { workspaceId, isrc: null, title: match.title, artist: match.artist },
-    orderBy: { createdAt: "asc" },
-  });
-  return (
-    existing ??
-    tx.musicTrack.create({
-      data: { workspaceId, title: match.title, artist: match.artist, isrc: match.isrc },
-    })
-  );
+/** The catalogue song an assessed item names — checked to be this
+ *  workspace's, so an item can't be filed under another workspace's song. */
+async function catalogueTrackId(tx: Prisma.TransactionClient, workspaceId: string, trackId: string): Promise<string> {
+  const track = await tx.musicTrack.findFirst({ where: { id: trackId, workspaceId }, select: { id: true } });
+  if (!track) throw new Error(`Track ${trackId} isn't in workspace ${workspaceId}.`);
+  return track.id;
 }
 
-function toStoredItem(row: ContentRow): StoredScanItem | null {
-  const commercial = row.commercialContent;
-  if (!commercial) return null;
+/** The workspace's record of a song outside its catalogue: the one it
+ *  already knows, or a new one. */
+async function recordIdentifiedTrack(
+  tx: Prisma.TransactionClient,
+  workspaceId: string,
+  match: NormalizedMusicMatch,
+  known: KnownTrack[],
+): Promise<string> {
+  const isrc = normalizeIsrc(match.isrc);
+  const existing = findSameTrack(known, { isrc, title: match.title, artist: match.artist || null });
+  if (existing) return existing.id;
+  const created = await tx.musicTrack.create({
+    data: {
+      workspaceId,
+      title: match.title,
+      artist: match.artist || null,
+      isrc,
+      source: "identified",
+      inCatalogue: false,
+    },
+    select: { id: true, title: true, artist: true, isrc: true, externalId: true },
+  });
+  known.push(created);
+  return created.id;
+}
 
-  const creator = {
-    creatorId: row.creator.id,
-    creatorExternalId: row.creator.externalId,
-    creatorUsername: row.creator.handle,
+function toVerdict(assessment: RightsAssessmentResult) {
+  return {
+    status: assessment.status,
+    reason: assessment.reason,
+    explanation: assessment.explanation,
+    matchedRecordIds: assessment.matchedRecordIds,
   };
-  const content: NormalizedCommercialContent = {
+}
+
+function toContent(
+  row: { platform: string; externalContentId: string; publishedAt: Date | null; createdAt: Date; creator: { externalId: string; handle: string } },
+  commercial: { brandNames: string[]; label: string | null; videoUrls: string[]; territory: string | null; rawPayload: unknown },
+): NormalizedCommercialContent {
+  return {
     platform: row.platform as Platform,
     externalContentId: row.externalContentId,
     creatorExternalId: row.creator.externalId,
@@ -216,24 +317,47 @@ function toStoredItem(row: ContentRow): StoredScanItem | null {
     territory: commercial.territory,
     rawPayload: commercial.rawPayload,
   };
+}
 
-  // Newest identification with a track wins: that's the one a Case hangs
-  // off. An earlier one is never deleted, only outranked.
-  const identified = commercial.musicMatches.find((m) => m.musicTrack && m.rightsAssessment);
-  if (identified?.musicTrack && identified.rightsAssessment) {
-    const assessment = identified.rightsAssessment;
+function toMusicMatch(
+  match: { confidence: number; provider: string; manual: boolean },
+  track: { id: string; title: string; artist: string | null; isrc: string | null },
+): NormalizedMusicMatch {
+  return {
+    trackId: track.id,
+    title: track.title,
+    artist: track.artist ?? "",
+    isrc: track.isrc,
+    confidence: match.confidence,
+    provider: match.provider,
+    manual: match.manual,
+  };
+}
+
+function toStoredItems(rows: ContentRow[]): StoredScanItem[] {
+  return rows.map(toStoredItem).filter((item): item is StoredScanItem => item !== null);
+}
+
+function toStoredItem(row: ContentRow): StoredScanItem | null {
+  const commercial = row.commercialContent;
+  if (!commercial) return null;
+
+  const creator = {
+    creatorId: row.creator.id,
+    creatorExternalId: row.creator.externalId,
+    creatorUsername: row.creator.handle,
+  };
+  const content = toContent(row, commercial);
+
+  // Newest assessed identification wins: that's the one a Case hangs off.
+  // An earlier one is never deleted, only outranked.
+  const assessed = commercial.musicMatches.find((m) => m.musicTrack && m.rightsAssessment);
+  if (assessed?.musicTrack && assessed.rightsAssessment) {
+    const assessment = assessed.rightsAssessment;
     return {
       kind: "ASSESSED",
       content,
-      musicMatch: {
-        trackId: identified.musicTrack.id,
-        title: identified.musicTrack.title,
-        artist: identified.musicTrack.artist ?? "",
-        isrc: identified.musicTrack.isrc,
-        confidence: identified.confidence,
-        provider: identified.provider,
-        manual: identified.manual,
-      },
+      musicMatch: toMusicMatch(assessed, assessed.musicTrack),
       assessment: {
         status: assessment.status as RightsAssessmentStatus,
         reason: assessment.reason as RightsAssessmentReason | null,
@@ -242,6 +366,17 @@ function toStoredItem(row: ContentRow): StoredScanItem | null {
       },
       ...creator,
       rightsAssessmentId: assessment.id,
+    };
+  }
+
+  const identified = commercial.musicMatches.find((m) => m.musicTrack);
+  if (identified?.musicTrack) {
+    return {
+      kind: "OTHER_MUSIC",
+      content,
+      musicMatch: toMusicMatch(identified, identified.musicTrack),
+      ...creator,
+      rightsAssessmentId: null,
     };
   }
 

@@ -244,19 +244,42 @@ model CommercialContent {
 // Music
 // ---------------------------------------------------------------------------
 
+// A song the workspace knows about. Those it administers form its catalogue
+// — the Rights Library (Master Brief §10), what scans assess against. A scan
+// also records songs it identified that aren't in the catalogue
+// (`inCatalogue` false), so that adding one later brings in its earlier
+// matches instead of waiting for new posts.
 model MusicTrack {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   title       String
   artist      String?
   isrc        String?
-  createdAt   DateTime @default(now())
+  // Brief §10's track fields beyond title, artist and ISRC.
+  album       String?
+  durationMs  Int?
+  catalogueId String? // the workspace's own catalogue number
+  rightsOwner String?
+  publisher   String?
+  label       String?
+  notes       String?
+  // Where the song came from: "musicbrainz" (search), "manual", "demo", or
+  // "identified" (a scan found it in a post). `externalId` is that source's
+  // id — a MusicBrainz recording id.
+  source      String    @default("manual")
+  externalId  String?
+  artworkUrl  String?
+  inCatalogue Boolean   @default(false)
+  addedAt     DateTime? // when it joined the catalogue
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 
   workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   rightsRecords RightsRecord[]
   musicMatches  MusicMatch[]
 
   @@index([workspaceId])
+  @@index([workspaceId, inCatalogue])
   @@index([isrc])
   @@map("music_tracks")
 }
@@ -299,6 +322,10 @@ model RightsRecord {
   // while every consumer already expected nullable — never caught before
   // because `prisma generate` never ran to completion until Phase 2.
   endDate      DateTime?
+  // Brief §10's "notes" and "source" — what the grant is (an agreement
+  // number, who it's with) and where the record came from.
+  notes        String?
+  source       String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

@@ -144,6 +144,23 @@ describe("buildAuditLogView", () => {
     assert.equal(added.href, "/workspace/creators/creator-1");
     assert.equal(removed.description, "Removed @lena.creates from the watchlist");
     assert.equal(unnamed.description, "Paused monitoring of a creator");
+    assert.equal(added.hrefLabel, "View creator");
+  });
+
+  test("song and rights entries name the song and link to its page", () => {
+    const [added, rights, untitled] = buildAuditLogView(
+      [
+        makeEntry({ action: "song.added", targetType: "song", targetId: "track-1", metadata: { title: "Midnight Run" } }),
+        makeEntry({ action: "rights.updated", targetType: "song", targetId: "track-1", metadata: { title: "Midnight Run" } }),
+        makeEntry({ action: "song.removed", targetType: "song", targetId: "track-2", metadata: null }),
+      ],
+      { ...noContext, members: new Map(), casesById: new Map() },
+    );
+    assert.equal(added.description, "Added “Midnight Run” to the catalogue");
+    assert.equal(added.href, "/workspace/rights/track-1");
+    assert.equal(added.hrefLabel, "View song");
+    assert.equal(rights.description, "Changed a rights record on “Midnight Run”");
+    assert.equal(untitled.description, "Took a song out of the catalogue");
   });
 
   test("preserves input order (callers pass entries already sorted newest-first)", () => {

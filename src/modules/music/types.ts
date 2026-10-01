@@ -11,7 +11,9 @@
  */
 
 export interface NormalizedMusicMatch {
-  /** Internal MusicTrack id (Brief §43) this content was matched to. */
+  /** The track's id as the provider knows it. The scan pipeline replaces it
+   *  with the workspace's own `MusicTrack` id (Brief §43) once it has found
+   *  the song in the catalogue — on an `ASSESSED` item it's always that. */
   trackId: string;
   title: string;
   artist: string;

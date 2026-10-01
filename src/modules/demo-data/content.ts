@@ -191,6 +191,44 @@ export function demoIdentificationFor(contentId: string, salt: string = DEMO_SAL
   return { kind: "match", track, confidence };
 }
 
+/**
+ * How often a generated post uses one of the songs a workspace added to its
+ * catalogue itself — what makes a demo scan find the songs a user searched
+ * for and added (the dataset's own six are identified as above). Generous
+ * on purpose: a demo has to show a song being found to show anything.
+ * More songs, a larger share, up to a cap.
+ */
+const OWN_SONG_SHARE = { base: 0.3, perExtraSong: 0.04, max: 0.5 };
+
+/**
+ * Which of `songKeys` (stable keys for a workspace's own catalogue songs)
+ * a generated demo post uses, if any, and with what confidence. A
+ * hand-written scenario or non-demo content uses none of them.
+ *
+ * Stable as a catalogue grows: whether a post uses an own song is one draw
+ * against a share that only grows, so a post that used one still does; and
+ * which song is the one with the post's highest draw, so a new song can
+ * only take over the posts it wins — the others' posts aren't reshuffled.
+ */
+export function demoCatalogueSongFor(
+  contentId: string,
+  songKeys: readonly string[],
+  salt: string = DEMO_SALT,
+): { key: string; confidence: number } | null {
+  if (!contentId.startsWith(GENERATED_PREFIX) || songKeys.length === 0) return null;
+  const share = Math.min(OWN_SONG_SHARE.max, OWN_SONG_SHARE.base + OWN_SONG_SHARE.perExtraSong * (songKeys.length - 1));
+  if (draw(salt, contentId, "own-song") >= share) return null;
+
+  let best: { key: string; score: number } | null = null;
+  for (const key of songKeys) {
+    const score = draw(salt, contentId, "own-song-pick", key);
+    if (best === null || score > best.score) best = { key, score };
+  }
+  if (!best) return null;
+  const confidence = Math.round((0.8 + draw(salt, contentId, "own-song-confidence", best.key) * 0.19) * 1000) / 1000;
+  return { key: best.key, confidence };
+}
+
 const GENERATED_PREFIX = "DEMO-V-G";
 
 function dayIndex(date: Date): number {

@@ -42,6 +42,15 @@ export const DEMO_TRACKS = {
 
 export type DemoTrackKey = keyof typeof DEMO_TRACKS;
 
+const DEMO_TRACK_IDS = new Set<string>(Object.values(DEMO_TRACKS).map((track) => track.trackId));
+
+/** The demo dataset's own catalogue lookup, for scans that run against the
+ *  dataset alone (Demo Mode's public pages, tests): a track it identified
+ *  is in Northstar's catalogue under its own id. */
+export async function findDemoCatalogueTrack(match: { trackId: string }): Promise<string | null> {
+  return DEMO_TRACK_IDS.has(match.trackId) ? match.trackId : null;
+}
+
 export const DEMO_BRANDS = ["NordHaus", "Volt Coffee", "Feld & Co."] as const;
 
 export interface DemoCampaign {

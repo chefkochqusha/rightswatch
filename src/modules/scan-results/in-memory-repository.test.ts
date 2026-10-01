@@ -138,4 +138,46 @@ describe("InMemoryScanResultRepository", () => {
     assert.equal(lenas[0].creatorId, "creator-lena");
     assert.deepEqual(await repo.findForCreator("w2", "creator-lena"), []);
   });
+
+  test("a song outside the catalogue is kept, and an assessed song outranks it", async () => {
+    const repo = new InMemoryScanResultRepository();
+    const other: ScanItemInput = { kind: "OTHER_MUSIC", content: CONTENT, musicMatch: { ...MATCH, trackId: "t-other" }, ...CREATOR };
+
+    const [first] = await save(repo, "w1", [other]);
+    assert.equal(first.kind, "OTHER_MUSIC");
+    assert.equal(first.rightsAssessmentId, null);
+    const [afterNothing] = await save(repo, "w1", [noMatch]);
+    assert.equal(afterNothing.kind, "OTHER_MUSIC", "a later 'no track' doesn't erase it");
+
+    const [assessedNow] = await save(repo, "w1", [assessed()]);
+    const [otherAgain] = await save(repo, "w1", [other]);
+    assert.equal(otherAgain.kind, "ASSESSED");
+    assert.equal(otherAgain.rightsAssessmentId, assessedNow.rightsAssessmentId);
+  });
+
+  test("findForTrack and reassessTrack: a song's posts, assessed again in place", async () => {
+    const repo = new InMemoryScanResultRepository();
+    const [, second] = LENA_POSTS;
+    await save(repo, "w1", [
+      { kind: "OTHER_MUSIC", content: CONTENT, musicMatch: { ...MATCH, trackId: "t-1" }, ...CREATOR },
+      { kind: "NO_MUSIC_MATCH", content: second, ...CREATOR },
+    ]);
+    assert.deepEqual((await repo.findForTrack("w1", "t-1")).map((item) => item.content.externalContentId), [CONTENT.externalContentId]);
+    assert.deepEqual(await repo.findForTrack("w2", "t-1"), []);
+
+    const seen: string[] = [];
+    const verdict = (status: "UNKNOWN" | "CLEARED") => async (match: { creatorUsername: string; musicMatch: { trackId: string } }) => {
+      seen.push(`${match.creatorUsername}:${match.musicMatch.trackId}`);
+      return { status, reason: status === "CLEARED" ? null : ("NO_RIGHTS_RECORD" as const), matchedRecordIds: [], explanation: status };
+    };
+    const [first] = await repo.reassessTrack({ workspaceId: "w1", trackId: "t-1", assess: verdict("UNKNOWN") });
+    assert.equal(first.kind, "ASSESSED");
+    assert.deepEqual(seen, [`${CREATOR.creatorUsername}:t-1`]);
+
+    const [again] = await repo.reassessTrack({ workspaceId: "w1", trackId: "t-1", assess: verdict("CLEARED") });
+    assert.equal(again.kind === "ASSESSED" && again.assessment.status, "CLEARED");
+    assert.equal(again.rightsAssessmentId, first.rightsAssessmentId, "the same assessment, so a case stays attached");
+    assert.deepEqual(await repo.reassessTrack({ workspaceId: "w2", trackId: "t-1", assess: verdict("CLEARED") }), []);
+  });
 });
+

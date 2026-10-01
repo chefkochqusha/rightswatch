@@ -1,11 +1,11 @@
 import { runScan } from "@/modules/scan-pipeline";
 import { MockTikTokConnector } from "@/modules/connectors";
 import { FixtureMusicIdentificationProvider } from "@/modules/music";
-import { FixtureRightsRepository } from "@/modules/rights";
-import { FixtureCampaignRepository } from "@/modules/campaigns";
+import { PrismaCampaignRepository } from "@/modules/campaigns/prisma-repository";
+import { toRightsRecordInput } from "@/modules/rights";
+import type { RightsRecordInput } from "@/modules/rights-engine/types";
+import { findSameTrack } from "@/modules/catalog";
 import { DEMO_WINDOW_START } from "@/modules/demo-data";
-import { openCase } from "@/modules/cases";
-import { notifyCaseOpened } from "@/modules/notifications";
 import { scanOutcomeChanges, type CreatorRecord } from "@/modules/creators";
 import {
   SCAN_JOB_TYPE,
@@ -15,36 +15,40 @@ import {
   type ScanJobPayload,
 } from "@/modules/jobs";
 import type { ScanItemInput, StoredScanItem } from "@/modules/scan-results";
-import { getCaseStore } from "./case-store";
-import { getNotificationStore } from "./notification-store";
-import { getAuthStore } from "./auth-store";
-import { getAuditStore } from "./audit-store";
 import { getScanResultStore } from "./scan-result-store";
 import { getCreatorStore } from "./creator-store";
 import { getJobStore } from "./job-store";
+import { getLibraryStore } from "./library-store";
 import { getCreatorAllowance } from "./creator-allowance";
 import { getConnectorMode } from "./connector-mode";
+import { openCasesForFlaggedItems } from "./case-automation";
 
 /**
  * A workspace's scan (Brief §21, §50): fetch each monitored creator's
- * commercial content, identify the music, assess the rights, store the
- * results, open a case for anything flagged, and tell the team.
+ * commercial content, identify the music, assess the posts that use a song
+ * in the workspace's catalogue against its rights records (Brief §10, §11),
+ * store the results, open a case for anything flagged, and tell the team.
  *
  * - **Who is scanned** is the watchlist (`modules/creators`): creators not
  *   removed and not paused, oldest first, up to the plan's limit (§19) —
  *   any beyond it are left out and counted, not silently dropped.
+ * - **What is assessed** is the catalogue (`modules/catalog`): a song
+ *   outside it is recorded, not assessed, so adding it later brings its
+ *   posts in (`reassess.ts`).
  * - **Which window**: everything since the creator was last reached (with
  *   a day's overlap, so a post published while the last scan ran isn't
  *   missed), or the last 30 days for a creator never scanned. In demo mode
- *   a first scan reaches back to the start of the demo dataset's scenarios
- *   instead, so a new workspace sees all of them.
+ *   every scan covers the whole demo window — from the start of the demo
+ *   dataset's scenarios — so a song added since the last scan is found in
+ *   the posts that scan already checked, the way a real provider's stored
+ *   identifications would find it.
  * - **Every run is a `Job`** (§21), created when it starts and completed
  *   or failed when it ends, with per-creator results as its payload — what
  *   a creator's monitoring history (§8) and "last scan" (§7) read.
  *
  * Until the real TikTok connector exists (`connector-mode.ts`), the
- * connector, music identification, rights records and campaigns are the
- * demo dataset's. Swapping in the real ones changes nothing below.
+ * connector and music identification are the demo dataset's. Swapping in
+ * the real ones changes nothing below.
  */
 
 const INITIAL_LOOKBACK_DAYS = 30;
@@ -125,12 +129,27 @@ async function scanCreators(
   now: Date,
   payload: ScanJobPayload,
 ): Promise<ScanJobPayload> {
+  const library = getLibraryStore();
+  const catalogue = await library.catalog.findCatalogue(workspaceId);
   const connector = new MockTikTokConnector();
-  const musicProvider = new FixtureMusicIdentificationProvider();
-  const rightsRepository = new FixtureRightsRepository();
-  const campaignRepository = new FixtureCampaignRepository();
+  const musicProvider = new FixtureMusicIdentificationProvider({
+    catalogue: catalogue.map((track) => ({ trackId: track.id, title: track.title, artist: track.artist, isrc: track.isrc })),
+  });
+  const campaigns = new PrismaCampaignRepository(workspaceId);
   const results = getScanResultStore().results;
   const creatorRepository = getCreatorStore().creators;
+
+  // Each song's records are read once per scan, however many posts use it.
+  const rightsByTrack = new Map<string, Promise<RightsRecordInput[]>>();
+  const getRightsRecordsForTrack = (trackId: string) => {
+    if (!rightsByTrack.has(trackId)) {
+      rightsByTrack.set(
+        trackId,
+        library.rights.findForTrack(workspaceId, trackId).then((rows) => rows.map(toRightsRecordInput)),
+      );
+    }
+    return rightsByTrack.get(trackId)!;
+  };
 
   // Fetch: one creator at a time — a real connector is rate-limited, and
   // one failing creator mustn't stop the rest (Brief §37).
@@ -140,9 +159,11 @@ async function scanCreators(
     const result = await runScan({
       connector,
       musicProvider,
-      getRightsRecordsForTrack: (trackId) => rightsRepository.getRecordsForTrack(trackId),
+      getRightsRecordsForTrack,
       getCampaignIdsForCreator: async (creatorExternalId) =>
-        (await campaignRepository.findForCreator(creatorExternalId)).map((c) => c.id),
+        (await campaigns.findForCreator(creatorExternalId)).map((c) => c.id),
+      findCatalogueTrack: async (match) =>
+        findSameTrack(catalogue, { isrc: match.isrc, title: match.title, artist: match.artist || null })?.id ?? null,
       creatorExternalId: creator.externalId,
       creatorUsername: creator.handle,
       creatorCountry: creator.country,
@@ -185,59 +206,8 @@ async function scanCreators(
 }
 
 function windowStart(creator: CreatorRecord, now: Date): Date {
-  if (creator.lastSeenAt) return new Date(creator.lastSeenAt.getTime() - DAY_MS);
   const lookback = new Date(now.getTime() - INITIAL_LOOKBACK_DAYS * DAY_MS);
-  return getConnectorMode() === "DEMO" && DEMO_WINDOW_START < lookback ? DEMO_WINDOW_START : lookback;
-}
-
-/**
- * Case Creation (Brief §51): a case for every assessed item the Rights
- * Engine didn't clear — a CLEARED one has nothing to investigate.
- * `openCase` is idempotent, so a re-run never duplicates a case or
- * disturbs one a human has since resolved; only genuinely new cases are
- * announced to every member (a notification is visibility, not a mutation
- * — ARCHITECTURE.md → "Auth & authorization") and audit-logged.
- */
-async function openCasesForFlaggedItems(
-  workspaceId: string,
-  triggeredByUserId: string,
-  items: StoredScanItem[],
-): Promise<number> {
-  const caseRepository = getCaseStore().cases;
-  const notificationRepository = getNotificationStore().notifications;
-  const memberships = await getAuthStore().memberships.findForWorkspace(workspaceId);
-  const recipientUserIds = memberships.map((m) => m.userId);
-
-  let opened = 0;
-  for (const item of items) {
-    if (item.kind !== "ASSESSED" || item.assessment.status === "CLEARED") continue;
-
-    const result = await openCase({ workspaceId, rightsAssessmentId: item.rightsAssessmentId }, { caseRepository });
-    if (!result.created) continue;
-    opened += 1;
-
-    await notifyCaseOpened(
-      {
-        workspaceId,
-        recipientUserIds,
-        payload: {
-          caseId: result.case.id,
-          contentId: item.content.externalContentId,
-          creatorUsername: item.creatorUsername,
-          status: item.assessment.status,
-        },
-      },
-      { notificationRepository },
-    );
-    // The same action/targetType as the manual "Open a case" path
-    // (`case-actions.ts`'s `openCaseAction`).
-    await getAuditStore().auditLogs.create({
-      workspaceId,
-      actorId: triggeredByUserId,
-      action: "case.opened",
-      targetType: "case",
-      targetId: result.case.id,
-    });
-  }
-  return opened;
+  if (getConnectorMode() === "DEMO") return DEMO_WINDOW_START < lookback ? DEMO_WINDOW_START : lookback;
+  if (creator.lastSeenAt) return new Date(creator.lastSeenAt.getTime() - DAY_MS);
+  return lookback;
 }

@@ -1,3 +1,6 @@
+import type { NormalizedCommercialContent } from "../connectors/types";
+import type { NormalizedMusicMatch } from "../music/types";
+import type { RightsAssessmentResult } from "../rights-engine/types";
 import type { ScanItemResult } from "../scan-pipeline/types";
 
 /**
@@ -37,6 +40,12 @@ export type ScanItemInput = ScanItemResult & CreatorContext;
  * persisted `RightsAssessment` row, which is what a `Case` points at.
  * Discriminated on `kind`, so narrowing to `ASSESSED` also narrows
  * `rightsAssessmentId` to a string.
+ *
+ * On an `ASSESSED` or `OTHER_MUSIC` item, `musicMatch.trackId` is the
+ * workspace's `MusicTrack` id for the song — in the catalogue or not.
+ * An item stays `ASSESSED` once it has an assessment, even if its song
+ * later leaves the catalogue: the assessment, and any case on it, are
+ * evidence (Brief §13).
  */
 export type StoredScanItem =
   | (Extract<ScanItemResult, { kind: "ASSESSED" }> & CreatorContext & { rightsAssessmentId: string })
@@ -79,4 +88,28 @@ export interface ScanResultRepository {
   /** Scoped by workspace: another workspace's item with the same platform
    *  id is never returned. */
   findByContentId(workspaceId: string, externalContentId: string): Promise<StoredScanItem | null>;
+
+  /** Every post a song was identified in, assessed or not, newest first.
+   *  Scoped by workspace. */
+  findForTrack(workspaceId: string, trackId: string): Promise<StoredScanItem[]>;
+
+  /**
+   * Runs `assess` again for every post a song was identified in, and stores
+   * each new verdict over the old one (same `rightsAssessmentId`, so a case
+   * stays attached) — for when the song joins the catalogue, or its rights
+   * records change, between scans. Returns those posts as stored, newest
+   * first.
+   */
+  reassessTrack(input: {
+    workspaceId: string;
+    trackId: string;
+    assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+  }): Promise<StoredScanItem[]>;
+}
+
+/** A post a song was identified in, as `reassessTrack` hands it over. */
+export interface TrackMatchForAssessment extends CreatorContext {
+  content: NormalizedCommercialContent;
+  /** `trackId` is the song's `MusicTrack` id. */
+  musicMatch: NormalizedMusicMatch;
 }

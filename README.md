@@ -75,16 +75,15 @@ Everything else in `.env.example` is optional — see `ARCHITECTURE.md` →
 ## Current status
 
 The core is built and tested end to end: auth, the creator watchlist with
-plan limits, the rights engine, the scan pipeline (against a demo TikTok
-connector and demo music identification), cases, notifications, the audit
-log and billing. Everything they store is in Postgres (Neon): auth with
-database-backed sessions, creators, scan results and scan jobs, cases,
-notifications, the audit log and billing.
+plan limits, the Rights Library (a song catalogue you fill by searching,
+with structured rights records per song), the rights engine, the scan
+pipeline (against a demo TikTok connector and demo music identification),
+cases, notifications, the audit log and billing. Everything they store is
+in Postgres (Neon).
 
-Still to build from the Master Brief: the song catalogue and Rights
-Library, the home feed, a cases list and report export, settings, the
-landing and pricing pages, password reset and email verification, the real
-TikTok connector, and scheduled scans. Everything that needs an account,
+Still to build from the Master Brief: the home feed, a cases list and
+report export, settings, the landing and pricing pages, password reset and
+email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 
 Billing runs on Stripe (test mode) as soon as its five environment

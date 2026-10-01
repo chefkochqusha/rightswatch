@@ -31,7 +31,7 @@ export function AuditLogRow({ entry }: { entry: AuditLogEntryView }) {
           <>
             {" "}
             <Link href={entry.href} className="text-accent hover:underline">
-              View case
+              {entry.hrefLabel}
             </Link>
           </>
         )}

@@ -31,3 +31,23 @@ export interface CampaignRepository {
    */
   findForCreator(creatorExternalId: string): Promise<CampaignRecord[]>;
 }
+
+/** A campaign with who's signed to it — what a workspace manages (Brief
+ *  §2: "assign creators to campaigns/projects"). */
+export interface WorkspaceCampaign extends CampaignRecord {
+  /** `Creator.id`s of its members. */
+  creatorIds: string[];
+}
+
+/** A workspace's campaigns, as the app manages them. Scoped by workspace on
+ *  every call: another workspace's campaign or creator is never touched. */
+export interface CampaignDirectory {
+  /** Oldest first. */
+  findForWorkspace(workspaceId: string): Promise<WorkspaceCampaign[]>;
+  /** The campaigns a watchlist creator (`Creator.id`) belongs to. */
+  findForCreatorId(workspaceId: string, creatorId: string): Promise<CampaignRecord[]>;
+  /** The campaign with this name, created if there's none yet. */
+  ensure(workspaceId: string, name: string): Promise<WorkspaceCampaign>;
+  addCreator(workspaceId: string, campaignId: string, creatorId: string): Promise<void>;
+}
+
