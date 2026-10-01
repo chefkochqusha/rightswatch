@@ -244,6 +244,7 @@ Server Actions, or pages that use it.
 | `rights-engine` | Pure rights-assessment function — no storage, nothing to swap | §11, §43 |
 | `rights` | Read-only lookup of a workspace's `RightsRecord`s by track | §42 |
 | `campaigns` | Read-only lookup of a creator's campaign memberships | §11 |
+| `demo-data` | The fictional dataset every demo adapter reads: catalogue, creators, posts (see "Demo data") | §48, §62 |
 | `scan-pipeline` | Wires connector → music ID → rights engine into one scan | §21, §50 |
 | `scan-results` | Stores a scan's `Creator → Content → … → RightsAssessment` chain, idempotently | §22, §43, §50 |
 | `cases` | Turns a flagged assessment into actionable, assignable work | §43 |
@@ -262,13 +263,14 @@ rights engine, cases, the UI — reads through: a `NormalizedCommercialContent`
 shape. `rawPayload` is carried through for audit display only; no business
 logic anywhere is allowed to branch on it (Brief §1, §44).
 
-`MockTikTokConnector` is the only implementation today. It returns
-deterministic fixture data modeled directly on the real TikTok Commercial
-Content API's response shape as confirmed live during this project (Brief
-§4: `id`, `create_timestamp`, `create_date`, `label`, `brand_names`,
-`creator`, `videos` — notably no track title, no ISRC, no audio fingerprint,
-which is exactly why music identification is a separate boundary rather than
-assumed to come from the platform).
+`MockTikTokConnector` is the only implementation today. It's asked what the
+real API is asked — a creator's username and a publication-date window
+(Brief §4) — and answers from the demo dataset (see "Demo data" below) in
+the real response's shape: `id`, `create_timestamp`, `create_date`,
+`label`, `brand_names`, `creator`, `videos`, and notably no track title,
+ISRC or audio, which is exactly why music identification is a separate
+boundary rather than assumed to come from the platform. Like the real API,
+it never returns a post from the future.
 
 The real connector — `TikTokCommercialContentConnector` in the Brief's own
 naming (a distinct `TikTokResearchConnector` is also named) — is Phase 10,
@@ -296,7 +298,42 @@ everything past it only ever sees `NormalizedMusicMatch`. Brief §1 names
 four concrete implementations sharing this interface — ProviderA, ProviderB,
 CatalogueMatchingProvider, and ManualMusicIdentification (the `manual:
 boolean` flag on `NormalizedMusicMatch` exists for this last one).
-`FixtureMusicIdentificationProvider` is the only one built today.
+`FixtureMusicIdentificationProvider` is the only one built today; it
+answers from the demo dataset.
+
+### Demo data
+
+(Brief §48, §62)
+
+`src/modules/demo-data/` is one coherent, fictional dataset the demo
+adapters all read from: the catalogue (§62's six tracks and three brands,
+two campaigns, the rights records on file — Golden Hour's is §10's own
+example), §62's six named creators plus 42 more for §48's 48, and their
+posts.
+
+- **Scenarios.** Fifteen hand-written September 2026 posts by the six named
+  creators, each there to produce one verdict: between them, every status
+  and reason the Rights Engine gives commercial content, plus a post with
+  no identifiable track and one whose identification fails.
+  `demo-snapshot.test.ts` pins each verdict.
+- **Generated posts** for any other username, so a creator a workspace adds
+  itself is scanned like any other (§72 steps 5–9). Each creator posts at
+  its own steady rate; post days, brands and identified tracks come from
+  seeded draws, so the same username and window always give the same
+  posts, with stable ids — a re-scan finds the same posts, never new
+  copies of them.
+- **Exactly §48's numbers.** Over Demo Mode's window (September 2026), the
+  48 creators come to 186 videos, 27 music matches, 11 that need a
+  decision and 7 new in the last week. `DEMO_SALT` is the seed that lands
+  there; `computeDemoSnapshot()` checks it through the real `runScan()`
+  in a test, and `scripts/demo-data/find-salt.ts` finds a new seed when a
+  change to the dataset moves the numbers.
+
+A creator's country (Brief §8) is the territory signal for a post the
+platform reports none for — every TikTok post — and the engine's
+explanation says when it's using it (`runScan`'s `creatorCountry`, Brief
+§11's "Country" input). The validated prototype assessed territory the same
+way.
 
 ## Database architecture
 

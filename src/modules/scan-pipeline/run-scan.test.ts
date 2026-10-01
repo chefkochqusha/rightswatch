@@ -16,131 +16,143 @@ import type {
   MusicIdentificationResult,
 } from '../music/types';
 
-const FAR_PAST = new Date('2000-01-01');
-const FAR_FUTURE = new Date('2100-01-01');
+// The demo dataset's scenarios are all in September 2026; a demo connector
+// pinned to the end of it sees exactly those (the full scenario table is
+// checked in demo-snapshot.test.ts).
+const SINCE = new Date('2026-09-01T00:00:00Z');
+const UNTIL = new Date('2026-09-30T23:59:59Z');
+const demoConnector = () => new MockTikTokConnector({ now: () => UNTIL });
 
-function demoParams(creatorExternalId: string, creatorUsername: string) {
+function demoParams(creatorUsername: string, creatorCountry: string | null) {
   const rightsRepo = new FixtureRightsRepository();
   const campaignRepo = new FixtureCampaignRepository();
   return {
-    connector: new MockTikTokConnector(),
+    connector: demoConnector(),
     musicProvider: new FixtureMusicIdentificationProvider(),
     getRightsRecordsForTrack: (trackId: string) => rightsRepo.getRecordsForTrack(trackId),
     getCampaignIdsForCreator: async (id: string) =>
       (await campaignRepo.findForCreator(id)).map((c) => c.id),
-    creatorExternalId,
+    creatorExternalId: creatorUsername,
     creatorUsername,
-    since: FAR_PAST,
-    until: FAR_FUTURE,
+    creatorCountry,
+    since: SINCE,
+    until: UNTIL,
   };
 }
 
-describe('runScan (end-to-end over the demo fixtures)', () => {
-  test('demo-creator-1: one cleared, one flagged with no rights record at all, one cleared via campaign match', async () => {
-    const result = await runScan(demoParams('demo-creator-1', 'mia.dances'));
+describe('runScan (end-to-end over the demo dataset)', () => {
+  test('lena.creates: cleared worldwide, and cleared through her campaign', async () => {
+    const result = await runScan(demoParams('lena.creates', 'DE'));
     assert.equal(result.connectorError, null);
-    assert.equal(result.items.length, 3);
-
-    const byContentId = Object.fromEntries(
-      result.items.map((item) => [item.content.externalContentId, item]),
+    assert.deepEqual(
+      result.items.map((item) => (item.kind === 'ASSESSED' ? item.assessment.status : item.kind)),
+      ['CLEARED', 'CLEARED'],
     );
-
-    const cleared = byContentId['tt-cc-1001'];
-    assert.equal(cleared.kind, 'ASSESSED');
-    if (cleared.kind === 'ASSESSED') {
-      assert.equal(cleared.assessment.status, 'CLEARED');
-    }
-
-    const noRecord = byContentId['tt-cc-1002'];
-    assert.equal(noRecord.kind, 'ASSESSED');
-    if (noRecord.kind === 'ASSESSED') {
-      assert.equal(noRecord.assessment.status, 'POTENTIAL_MISMATCH');
-      assert.equal(noRecord.assessment.reason, 'NO_RIGHTS_RECORD');
-    }
-
-    // demo-creator-1 is signed to exactly one campaign fixture ("Summer
-    // Launch"), so this campaign-scoped rights record confidently clears.
-    const campaignCleared = byContentId['tt-cc-1003'];
-    assert.equal(campaignCleared.kind, 'ASSESSED');
-    if (campaignCleared.kind === 'ASSESSED') {
-      assert.equal(campaignCleared.assessment.status, 'CLEARED');
-    }
   });
 
-  test('demo-creator-2: one flagged as commercial-not-covered, one cleared, one UNKNOWN via campaign non-membership', async () => {
-    const result = await runScan(demoParams('demo-creator-2', 'leon.fit'));
-    assert.equal(result.items.length, 3);
-    const byContentId = Object.fromEntries(
-      result.items.map((item) => [item.content.externalContentId, item]),
-    );
-
-    const organicOnly = byContentId['tt-cc-2001'];
-    assert.equal(organicOnly.kind, 'ASSESSED');
-    if (organicOnly.kind === 'ASSESSED') {
-      assert.equal(organicOnly.assessment.status, 'POTENTIAL_MISMATCH');
-      assert.equal(organicOnly.assessment.reason, 'COMMERCIAL_USAGE_NOT_COVERED');
-    }
-
-    const cleared = byContentId['tt-cc-2002'];
-    assert.equal(cleared.kind, 'ASSESSED');
-    if (cleared.kind === 'ASSESSED') {
-      assert.equal(cleared.assessment.status, 'CLEARED');
-    }
-
-    // demo-creator-2 is signed to no campaign at all, so the same
-    // campaign-scoped record demo-creator-1 clears against can't be
-    // confirmed either way for them — UNKNOWN, not a guessed CLEARED or a
-    // false POTENTIAL_MISMATCH.
-    const campaignUnknown = byContentId['tt-cc-2003'];
-    assert.equal(campaignUnknown.kind, 'ASSESSED');
-    if (campaignUnknown.kind === 'ASSESSED') {
-      assert.equal(campaignUnknown.assessment.status, 'UNKNOWN');
-      assert.equal(campaignUnknown.assessment.reason, 'MANUAL_REVIEW_REQUIRED');
-    }
-  });
-
-  test('demo-creator-3: flagged as term-expired', async () => {
-    const result = await runScan(demoParams('demo-creator-3', 'noah.cooks'));
-    assert.equal(result.items.length, 1);
-    const [item] = result.items;
-    assert.equal(item.kind, 'ASSESSED');
-    if (item.kind === 'ASSESSED') {
-      assert.equal(item.assessment.status, 'POTENTIAL_MISMATCH');
-      assert.equal(item.assessment.reason, 'TERM_EXPIRED');
-    }
-  });
-
-  test('demo-creator-4: conflicting records surface as REVIEW, ambiguous territory surfaces as UNKNOWN', async () => {
-    const result = await runScan(demoParams('demo-creator-4', 'priya.beauty'));
-    assert.equal(result.items.length, 2);
-    const byContentId = Object.fromEntries(
-      result.items.map((item) => [item.content.externalContentId, item]),
-    );
-
-    const conflicting = byContentId['tt-cc-4001'];
-    assert.equal(conflicting.kind, 'ASSESSED');
-    if (conflicting.kind === 'ASSESSED') {
-      assert.equal(conflicting.assessment.status, 'REVIEW');
-      assert.equal(conflicting.assessment.reason, 'CONFLICTING_RIGHTS_RECORDS');
-    }
-
-    const ambiguousTerritory = byContentId['tt-cc-4002'];
-    assert.equal(ambiguousTerritory.kind, 'ASSESSED');
-    if (ambiguousTerritory.kind === 'ASSESSED') {
-      assert.equal(ambiguousTerritory.assessment.status, 'UNKNOWN');
-      assert.equal(ambiguousTerritory.assessment.reason, 'MANUAL_REVIEW_REQUIRED');
+  test("sophie.makes: the creator's country decides a territory-restricted record", async () => {
+    const result = await runScan(demoParams('sophie.makes', 'US'));
+    const territory = result.items.find((item) => item.content.externalContentId === 'DEMO-V-4003');
+    assert.equal(territory?.kind, 'ASSESSED');
+    if (territory?.kind === 'ASSESSED') {
+      assert.equal(territory.assessment.status, 'POTENTIAL_MISMATCH');
+      assert.equal(territory.assessment.reason, 'TERRITORY_NOT_COVERED');
+      // Says where the territory came from: TikTok reports none.
+      assert.match(territory.assessment.explanation, /country on file for this creator/);
     }
   });
 
   test('a narrower date window excludes content published outside it', async () => {
     const result = await runScan({
-      ...demoParams('demo-creator-1', 'mia.dances'),
-      since: new Date('2025-01-01'),
-      until: new Date('2025-12-31'),
+      ...demoParams('lena.creates', 'DE'),
+      since: new Date('2026-09-01T00:00:00Z'),
+      until: new Date('2026-09-15T00:00:00Z'),
     });
-    // Only tt-cc-1001 (2025-11-03) falls in this window; tt-cc-1002 is 2026.
-    assert.equal(result.items.length, 1);
-    assert.equal(result.items[0].content.externalContentId, 'tt-cc-1001');
+    // Only DEMO-V-1002 (8 September) falls in this window; DEMO-V-1001 is
+    // the 27th.
+    assert.deepEqual(result.items.map((item) => item.content.externalContentId), ['DEMO-V-1002']);
+  });
+});
+
+describe('runScan (territory signal)', () => {
+  // One post, one rights record restricted to Germany — only where the
+  // territory comes from varies.
+  function territoryParams(postTerritory: string | null, creatorCountry: string | null) {
+    const connector: PlatformConnector = {
+      platform: 'TIKTOK',
+      async fetchCommercialContent(): Promise<ConnectorFetchResult> {
+        return {
+          error: null,
+          items: [
+            {
+              platform: 'TIKTOK',
+              externalContentId: 'cc-1',
+              creatorExternalId: 'creator-1',
+              creatorUsername: 'creator.one',
+              publishedAt: new Date('2026-06-01'),
+              brandNames: ['Test Brand'],
+              label: 'Paid partnership',
+              territory: postTerritory,
+              videoUrls: [],
+              rawPayload: {},
+            },
+          ],
+        };
+      },
+    };
+    const provider: MusicIdentificationProvider = {
+      providerName: 'fixed',
+      async identify(): Promise<MusicIdentificationResult> {
+        return {
+          error: null,
+          matches: [{ trackId: 't', title: 'T', artist: 'A', isrc: null, confidence: 1, provider: 'fixed', manual: false }],
+        };
+      },
+    };
+    return {
+      connector,
+      musicProvider: provider,
+      getRightsRecordsForTrack: async () => [
+        {
+          id: 'rr-de-only',
+          territories: ['DE'],
+          commercialUsageAllowed: true,
+          organicUsageAllowed: true,
+          startDate: new Date('2026-01-01'),
+          endDate: null,
+          campaignIds: [],
+        },
+      ],
+      getCampaignIdsForCreator: async () => [],
+      creatorExternalId: 'creator-1',
+      creatorUsername: 'creator.one',
+      creatorCountry,
+      since: new Date('2026-01-01'),
+      until: new Date('2026-12-31'),
+    };
+  }
+
+  async function verdict(postTerritory: string | null, creatorCountry: string | null) {
+    const [item] = (await runScan(territoryParams(postTerritory, creatorCountry))).items;
+    assert.equal(item.kind, 'ASSESSED');
+    return item.kind === 'ASSESSED' ? item.assessment : null;
+  }
+
+  test("with no territory on the post, the creator's country stands in for it", async () => {
+    assert.equal((await verdict(null, 'DE'))?.status, 'CLEARED');
+    const outside = await verdict(null, 'US');
+    assert.equal(outside?.reason, 'TERRITORY_NOT_COVERED');
+    assert.match(outside?.explanation ?? '', /"US", the country on file for this creator/);
+  });
+
+  test('with neither, a territory-restricted record stays UNKNOWN', async () => {
+    assert.equal((await verdict(null, null))?.status, 'UNKNOWN');
+  });
+
+  test("the post's own territory wins over the creator's country", async () => {
+    const result = await verdict('FR', 'DE');
+    assert.equal(result?.reason, 'TERRITORY_NOT_COVERED');
+    assert.match(result?.explanation ?? '', /territory "FR"/);
   });
 });
 
@@ -158,10 +170,10 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       musicProvider: new FixtureMusicIdentificationProvider(),
       getRightsRecordsForTrack: (trackId) => rightsRepo.getRecordsForTrack(trackId),
       getCampaignIdsForCreator: async () => [],
-      creatorExternalId: 'demo-creator-1',
-      creatorUsername: 'mia.dances',
-      since: FAR_PAST,
-      until: FAR_FUTURE,
+      creatorExternalId: 'lena.creates',
+      creatorUsername: 'lena.creates',
+      since: SINCE,
+      until: UNTIL,
     });
     assert.equal(result.connectorError, 'TikTok API rate limit exceeded');
     assert.deepEqual(result.items, []);
@@ -169,7 +181,7 @@ describe('runScan (isolated branch behavior with fakes)', () => {
 
   test('a content item with no identifiable track is reported as NO_MUSIC_MATCH', async () => {
     const result = await runScan({
-      connector: new MockTikTokConnector(),
+      connector: demoConnector(),
       // Always "finds" nothing, regardless of input.
       musicProvider: {
         providerName: 'silent',
@@ -179,12 +191,12 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       },
       getRightsRecordsForTrack: async () => [],
       getCampaignIdsForCreator: async () => [],
-      creatorExternalId: 'demo-creator-1',
-      creatorUsername: 'mia.dances',
-      since: FAR_PAST,
-      until: FAR_FUTURE,
+      creatorExternalId: 'lena.creates',
+      creatorUsername: 'lena.creates',
+      since: SINCE,
+      until: UNTIL,
     });
-    assert.equal(result.items.length, 3);
+    assert.equal(result.items.length, 2);
     assert.ok(result.items.every((item) => item.kind === 'NO_MUSIC_MATCH'));
   });
 
@@ -196,19 +208,21 @@ describe('runScan (isolated branch behavior with fakes)', () => {
       },
     };
     const result = await runScan({
-      connector: new MockTikTokConnector(),
+      connector: demoConnector(),
       musicProvider: failingProvider,
       getRightsRecordsForTrack: async () => [],
       getCampaignIdsForCreator: async () => [],
-      creatorExternalId: 'demo-creator-3',
-      creatorUsername: 'noah.cooks',
-      since: FAR_PAST,
-      until: FAR_FUTURE,
+      creatorExternalId: 'maxstudio',
+      creatorUsername: 'maxstudio',
+      since: SINCE,
+      until: UNTIL,
     });
-    assert.equal(result.items.length, 1);
-    assert.equal(result.items[0].kind, 'MUSIC_ID_ERROR');
-    if (result.items[0].kind === 'MUSIC_ID_ERROR') {
-      assert.equal(result.items[0].error, 'fingerprinting service unavailable');
+    assert.equal(result.items.length, 2);
+    for (const item of result.items) {
+      assert.equal(item.kind, 'MUSIC_ID_ERROR');
+      if (item.kind === 'MUSIC_ID_ERROR') {
+        assert.equal(item.error, 'fingerprinting service unavailable');
+      }
     }
   });
 });
@@ -278,8 +292,8 @@ describe('runScan (campaign id resolution)', () => {
       getCampaignIdsForCreator,
       creatorExternalId: 'creator-1',
       creatorUsername: 'creator.one',
-      since: FAR_PAST,
-      until: FAR_FUTURE,
+      since: new Date('2000-01-01'),
+      until: new Date('2100-01-01'),
     };
   }
 

@@ -61,10 +61,14 @@ export async function runScan(params: RunScanParams): Promise<ScanResult> {
 
     const rightsRecords = await params.getRightsRecordsForTrack(bestMatch.trackId);
 
+    // The post's own territory when the platform reports one; otherwise the
+    // creator's country, labeled as such in the explanation.
+    const creatorCountry = params.creatorCountry ?? null;
     const assessment = assessRights({
       content: {
         publishedAt: content.publishedAt,
-        territory: content.territory,
+        territory: content.territory ?? creatorCountry,
+        territorySource: content.territory === null && creatorCountry !== null ? 'creator' : 'content',
         // Every item this pipeline sees comes from a commercial-content
         // fetch (paid partnership / #ad) by construction — see the
         // `isCommercialUsage` comment in rights-engine/types.ts.

@@ -37,6 +37,11 @@ export interface RunScanParams {
   getCampaignIdsForCreator: (creatorExternalId: string) => Promise<string[]>;
   creatorExternalId: string;
   creatorUsername: string;
+  /** The country recorded for this creator (ISO 3166-1 alpha-2), if any.
+   *  The territory signal for a post whose connector reports none — every
+   *  TikTok post, today (Brief §4) — passed to the Rights Engine as such
+   *  (Brief §11 lists "Country" among its inputs). */
+  creatorCountry?: string | null;
   /** Inclusive publication-date window to scan. */
   since: Date;
   until: Date;

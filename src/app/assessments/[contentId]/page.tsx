@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  getAllDemoAssessments,
-  getDemoAssessmentByContentId,
-} from "@/app/_lib/get-demo-scan-results";
+import { getDemoAssessmentByContentId, getDemoSnapshot } from "@/app/_lib/get-demo-scan-results";
 import { AppHeader } from "@/components/layout/app-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AssessmentSummary } from "@/components/rights/assessment-summary";
@@ -12,8 +9,8 @@ import { AssessmentSummary } from "@/components/rights/assessment-summary";
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
 export async function generateStaticParams() {
-  const all = await getAllDemoAssessments();
-  return all.map((row) => ({ contentId: row.content.externalContentId }));
+  const { items } = await getDemoSnapshot();
+  return items.map((row) => ({ contentId: row.content.externalContentId }));
 }
 
 /**
@@ -37,7 +34,7 @@ export async function generateMetadata({
   const { contentId } = await params;
   const row = await getDemoAssessmentByContentId(contentId);
   if (!row) return { title: "Page not found — RightsWatch" };
-  return { title: `@${row.creatorUsername} — RightsWatch` };
+  return { title: `@${row.creator.handle} — RightsWatch` };
 }
 
 export default async function AssessmentDetailPage({
@@ -61,7 +58,7 @@ export default async function AssessmentDetailPage({
         <div className="mt-4 mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              @{row.creatorUsername}
+              @{row.creator.handle}
             </h1>
             <p className="mt-1 text-sm text-t2">
               {row.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}

@@ -1,15 +1,17 @@
 import type { CampaignRecord, CampaignRepository } from './types';
-import { FIXTURE_CAMPAIGN_MEMBERSHIPS_BY_CREATOR_ID } from './fixtures';
+import { DEMO_CAMPAIGNS } from '../demo-data/catalog';
 
 /**
- * Demo Mode's stand-in for a real, Prisma-backed campaign repository — same
- * role as `rights/fixture-repository.ts`'s `FixtureRightsRepository`. Once
- * the database is live, a real repository querying `Campaign` rows by
- * `creators: { some: { workspaceId, externalId: creatorExternalId } }` and
- * mapping them to `CampaignRecord` replaces this at the call site only.
+ * The demo dataset's campaigns (`modules/demo-data/catalog.ts`), looked up
+ * by the creator's external id — for a TikTok creator, the username. A
+ * workspace's own campaigns (Brief §2: "assign creators to
+ * campaigns/projects") implement the same interface from `Campaign` rows.
  */
 export class FixtureCampaignRepository implements CampaignRepository {
   async findForCreator(creatorExternalId: string): Promise<CampaignRecord[]> {
-    return FIXTURE_CAMPAIGN_MEMBERSHIPS_BY_CREATOR_ID[creatorExternalId] ?? [];
+    const handle = creatorExternalId.toLowerCase();
+    return Object.values(DEMO_CAMPAIGNS)
+      .filter((campaign) => (campaign.members as readonly string[]).includes(handle))
+      .map(({ id, name, createdAt }) => ({ id, name, createdAt }));
   }
 }

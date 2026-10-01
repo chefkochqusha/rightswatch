@@ -96,14 +96,17 @@ export function assessRights(
         reason: 'MANUAL_REVIEW_REQUIRED',
         matchedRecordIds: territoryChecks.unknown.map((r) => r.id),
         explanation:
-          "The content's territory could not be determined, and the rights record(s) that might cover this usage are restricted to specific territories.",
+          "The content's territory could not be determined (the platform doesn't report one, and no country is on file for this creator), and the rights record(s) that might cover this usage are restricted to specific territories.",
       };
     }
     return {
       status: 'POTENTIAL_MISMATCH',
       reason: 'TERRITORY_NOT_COVERED',
       matchedRecordIds: termActive.map((r) => r.id),
-      explanation: `None of the rights records active on the publish date cover the territory "${content.territory ?? 'unknown'}".`,
+      explanation:
+        content.territorySource === 'creator'
+          ? `None of the rights records active on the publish date cover "${content.territory}", the country on file for this creator. The platform doesn't report where a post was shown, so the creator's country stands in for it.`
+          : `None of the rights records active on the publish date cover the territory "${content.territory ?? 'unknown'}".`,
     };
   }
   const territoryActive = territoryChecks.pass;

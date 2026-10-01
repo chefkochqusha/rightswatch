@@ -1,5 +1,5 @@
 import type { ScanItemResult } from "@/modules/scan-pipeline";
-import { REASON_LABELS } from "./labels";
+import { PLATFORM_LABELS, REASON_LABELS, formatConfidence, matchMethodLabel } from "./labels";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
@@ -43,8 +43,11 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
               </p>
               <p className="mt-0.5 text-[0.8125rem] text-t2">
                 {item.musicMatch.isrc ?? "No ISRC on file"} ·{" "}
-                {Math.round(item.musicMatch.confidence * 100)}% confidence ·{" "}
-                {item.musicMatch.manual ? "manually identified" : item.musicMatch.provider}
+                {formatConfidence(item.musicMatch.confidence)} identification confidence ·{" "}
+                {matchMethodLabel(item.musicMatch.provider, item.musicMatch.manual)}
+              </p>
+              <p className="mt-1 text-xs text-t2">
+                Confidence in the music identification, not that an infringement occurred.
               </p>
             </div>
           </section>
@@ -54,7 +57,7 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
             <dl className="mt-3 space-y-2.5 text-[0.8125rem]">
               <div className="flex justify-between gap-3">
                 <dt className="text-t2">Platform</dt>
-                <dd className="text-tx">{item.content.platform}</dd>
+                <dd className="text-tx">{PLATFORM_LABELS[item.content.platform]}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-t2">Published</dt>

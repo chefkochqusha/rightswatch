@@ -1,23 +1,15 @@
 import Link from "next/link";
-import { getDemoScanResults } from "@/app/_lib/get-demo-scan-results";
+import { getDemoSnapshot } from "@/app/_lib/get-demo-scan-results";
 import { AppHeader } from "@/components/layout/app-header";
 import { KeywordMarquee } from "@/components/marketing/keyword-marquee";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { REASON_LABELS, STATUS_SORT_ORDER } from "@/components/rights/labels";
+import { REASON_LABELS, STATUS_SORT_ORDER, formatConfidence } from "@/components/rights/labels";
 import type { RightsAssessmentStatus } from "@/modules/rights-engine/types";
-import type { ScanItemResult } from "@/modules/scan-pipeline";
+import type { DemoSnapshotItem } from "@/modules/scan-pipeline/demo-snapshot";
 
 export const metadata = {
   title: "Dashboard — RightsWatch",
 };
-
-interface Row {
-  key: string;
-  creatorUsername: string;
-  brandNames: string[];
-  publishedAt: Date;
-  item: ScanItemResult;
-}
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -42,24 +34,21 @@ const CAPABILITY_KEYWORDS = [
   "SIGNALS WHAT NEEDS REVIEW",
 ] as const;
 
+/**
+ * Demo Mode's dashboard (Brief §7, §48): the demo snapshot's headline
+ * numbers, where its music matches stand, and every match, most urgent
+ * first. Posts with no identified track count as videos checked but aren't
+ * listed — there's nothing to assess in them.
+ */
 export default async function DashboardPage() {
-  const scans = await getDemoScanResults();
+  const { items, counts: totals } = await getDemoSnapshot();
 
-  const rows: Row[] = scans.flatMap((scan) =>
-    scan.items.map((item) => ({
-      key: item.content.externalContentId,
-      creatorUsername: scan.creatorUsername,
-      brandNames: item.content.brandNames,
-      publishedAt: item.content.publishedAt,
-      item,
-    })),
+  const rows = items.filter(
+    (item): item is Extract<DemoSnapshotItem, { kind: "ASSESSED" }> => item.kind === "ASSESSED",
   );
-
   rows.sort((a, b) => {
-    const aRank = a.item.kind === "ASSESSED" ? STATUS_SORT_ORDER[a.item.assessment.status] : -1;
-    const bRank = b.item.kind === "ASSESSED" ? STATUS_SORT_ORDER[b.item.assessment.status] : -1;
-    if (aRank !== bRank) return aRank - bRank;
-    return b.publishedAt.getTime() - a.publishedAt.getTime();
+    const rank = STATUS_SORT_ORDER[a.assessment.status] - STATUS_SORT_ORDER[b.assessment.status];
+    return rank !== 0 ? rank : b.content.publishedAt.getTime() - a.content.publishedAt.getTime();
   });
 
   const counts: Record<RightsAssessmentStatus, number> = {
@@ -68,9 +57,7 @@ export default async function DashboardPage() {
     POTENTIAL_MISMATCH: 0,
     UNKNOWN: 0,
   };
-  for (const row of rows) {
-    if (row.item.kind === "ASSESSED") counts[row.item.assessment.status] += 1;
-  }
+  for (const row of rows) counts[row.assessment.status] += 1;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -99,11 +86,21 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-t2">
-            Example data — no TikTok connection is required to see how
-            RightsWatch assesses commercial content. Connect a workspace to
-            scan real creators.
+            Northstar Music Publishing, a fictional publisher, after a demo scan of September 2026.
+            Every creator, track and match here is a demo record — no live TikTok data is shown.
           </p>
         </div>
+
+        <section
+          aria-label="Key figures"
+          className="mb-6 grid grid-cols-2 gap-x-6 gap-y-5 rounded-lg border border-line bg-surface px-5 py-5 sm:grid-cols-3 lg:grid-cols-5"
+        >
+          <Figure label="Monitored creators" value={totals.monitoredCreators} />
+          <Figure label="New commercial videos" value={totals.videos} note="last 30 days" />
+          <Figure label="Music matches" value={totals.musicMatches} note={`${totals.newMatches} new this week`} />
+          <Figure label="Open cases" value={totals.openCases} note="need a decision" />
+          <Figure label="High-priority reviews" value={counts.POTENTIAL_MISMATCH} note="potential mismatches" />
+        </section>
 
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="Potential mismatches" count={counts.POTENTIAL_MISMATCH} tone="mismatch" />
@@ -114,10 +111,11 @@ export default async function DashboardPage() {
 
         <section className="overflow-hidden rounded-lg border border-line bg-surface">
           <div className="border-b border-line px-5 py-4">
-            <h2 className="text-sm font-semibold">Rights assessments</h2>
+            <h2 className="text-sm font-semibold">Music matches</h2>
             <p className="mt-0.5 text-[0.8125rem] text-t2">
-              Every piece of commercial content scanned across your
-              monitored creators, most urgent first.
+              Every commercial video a catalogue track was identified in, most urgent first. Match
+              confidence is confidence in the music identification, not that an infringement
+              occurred.
             </p>
           </div>
 
@@ -129,6 +127,7 @@ export default async function DashboardPage() {
                   <th className="px-5 py-3 font-medium">Creator</th>
                   <th className="px-5 py-3 font-medium">Brand</th>
                   <th className="px-5 py-3 font-medium">Track</th>
+                  <th className="px-5 py-3 font-medium">Confidence</th>
                   <th className="px-5 py-3 font-medium">Published</th>
                   <th className="px-5 py-3 font-medium">Detail</th>
                   <th className="px-5 py-3 font-medium" />
@@ -136,50 +135,32 @@ export default async function DashboardPage() {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.key} className="border-b border-line last:border-0">
+                  <tr key={row.content.externalContentId} className="border-b border-line last:border-0">
                     <td className="px-5 py-3.5 align-top">
-                      {row.item.kind === "ASSESSED" ? (
-                        <StatusBadge status={row.item.assessment.status} />
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-hover px-2.5 py-1 text-xs font-medium text-t2 whitespace-nowrap">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
-                          {row.item.kind === "NO_MUSIC_MATCH"
-                            ? "No track identified"
-                            : "Identification failed"}
-                        </span>
-                      )}
+                      <StatusBadge status={row.assessment.status} />
                     </td>
                     <td className="px-5 py-3.5 align-top whitespace-nowrap text-tx">
-                      @{row.creatorUsername}
+                      @{row.creator.handle}
                     </td>
                     <td className="px-5 py-3.5 align-top text-t2">
-                      {row.brandNames.join(", ") || "—"}
+                      {row.content.brandNames.join(", ") || "—"}
                     </td>
                     <td className="px-5 py-3.5 align-top">
-                      {row.item.kind === "ASSESSED" ? (
-                        <div>
-                          <div className="text-tx">{row.item.musicMatch.title}</div>
-                          <div className="text-[0.8125rem] text-t2">
-                            {row.item.musicMatch.artist}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-t2">—</span>
-                      )}
+                      <div className="text-tx">{row.musicMatch.title}</div>
+                      <div className="text-[0.8125rem] text-t2">{row.musicMatch.artist}</div>
+                    </td>
+                    <td className="px-5 py-3.5 align-top whitespace-nowrap text-t2 tabular-nums">
+                      {formatConfidence(row.musicMatch.confidence)}
                     </td>
                     <td className="px-5 py-3.5 align-top whitespace-nowrap text-t2">
-                      {dateFormatter.format(row.publishedAt)}
+                      {dateFormatter.format(row.content.publishedAt)}
                     </td>
                     <td className="px-5 py-3.5 align-top text-t2">
-                      {row.item.kind === "ASSESSED" && row.item.assessment.reason
-                        ? REASON_LABELS[row.item.assessment.reason]
-                        : row.item.kind === "MUSIC_ID_ERROR"
-                          ? row.item.error
-                          : "—"}
+                      {row.assessment.reason ? REASON_LABELS[row.assessment.reason] : "—"}
                     </td>
                     <td className="px-5 py-3.5 align-top whitespace-nowrap">
                       <Link
-                        href={`/assessments/${encodeURIComponent(row.key)}`}
+                        href={`/assessments/${encodeURIComponent(row.content.externalContentId)}`}
                         className="text-[0.8125rem] font-medium text-accent hover:underline"
                       >
                         View
@@ -192,6 +173,16 @@ export default async function DashboardPage() {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function Figure({ label, value, note }: { label: string; value: number; note?: string }) {
+  return (
+    <div>
+      <div className="text-xs tracking-[0.02em] text-t2">{label}</div>
+      <div className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.025em] tabular-nums">{value}</div>
+      {note && <div className="mt-1 text-xs text-t2">{note}</div>}
     </div>
   );
 }

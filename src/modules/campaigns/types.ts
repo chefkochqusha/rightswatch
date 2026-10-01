@@ -6,19 +6,12 @@
  * doesn't carry its own campaign directly; it inherits campaign membership
  * from the creator who posted it.
  *
- * `CampaignRecord` deliberately does NOT carry `workspaceId`, unlike
- * `cases/types.ts`'s `CaseRecord`. Cases are created *through this app*
- * (`openCase`) and persisted per-workspace, so `workspaceId` is real,
- * load-bearing identifying data for them. Campaigns, like RightsRecords
- * (`rights-engine/types.ts`'s `RightsRecordInput`, which also omits
- * `workspaceId`), are reference data the workspace already has on file —
- * nothing in this app creates or edits a Campaign yet, so there's no
- * `InMemoryCampaignRepository` here, only a fixture-backed one, exactly
- * mirroring `modules/rights`'s shape (`FixtureRightsRepository`, no CRUD
- * repository). A real Prisma-backed `CampaignRepository` scopes its own
- * query by workspaceId internally (`WHERE workspaceId = ? AND creators =
- * { some: { id: creatorId } }`) without needing to round-trip it through
- * this return shape.
+ * `CampaignRecord` carries no `workspaceId`: a repository is scoped to one
+ * workspace when it's built (a Prisma-backed one queries `WHERE
+ * workspaceId = ? AND creators: { some: … }`), so the id would only ever
+ * repeat what the caller already knows. Campaigns are workspace data users
+ * manage (Brief §2: "assign creators to campaigns/projects"); until that's
+ * built, `FixtureCampaignRepository` serves the demo dataset's campaigns.
  */
 
 export interface CampaignRecord {

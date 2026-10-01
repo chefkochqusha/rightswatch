@@ -71,6 +71,12 @@ export interface RightsAssessmentInput {
      *  routes the result to UNKNOWN — the engine never silently guesses
      *  "worldwide" or a default market for a record that says otherwise. */
     territory: string | null;
+    /** Where `territory` came from, for the explanation only — it never
+     *  changes the verdict. `"content"` (the default): the platform reported
+     *  it for this post. `"creator"`: the post carried none, so it's the
+     *  country recorded for the creator (Brief §8, §11 "Country") — a
+     *  weaker signal, and the explanation says so. */
+    territorySource?: 'content' | 'creator';
     /** True for paid-partnership / #ad usage, false for organic. Every
      *  TikTok Commercial Content API result is commercial by definition
      *  (that's the whole product), so this is always `true` in production

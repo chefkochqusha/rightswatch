@@ -1,3 +1,4 @@
+import type { Platform } from "@/modules/connectors";
 import type {
   RightsAssessmentReason,
   RightsAssessmentStatus,
@@ -27,6 +28,31 @@ export const REASON_LABELS: Record<RightsAssessmentReason, string> = {
   CONFLICTING_RIGHTS_RECORDS: "Conflicting rights records",
   MANUAL_REVIEW_REQUIRED: "Manual review required",
 };
+
+export const PLATFORM_LABELS: Record<Platform, string> = {
+  TIKTOK: "TikTok",
+  INSTAGRAM: "Instagram",
+  YOUTUBE: "YouTube",
+};
+
+/**
+ * How a music match was made (Brief §9's `match_method`), by provider name.
+ * A provider this map doesn't know shows its own name.
+ */
+export const MATCH_METHOD_LABELS: Record<string, string> = {
+  fixture: "Demo identification",
+  manual: "Manual",
+};
+
+export function matchMethodLabel(provider: string, manual: boolean): string {
+  if (manual) return MATCH_METHOD_LABELS.manual;
+  return MATCH_METHOD_LABELS[provider] ?? provider;
+}
+
+/** Brief §9's example format: one decimal, as a percentage ("97.4%"). */
+export function formatConfidence(confidence: number): string {
+  return `${(confidence * 100).toFixed(1)}%`;
+}
 
 /**
  * Worst-first ranking for tables that list assessments across many

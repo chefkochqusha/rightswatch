@@ -3,15 +3,17 @@ import assert from "node:assert/strict";
 import { InMemoryScanResultRepository } from "./in-memory-repository";
 import { IDENTIFICATION_NOT_COMPLETED } from "./types";
 import type { ScanItemInput } from "./types";
-import { FIXTURE_COMMERCIAL_CONTENT } from "../connectors/tiktok/fixtures";
+import { demoContentFor } from "../demo-data/content";
 
-const CONTENT = FIXTURE_COMMERCIAL_CONTENT[0];
+// Lena's two September scenario posts, oldest first.
+const LENA_POSTS = demoContentFor("lena.creates", new Date("2026-09-01T00:00:00Z"), new Date("2026-09-30T23:59:59Z"));
+const CONTENT = LENA_POSTS[0];
 const CREATOR = { creatorExternalId: CONTENT.creatorExternalId, creatorUsername: CONTENT.creatorUsername };
 const MATCH = {
-  trackId: "demo-track-1",
-  title: "Neon Skyline",
-  artist: "Aurora Belle",
-  isrc: "DEA123456789",
+  trackId: "demo-track-midnight-run",
+  title: "Midnight Run",
+  artist: "Aiko",
+  isrc: "DEMO12600001",
   confidence: 0.97,
   provider: "fixture",
   manual: false,
@@ -105,7 +107,7 @@ describe("InMemoryScanResultRepository", () => {
 
   test("returns stored items in input order, and reads them back newest first", async () => {
     const repo = new InMemoryScanResultRepository();
-    const [older, newer] = [FIXTURE_COMMERCIAL_CONTENT[0], FIXTURE_COMMERCIAL_CONTENT[1]];
+    const [older, newer] = [LENA_POSTS[0], LENA_POSTS[1]];
     assert.ok(newer.publishedAt > older.publishedAt);
     const items: ScanItemInput[] = [
       { kind: "NO_MUSIC_MATCH", content: older, ...CREATOR },

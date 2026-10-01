@@ -3,6 +3,7 @@ import { MockTikTokConnector } from "@/modules/connectors";
 import { FixtureMusicIdentificationProvider } from "@/modules/music";
 import { FixtureRightsRepository } from "@/modules/rights";
 import { FixtureCampaignRepository } from "@/modules/campaigns";
+import { DEMO_NAMED_CREATORS, DEMO_WINDOW_START } from "@/modules/demo-data";
 import { openCase } from "@/modules/cases";
 import { notifyCaseOpened } from "@/modules/notifications";
 import type { ScanItemInput, StoredScanItem } from "@/modules/scan-results";
@@ -36,16 +37,9 @@ import { getScanResultStore } from "./scan-result-store";
  * (RELEASE_CHECKLIST.md).
  */
 
-const DEMO_CREATORS = [
-  { creatorExternalId: "demo-creator-1", creatorUsername: "mia.dances" },
-  { creatorExternalId: "demo-creator-2", creatorUsername: "leon.fit" },
-  { creatorExternalId: "demo-creator-3", creatorUsername: "noah.cooks" },
-  { creatorExternalId: "demo-creator-4", creatorUsername: "priya.beauty" },
-] as const;
-
-// Wide enough to include every fixture regardless of when "today" is.
-const SINCE = new Date("2000-01-01");
-const UNTIL = new Date("2100-01-01");
+// From the start of the demo dataset's scenarios up to now: the scenarios,
+// plus whatever the six named creators have "posted" since.
+const SINCE = DEMO_WINDOW_START;
 
 /** One stored scan item, as the workspace pages render it. */
 export type WorkspaceScanItem = StoredScanItem;
@@ -75,20 +69,26 @@ export async function runSampleScanForWorkspace(
   const rightsRepository = new FixtureRightsRepository();
   const campaignRepository = new FixtureCampaignRepository();
 
+  const now = new Date();
   const perCreator = await Promise.all(
-    DEMO_CREATORS.map(async (creator): Promise<ScanItemInput[]> => {
+    DEMO_NAMED_CREATORS.map(async (creator): Promise<ScanItemInput[]> => {
       const result = await runScan({
         connector,
         musicProvider,
         getRightsRecordsForTrack: (trackId) => rightsRepository.getRecordsForTrack(trackId),
         getCampaignIdsForCreator: async (creatorExternalId) =>
           (await campaignRepository.findForCreator(creatorExternalId)).map((c) => c.id),
-        creatorExternalId: creator.creatorExternalId,
-        creatorUsername: creator.creatorUsername,
+        creatorExternalId: creator.handle,
+        creatorUsername: creator.handle,
+        creatorCountry: creator.country,
         since: SINCE,
-        until: UNTIL,
+        until: now,
       });
-      return result.items.map((item) => ({ ...item, ...creator }));
+      return result.items.map((item) => ({
+        ...item,
+        creatorExternalId: creator.handle,
+        creatorUsername: creator.handle,
+      }));
     }),
   );
 
