@@ -164,7 +164,7 @@ application code until a provider is chosen.
 `ResendEmailSender`, chosen only when both `RESEND_API_KEY` and `EMAIL_FROM`
 are set (`app/_lib/email.ts`). Links in an email take their origin from
 `APP_URL` / `VERCEL_PROJECT_PRODUCTION_URL` in production, never from the
-request's Host header. Today only password reset sends email. Invite links
+request's Host header. Password reset and email confirmation send email. Invite links
 are still shown in-app for the inviter to copy, and in-app notifications
 are the only notification channel (see "Notifications" below). A
 domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
@@ -521,6 +521,13 @@ listed under "Known gaps"):
   once: after the password changes, the same link is dead. A reset also
   deletes every session of that user (`SessionRepository.deleteAllForUser`).
   Reset requests are rate limited (3 per window, in memory like the login limits).
+- **Email verification** (`modules/auth/email-verification.ts`,
+  `/verify-email`): signup emails a signed link (own HKDF key, naming the
+  user and the exact address, three days) and `User.emailVerifiedAt` is set
+  when it is opened; opening it twice keeps the first time. Nothing is gated
+  on it. A banner in the workspace asks for confirmation and offers to resend
+  (rate limited), but only when a real email provider is configured, since
+  asking for something nobody can do is noise. The demo is exempt.
 - **Settings** (`/workspace/settings`): a status board of what the
   workspace is connected to (TikTok, song search, music in posts, email,
   payments — read from the server's configuration, nothing secret shown) and
@@ -985,9 +992,9 @@ reads as an oversight:
   per-process, in-memory limiter only sees one serverless instance's
   traffic; this waits on the same shared store (Upstash Redis) the login
   limiter should move to
-- Email verification — Brief §17; password reset is built (see "Auth &
-  authorization"). Signup is still the one place that reveals whether an
-  email is registered
+- Signup is still the one place that reveals whether an email is
+  registered (Brief §17 asks for it not to; fixing it means signing up
+  without saying so, which needs working email first)
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
 - Managing campaigns (§2, and §8's "group creators" and "assign

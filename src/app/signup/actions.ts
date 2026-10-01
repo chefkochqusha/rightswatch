@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { signUp } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
+import { sendVerificationLink } from "@/app/_lib/email-verification";
 import { setSessionCookie } from "@/app/_lib/session-cookie";
 
 export interface SignUpFormState {
@@ -52,5 +53,7 @@ export async function signUpAction(
   }
 
   await setSessionCookie(result.user.id);
+  // Best effort: a mail provider that is down must not stop someone signing up.
+  await sendVerificationLink(result.user.id).catch(() => undefined);
   redirect("/workspace");
 }

@@ -82,6 +82,10 @@ export class PrismaUserRepository implements UserRepository {
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await getPrisma().user.update({ where: { id }, data: { passwordHash } });
   }
+
+  async markEmailVerified(id: string, at: Date): Promise<void> {
+    await getPrisma().user.updateMany({ where: { id, emailVerifiedAt: null }, data: { emailVerifiedAt: at } });
+  }
 }
 
 /**
@@ -224,6 +228,7 @@ function mapUser(row: {
   email: string;
   passwordHash: string;
   name: string | null;
+  emailVerifiedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }): UserRecord {
@@ -232,6 +237,7 @@ function mapUser(row: {
     email: row.email,
     passwordHash: row.passwordHash,
     name: row.name,
+    emailVerifiedAt: row.emailVerifiedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

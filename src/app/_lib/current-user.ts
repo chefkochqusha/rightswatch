@@ -5,7 +5,7 @@ import { getSessionUserId, hasSessionCookie } from "./session-cookie";
 import { getAuthStore } from "./auth-store";
 
 export interface CurrentSession {
-  user: { id: string; email: string; name: string | null };
+  user: { id: string; email: string; name: string | null; emailVerified: boolean };
   workspace: { id: string; name: string; slug: string };
   role: Role;
 }
@@ -46,7 +46,7 @@ export const getCurrentSession = cache(async function getCurrentSession(): Promi
   if (!workspace) return null;
 
   return {
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, email: user.email, name: user.name, emailVerified: user.emailVerifiedAt !== null },
     workspace: { id: workspace.id, name: workspace.name, slug: workspace.slug },
     role: membership.role,
   };

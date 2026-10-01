@@ -6,7 +6,7 @@ import type { UserRecord } from "@/modules/auth";
 import type { CaseRecord } from "@/modules/cases";
 
 function makeUser(id: string, name: string | null, email: string): UserRecord {
-  return { id, name, email, passwordHash: "hash", createdAt: new Date(), updatedAt: new Date() };
+  return { id, name, email, passwordHash: "hash", emailVerifiedAt: null, createdAt: new Date(), updatedAt: new Date() };
 }
 
 function makeCase(id: string, rightsAssessmentId: string): CaseRecord {

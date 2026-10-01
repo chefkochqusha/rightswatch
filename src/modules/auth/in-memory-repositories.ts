@@ -57,6 +57,7 @@ export class InMemoryUserRepository implements UserRepository {
       email: input.email.toLowerCase(),
       passwordHash: input.passwordHash,
       name: input.name,
+      emailVerifiedAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -67,6 +68,11 @@ export class InMemoryUserRepository implements UserRepository {
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     const user = this.byId.get(id);
     if (user) this.byId.set(id, { ...user, passwordHash, updatedAt: new Date() });
+  }
+
+  async markEmailVerified(id: string, at: Date): Promise<void> {
+    const user = this.byId.get(id);
+    if (user && !user.emailVerifiedAt) this.byId.set(id, { ...user, emailVerifiedAt: at, updatedAt: new Date() });
   }
 }
 

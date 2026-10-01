@@ -44,14 +44,15 @@ or a business decision at release time, it gets a line here.
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.
-- [ ] **Transactional email (Resend)** — password reset works today; it only
-  needs the account. Create a Resend account, verify your sending domain
+- [ ] **Transactional email (Resend)** — password reset and email
+  confirmation work today; they only need the account. Create a Resend account, verify your sending domain
   (SPF/DKIM records), then set `RESEND_API_KEY`, `EMAIL_FROM` (e.g.
   `RightsWatch <no-reply@yourdomain>`) and `APP_URL` (the public https
   address) in Vercel. Until then production says email isn't set up and sends
   nothing; locally the reset link is shown on the page. The Resend request is
   tested with a stubbed `fetch`, not yet against the live service — try one
-  reset email on the first deploy.
+  reset email and one confirmation email on the first deploy. The
+  "please confirm your email" banner only appears once these are set.
 - [ ] **Upstash Redis** via the Vercel Marketplace — scheduled scans and a
   login rate limit shared across serverless instances.
 - [ ] **Custom domain** (optional).

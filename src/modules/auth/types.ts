@@ -17,6 +17,8 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   name: string | null;
+  /** When the address was confirmed through an emailed link; null until then. */
+  emailVerifiedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +46,8 @@ export interface UserRepository {
   /** Re-stores a password at the current hashing cost after a successful
    *  login (`password.ts`'s `needsRehash`). */
   updatePasswordHash(id: string, passwordHash: string): Promise<void>;
+  /** Marks the address confirmed. Keeps the first time if called twice. */
+  markEmailVerified(id: string, at: Date): Promise<void>;
 }
 
 /** A validated, already-hashed new account — what `prepareUserAccount`

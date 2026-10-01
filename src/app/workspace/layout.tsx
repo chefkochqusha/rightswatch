@@ -5,6 +5,8 @@ import { getNotificationStore } from "@/app/_lib/notification-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { leaveDemoAction } from "@/app/demo/actions";
 import { logOutAction } from "@/app/workspace/actions";
+import { getEmailSender } from "@/app/_lib/email";
+import { VerifyEmailBanner } from "@/components/layout/verify-email-banner";
 import { WorkspaceNav } from "@/components/layout/workspace-nav";
 import type { WorkspaceNavItem } from "@/components/layout/nav-active";
 import { ROLE_LABELS } from "@/components/team/labels";
@@ -35,6 +37,8 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
   );
 
   const isDemo = session.workspace.slug === DEMO_WORKSPACE_SLUG;
+  // Only ask when a link can actually be sent: nagging for something nobody can do is noise.
+  const askToVerify = !isDemo && !session.user.emailVerified && getEmailSender().mode === "RESEND";
 
   const primary: WorkspaceNavItem[] = [
     { href: "/workspace", label: "Overview", alsoActiveFor: ["/workspace/items"] },
@@ -84,6 +88,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
             </form>
           </div>
         )}
+        {askToVerify && <VerifyEmailBanner email={session.user.email} />}
         <header className="flex items-center justify-between gap-4 border-b border-line bg-bg px-4 py-3 md:sticky md:top-0 md:z-10 md:px-10">
           <div className="flex min-w-0 items-center gap-2 text-[0.8125rem]">
             <span className="truncate font-semibold text-tx">{session.workspace.name}</span>
