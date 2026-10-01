@@ -114,16 +114,16 @@ made once and referenced everywhere rather than re-litigated per file.
   `FixtureCampaignRepository` — kept field-compatible with the Prisma
   schema until the features below replace them; what it *writes* is real.
 - **Rights, creators and campaigns are workspace data the Brief has users
-  manage — not built yet, rather than reference data synced from
-  elsewhere.** An earlier version of this document said the opposite,
-  after reading only the start of the Brief: §10 calls the Rights Library
-  "one of the most important product areas" (structured per-track rights a
-  workspace maintains), and §8 makes creators first-class records users
-  add, pause, resume and assign to campaigns. Their `Fixture*` stand-ins
-  are placeholders for those features, which are on the build list.
-  `Connector`/`ConnectorCredential` arrive
-  with the real TikTok connector, which is what has something to store
-  in them.
+  manage, not reference data synced from elsewhere.** An earlier version
+  of this document said the opposite, after reading only the start of the
+  Brief: §10 calls the Rights Library "one of the most important product
+  areas" (structured per-track rights a workspace maintains), and §8 makes
+  creators first-class records users add, pause, resume and assign to
+  campaigns. Creators are built (`modules/creators`, see "Creator
+  management"); rights records and campaigns still come from the demo
+  dataset until the Rights Library replaces them. `Connector`/
+  `ConnectorCredential` arrive with the real TikTok connector, which is
+  what has something to store in them.
 - **`getPrisma()`, never a top-level `prisma` constant**
   (`src/lib/prisma-client.ts`): the generated client, its driver adapter, and
   the `pg` pool all load via a `require()` deferred until `getPrisma()`
@@ -140,11 +140,16 @@ made once and referenced everywhere rather than re-litigated per file.
   row are Brief §21; Upstash specifically is a standing project decision
   (pairing naturally with Neon's serverless-first hosting story), not a
   Brief citation.
-- **Current reality:** nothing is queued yet. The scan pipeline runs
-  synchronously, in-process, triggered by a Server Action ("Run a sample
-  scan") rather than a scheduled job. `Job` exists in the Prisma schema but
-  has no application code reading or writing it. (`WebhookEvent`, the other
-  operations table, is live — see "Payments".)
+- **Current reality:** nothing is queued yet. A scan runs synchronously,
+  in-process, triggered by a Server Action ("Run scan") rather than a
+  scheduled job — but every run is already recorded as a `Job` row
+  (`modules/jobs`): created `RUNNING` when it starts, `COMPLETED` or
+  `FAILED` when it ends, with per-creator results as its payload. That row
+  is what a creator's monitoring history (§8) reads, and what a queue will
+  pick up and retry once there is one. `Job.workspaceId` is an addition to
+  §21's field list, documented on the model: a scan always works for one
+  workspace. (`WebhookEvent`, the other operations table, is live — see
+  "Payments".)
 
 ### Object storage
 
@@ -244,9 +249,11 @@ Server Actions, or pages that use it.
 | `rights-engine` | Pure rights-assessment function — no storage, nothing to swap | §11, §43 |
 | `rights` | Read-only lookup of a workspace's `RightsRecord`s by track | §42 |
 | `campaigns` | Read-only lookup of a creator's campaign memberships | §11 |
+| `creators` | The watchlist: add, pause, resume, remove, edit; plan limits on monitoring | §8, §19 |
 | `demo-data` | The fictional dataset every demo adapter reads: catalogue, creators, posts (see "Demo data") | §48, §62 |
 | `scan-pipeline` | Wires connector → music ID → rights engine into one scan | §21, §50 |
-| `scan-results` | Stores a scan's `Creator → Content → … → RightsAssessment` chain, idempotently | §22, §43, §50 |
+| `scan-results` | Stores a scan's `Content → … → RightsAssessment` chain for a watchlist creator, idempotently | §22, §43, §50 |
+| `jobs` | The durable record of every scan run, and its per-creator results | §21 |
 | `cases` | Turns a flagged assessment into actionable, assignable work | §43 |
 | `notifications` | In-app notifications for workspace members | schema only — not itself Brief-numbered |
 | `billing` | Plans and subscriptions | §18–§20 |
@@ -367,7 +374,7 @@ field-compatible with this schema.
 | Domain | Models | Built today? |
 |---|---|---|
 | Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`), `Session` | Yes — Prisma-backed (Neon), `modules/auth`. `Session` is a documented addition to §43's "at minimum" list (see "Auth & authorization") |
-| Creators & content | `Creator`, `Content`, `CommercialContent` (+`Platform`) | Yes — Prisma-backed, written by every scan (`modules/scan-results`). Creators aren't user-managed yet (Brief §8's watchlist is on the build list); a scan creates the ones it sees |
+| Creators & content | `Creator` (+`CreatorStatus`), `Content`, `CommercialContent` (+`Platform`) | Yes — Prisma-backed. `Creator` is the watchlist members manage (`modules/creators`, see "Creator management"), with two documented additions to §8's fields: `lastError` and `removedAt`. `Content`/`CommercialContent` are written by every scan (`modules/scan-results`) for watchlist creators only — a scan never adds a creator |
 | Campaigns | `Campaign` | Fixture-backed lookup (`modules/campaigns`) |
 | Music | `MusicTrack`, `MusicMatch` | Yes — Prisma-backed, written by every scan (`modules/scan-results`); one `MusicMatch` per (content, track, provider), plus a track-less one recording "nothing identified" |
 | Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: fixture lookup (`modules/rights`) until the Rights Library (Brief §10) is built. `RightsAssessment`: computed by `rights-engine`, persisted by `modules/scan-results` with its explanation and the rights records it matched. `RightsRule`: unbuilt (see below) |
@@ -375,7 +382,7 @@ field-compatible with this schema.
 | Notifications | `Notification`, `NotificationPreference` | `Notification`: yes, Prisma-backed (Neon), `modules/notifications`. `NotificationPreference`: deliberately unbuilt (see "Notifications") |
 | Billing | `Plan`, `PlanEntitlement`, `Subscription`, `UsageRecord` (+2 enums) | `Plan`/`Subscription`: yes, Prisma-backed (Neon); payment gateway is Stripe once configured, demo billing until then (see "Open decisions" → Payments). `PlanEntitlement`/`UsageRecord`: deliberately unbuilt (see "Billing") |
 | Connectors | `Connector`, `ConnectorCredential` (+enum) | Unbuilt — nothing to configure before Phase 10 |
-| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, Prisma-backed (Neon), `modules/audit` — see "Case management". `WebhookEvent`: yes, Prisma-backed (Neon), `modules/webhooks` — Stripe webhook idempotency (see "Open decisions" → Payments). `Job`: unbuilt, blocked on BullMQ/Redis rather than just not-yet-written |
+| Operations | `AuditLog`, `Job`, `WebhookEvent` (+enum) | `AuditLog`: yes, Prisma-backed (Neon), `modules/audit` — see "Case management". `WebhookEvent`: yes, Prisma-backed (Neon), `modules/webhooks` — Stripe webhook idempotency (see "Open decisions" → Payments). `Job`: yes, Prisma-backed, `modules/jobs` — every scan run is one, with `workspaceId` added to §21's fields; a queue that runs them is still to come (see "Open decisions" → Background jobs) |
 
 `RightsRecord` and `RightsRule` are split per Brief §43's allowance to split
 or merge entities "if there is a strong reason" — documented directly on
@@ -516,24 +523,33 @@ a demo script, a real BullMQ job, or a test. Deduplication is deliberately
 not reimplemented inside it: Brief §22 asks for a uniqueness strategy on
 stable external ids, which is the database's job, so it happens where the
 results are persisted — `modules/scan-results`, whose `saveScan` upserts the
-whole `Creator → Content → CommercialContent → MusicMatch →
-RightsAssessment` chain on the keys described under "Database
-architecture". Saving the same scan twice touches the same rows, keeps
-every `RightsAssessment` id (and so every Case) attached, and never
-deletes: a later scan that identifies nothing, or fails, can't erase an
-earlier identification.
+`Content → CommercialContent → MusicMatch → RightsAssessment` chain under
+a watchlist creator, on the keys described under "Database architecture".
+Saving the same scan twice touches the same rows, keeps every
+`RightsAssessment` id (and so every Case) attached, and never deletes: a
+later scan that identifies nothing, or fails, can't erase an earlier
+identification.
 
-`Scheduler` and `Scan Job` don't exist yet — nothing schedules scans on a
-cadence. Two callers invoke `runScan()` directly today:
+`Scheduler` doesn't exist yet — nothing schedules scans on a cadence. Two
+callers invoke `runScan()` directly today:
 
 - **`get-demo-scan-results.ts`** — Demo Mode's public pages, recomputed
   fresh on every request, nothing persisted.
-- **`workspace-scan-store.ts`** — the real, authenticated workspace's "Run a
-  sample scan" button. This is the one caller that stores its results
-  (`modules/scan-results`, Postgres) and carries out the pipeline's last
-  two documented steps, Case Creation and Notifications (see those sections
-  below), against a real, logged-in workspace rather than an anonymous demo
-  visitor.
+- **`workspace-scan-store.ts`'s `runWorkspaceScan`** — "Run scan" in the
+  real workspace, and the one caller that stores its results and carries
+  out the pipeline's last two steps, Case Creation and Notifications (see
+  those sections below):
+  - **Who:** the watchlist's monitored creators, oldest first, up to the
+    plan's limit (§19); any past it are left out and counted on the job,
+    not silently dropped.
+  - **Which window:** since the creator was last reached, with a day's
+    overlap; for a creator never scanned, the last 30 days — in demo mode,
+    back to the start of the demo scenarios instead, so a new workspace
+    sees all of them.
+  - **One creator at a time**, so a failing creator (a connector error)
+    marks only that creator `ERROR` with the reason and the rest go on.
+  - **Recorded as a `Job`** (§21) with per-creator results, which is what
+    a creator's monitoring history reads.
 
 **Campaign matching** feeds into the Rights Engine's `campaignId` input: a
 creator can belong to zero, one, or many campaigns (`Campaign.creators` is
@@ -571,6 +587,43 @@ matched track) and returns a verdict:
 Being framework-free and side-effect-free is the point: it's reused
 unchanged by `scan-pipeline`, and would be reused unchanged from a future
 one-off re-assessment script or API route.
+
+## Creator management
+
+(Brief §8, §19)
+
+The watchlist is the workspace's list of creators RightsWatch checks —
+`modules/creators`, `/workspace/creators` and a page per creator. A member
+of the ANALYST tier or up (the schema's role comment: "monitoring + cases +
+rights") can add, pause, resume, remove and edit; every change is
+audit-logged (§14's first example is "user added creator").
+
+- **Identity:** a TikTok creator is its username. The Commercial Content
+  API is queried by username and returns no other stable id (§4), so
+  `externalId` is the username, lowercased; a renamed account reads as a
+  new creator. A username can be pasted as "@name", "name" or a profile
+  link.
+- **Status vs. monitoring:** `monitoringEnabled` is the switch (pause and
+  resume) and what a scan reads; `status` is what the list shows (§8's
+  Active, Paused, Error, Pending), kept in step by those actions and by
+  each scan's outcome. `lastError` keeps the connector's reason while a
+  creator is in `ERROR` (§37).
+- **Removing is a soft delete** (`removedAt`): the creator leaves the
+  watchlist and is never scanned again, but its posts, assessments and
+  cases stay — §13: "Every case should preserve evidence". Adding the same
+  username again restores the same record with its history.
+- **Plan limits are enforced in the backend (§19)** where monitoring
+  starts: adding a creator and resuming one are refused at the plan's
+  `creatorCap` (no subscription, or a canceled one, allows none); paused
+  and removed creators don't count. The billing page won't offer a plan
+  smaller than what's monitored, and `choosePlanAction` refuses one. A plan
+  that shrinks anyway (a downgrade in Stripe's portal) leaves the extra
+  creators unscanned rather than deleted — the scan takes the oldest up to
+  the limit and records how many it skipped.
+- **Country** is the one detail that changes a verdict: the Commercial
+  Content API reports no territory for a post, so the creator's country
+  stands in when a rights record covers specific territories, and the
+  assessment's explanation says so (see "Rights engine").
 
 ## Case management
 
@@ -655,9 +708,10 @@ billing until then — see "Open decisions" → Payments and
 and `UsageRecord` (periodic usage snapshots) are both modeled in the schema
 but deliberately unbuilt: nothing in this codebase has a concrete
 entitlement key or a billing-period usage rollup to populate them with yet,
-and the one usage figure the UI actually needs (tracked creators vs.
-`creatorCap`) is counted live from the workspace's stored scan results
-rather than a stored snapshot. Building either now would be speculative scope.
+and the one usage figure the UI actually needs (monitored creators vs.
+`creatorCap`, §20) is counted live from the watchlist rather than a stored
+snapshot. Building either now would be speculative scope. How the limit is
+enforced is under "Creator management".
 
 ## Demo Mode vs. the real workspace
 
@@ -669,16 +723,18 @@ Two parallel surfaces exist on purpose:
 - **The real workspace** (`/workspace/*`) — Phase 5 (signup/auth) onward.
   Authenticated, session-gated by `proxy.ts` + `current-user.ts`.
 
-A freshly signed-up workspace has no real TikTok connection yet — Phase 10
-is still gated on TikTok's reply — so it would otherwise sit empty. "Run a
-sample scan" (`workspace-scan-store.ts`) bridges this: it runs the exact
-same fixture pipeline Demo Mode uses, but stores the results *in that real
-workspace* (Postgres, `modules/scan-results`) and opens real Cases against
-them, which is what makes them meaningful (a real `workspaceId`, real
-`RightsAssessment` rows, a real logged-in acting user) in a way the
-anonymous public demo's output isn't. The only thing Phase 10 changes is
-swapping `MockTikTokConnector` for a real one — storage and the pipeline
-call stay as they are.
+There's no real TikTok connection yet — Phase 10 is still gated on
+TikTok's reply — so the real workspace runs in demo mode
+(`app/_lib/connector-mode.ts`), labeled "Demo data" in its top bar: "Run
+scan" (`workspace-scan-store.ts`) runs the same demo connector and fixture
+providers as Demo Mode, over the workspace's own watchlist. The demo
+connector has posts for any username — the scenarios for §62's six
+creators (one click adds them), generated ones for anyone else — so a
+creator a member adds is scanned like any other. The results are stored in
+that workspace and real Cases are opened against them (a real
+`workspaceId`, real `RightsAssessment` rows, a real acting user). The only
+thing Phase 10 changes is swapping `MockTikTokConnector` for a real one —
+the watchlist, storage and the pipeline call stay as they are.
 
 ## Routing, errors & metadata
 
@@ -823,6 +879,10 @@ reads as an oversight:
   authorization")
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
+- Assigning creators to campaigns (§2, and §8's "group creators" and
+  "assign campaign") — arrives with the Rights Library, whose records are
+  what a campaign scopes; until then a creator's campaigns are the demo
+  dataset's, shown read-only on its page
 - A custom favicon / brand mark — `src/app/favicon.ico` is still the
   default `create-next-app` icon (unmodified since the original scaffold);
   there's no logo yet to replace it with

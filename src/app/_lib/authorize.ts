@@ -42,7 +42,9 @@ export async function requireWorkspaceManager(): Promise<CurrentSession> {
   return session;
 }
 
-/** Cases and the sample-scan pipeline that feeds them. */
+/** Monitoring, cases and rights — the ANALYST tier and up (the schema's
+ *  role comment: "ANALYST // monitoring + cases + rights"): the watchlist,
+ *  scans, and the cases they open. */
 export async function requireCaseManager(): Promise<CurrentSession> {
   const session = await requireSession();
   if (!canManageCases(session.role)) {

@@ -26,7 +26,7 @@ export function WorkspaceNav({
   return (
     <nav
       aria-label="Workspace"
-      className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-col md:gap-6 md:overflow-visible md:px-0 md:pb-0"
+      className="relative -mx-4 flex gap-1 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-col md:gap-6 md:overflow-visible md:px-0 md:pb-0"
     >
       <NavList items={primary} pathname={pathname} />
       <NavList items={secondary} pathname={pathname} />

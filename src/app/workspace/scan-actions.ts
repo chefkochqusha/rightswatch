@@ -2,21 +2,54 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
-import { runSampleScanForWorkspace } from "@/app/_lib/workspace-scan-store";
+import { runWorkspaceScan } from "@/app/_lib/workspace-scan-store";
 
 /**
- * Populates the caller's own real workspace with the same sample-scan
- * fixtures the public Demo Mode uses — see `workspace-scan-store.ts` for
- * why this exists. Re-running is safe: stored results are updated in place,
- * never duplicated, and existing cases stay attached to the same assessment
- * rows (`modules/scan-results`). Same permission tier as case management (`requireCaseManager`) —
- * scans exist to feed cases, so whoever can work a case can also refresh
- * the data behind it; a VIEWER can look but not trigger new scans.
+ * "Run scan" (Brief §50) for the caller's workspace — the ANALYST tier and
+ * up: scans exist to feed cases, so whoever works cases can refresh the
+ * data behind them; a VIEWER can look but not start one. Re-running is
+ * safe: stored results update in place, and existing cases stay attached.
  */
-export async function runSampleScanAction() {
+
+export type ScanActionState =
+  | { status: "idle" }
+  | {
+      status: "done";
+      creators: number;
+      videos: number;
+      matches: number;
+      newMatches: number;
+      casesOpened: number;
+      failedCreators: number;
+      skippedOverLimit: number;
+    }
+  | { status: "error"; message: string };
+
+export async function runScanAction(_prev: ScanActionState, _formData: FormData): Promise<ScanActionState> {
   const session = await requireCaseManager();
-  await runSampleScanForWorkspace(session.workspace.id, session.user.id);
-  // The whole workspace layout: a scan can open cases, and each one adds to
-  // the sidebar's unread-notification badge.
+  const result = await runWorkspaceScan(session.workspace.id, session.user.id);
+  // The whole layout: a scan can open cases, and each one adds to the
+  // sidebar's unread-notification badge.
   revalidatePath("/workspace", "layout");
+
+  if (!result.ok) {
+    return {
+      status: "error",
+      message:
+        result.error === "NO_PLAN"
+          ? "Choose a plan to start monitoring. Every plan starts with a free trial."
+          : "Add a creator to your watchlist first. A scan checks the creators you monitor.",
+    };
+  }
+  const payload = result.job.payload;
+  return {
+    status: "done",
+    creators: payload?.creatorsTotal ?? 0,
+    videos: payload?.videosChecked ?? 0,
+    matches: payload?.matches ?? 0,
+    newMatches: payload?.newMatches ?? 0,
+    casesOpened: payload?.casesOpened ?? 0,
+    failedCreators: payload?.creators.filter((creator) => creator.error).length ?? 0,
+    skippedOverLimit: payload?.skippedOverLimit ?? 0,
+  };
 }

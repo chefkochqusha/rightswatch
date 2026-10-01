@@ -72,7 +72,7 @@ export default async function AuditLogPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
         <p className="mt-1 text-sm text-t2">
-          Every case action taken in {session.workspace.name}, newest first.
+          Every change to cases and the watchlist in {session.workspace.name}, newest first.
         </p>
       </div>
 
@@ -81,12 +81,12 @@ export default async function AuditLogPage() {
           <div className="p-8 text-center">
             <h2 className="text-sm font-semibold">No activity yet</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-t2">
-              You&rsquo;ll see an entry here whenever a case is opened, its status changes, or
-              it&rsquo;s reassigned.
+              You&rsquo;ll see an entry here whenever someone changes the watchlist, or a case is
+              opened, moved to another status or reassigned.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-[0.8125rem] text-t2">

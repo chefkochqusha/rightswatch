@@ -39,12 +39,20 @@ export class InMemoryScanResultRepository implements ScanResultRepository {
     return items.sort((a, b) => b.content.publishedAt.getTime() - a.content.publishedAt.getTime());
   }
 
+  async findForCreator(workspaceId: string, creatorId: string): Promise<StoredScanItem[]> {
+    return (await this.findForWorkspace(workspaceId)).filter((item) => item.creatorId === creatorId);
+  }
+
   async findByContentId(workspaceId: string, externalContentId: string): Promise<StoredScanItem | null> {
     return this.byWorkspace.get(workspaceId)?.get(externalContentId) ?? null;
   }
 
   private merge(workspaceId: string, item: ScanItemInput, existing: StoredScanItem | undefined): StoredScanItem {
-    const creator = { creatorExternalId: item.creatorExternalId, creatorUsername: item.creatorUsername };
+    const creator = {
+      creatorId: item.creatorId,
+      creatorExternalId: item.creatorExternalId,
+      creatorUsername: item.creatorUsername,
+    };
 
     if (item.kind === "ASSESSED") {
       const key = [workspaceId, item.content.externalContentId, trackKey(item.musicMatch), item.musicMatch.provider].join("|");

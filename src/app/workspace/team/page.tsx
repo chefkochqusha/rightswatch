@@ -63,7 +63,7 @@ export default async function TeamPage() {
         <div className="border-b border-line px-5 py-4">
           <h2 className="text-sm font-semibold">Members ({members.length})</h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line text-[0.8125rem] text-t2">

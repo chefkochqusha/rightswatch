@@ -1,7 +1,7 @@
 import type { AuditLogRecord } from "@/modules/audit";
 import type { CaseRecord } from "@/modules/cases";
 import type { UserRecord } from "@/modules/auth";
-import { getAuditActionLabel, getCaseStatusLabelOrRaw } from "./labels";
+import { getAuditActionLabel, getCaseStatusLabelOrRaw, getCreatorActionLabel } from "./labels";
 
 /**
  * The audit log page's view-model: everything `AuditLogRow` needs, already
@@ -75,6 +75,9 @@ function describeAction(
       return `Changed the case assignment from ${from} to ${to}`;
     }
     default:
+      if (entry.targetType === "creator") {
+        return getCreatorActionLabel(entry.action, getMetadataString(entry.metadata, "handle"));
+      }
       // Covers "case.opened" today, and — deliberately, since `action` is
       // an open string — anything a future caller ever writes that this
       // file hasn't been taught a richer description for.
@@ -83,17 +86,18 @@ function describeAction(
 }
 
 /**
- * Only ever resolves a link for `targetType === "case"`, the only target
- * type any real caller writes today (`modules/audit/types.ts`). Anything
- * else — a "case" entry whose case can't be found, or whose assessment no
- * longer maps to a stored item — degrades to no link rather than a broken
- * one.
+ * Links an entry to what it's about: a creator's page, or the item a case
+ * belongs to. A "case" entry whose case can't be found, or whose
+ * assessment no longer maps to a stored item, degrades to no link rather
+ * than a broken one; so does any target type this file doesn't know.
  */
 function resolveHref(
   entry: AuditLogRecord,
   casesById: Map<string, CaseRecord>,
   contentIdByRightsAssessmentId: Map<string, string>,
 ): string | null {
+  // A removed creator's page still exists — its history stays.
+  if (entry.targetType === "creator") return `/workspace/creators/${encodeURIComponent(entry.targetId)}`;
   if (entry.targetType !== "case") return null;
   const relatedCase = casesById.get(entry.targetId);
   if (!relatedCase) return null;

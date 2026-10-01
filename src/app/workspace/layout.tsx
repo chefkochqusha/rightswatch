@@ -34,6 +34,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
 
   const primary: WorkspaceNavItem[] = [
     { href: "/workspace", label: "Overview", alsoActiveFor: ["/workspace/items"] },
+    { href: "/workspace/creators", label: "Creators" },
     { href: "/workspace/team", label: "Team" },
     { href: "/workspace/billing", label: "Billing" },
   ];
@@ -56,7 +57,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
             >
               RW
             </span>
-            <span className="text-xs font-bold tracking-[0.14em]">RIGHTSWATCH</span>
+            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">RightsWatch</span>
           </Link>
           <WorkspaceNav primary={primary} secondary={secondary} />
         </aside>
@@ -69,15 +70,16 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
             {getConnectorMode() === "DEMO" && (
               <span
                 title="TikTok isn't connected yet, so scans run against fictional demo data."
-                className="shrink-0 rounded-full bg-review-bg px-2 py-0.5 text-[0.6875rem] font-bold tracking-[0.08em] text-review"
+                className="shrink-0 rounded-full bg-review-bg px-2.5 py-0.5 text-xs font-medium text-review"
               >
-                DEMO MODE
+                Demo data
               </span>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-3 text-[0.8125rem] text-t2">
-            <span className="hidden sm:inline">
-              {session.user.name ?? session.user.email} · {ROLE_LABELS[session.role]}
+          <div className="flex shrink-0 items-center gap-3 text-[0.8125rem]">
+            <span className="hidden text-right leading-tight sm:block">
+              <span className="block text-tx">{session.user.name ?? session.user.email}</span>
+              <span className="block text-xs text-t2">{ROLE_LABELS[session.role]}</span>
             </span>
             <form action={logOutAction}>
               <button

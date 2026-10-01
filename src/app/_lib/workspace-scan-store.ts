@@ -3,43 +3,52 @@ import { MockTikTokConnector } from "@/modules/connectors";
 import { FixtureMusicIdentificationProvider } from "@/modules/music";
 import { FixtureRightsRepository } from "@/modules/rights";
 import { FixtureCampaignRepository } from "@/modules/campaigns";
-import { DEMO_NAMED_CREATORS, DEMO_WINDOW_START } from "@/modules/demo-data";
+import { DEMO_WINDOW_START } from "@/modules/demo-data";
 import { openCase } from "@/modules/cases";
 import { notifyCaseOpened } from "@/modules/notifications";
+import { scanOutcomeChanges, type CreatorRecord } from "@/modules/creators";
+import {
+  SCAN_JOB_TYPE,
+  emptyScanPayload,
+  type JobRecord,
+  type ScanJobCreatorResult,
+  type ScanJobPayload,
+} from "@/modules/jobs";
 import type { ScanItemInput, StoredScanItem } from "@/modules/scan-results";
 import { getCaseStore } from "./case-store";
 import { getNotificationStore } from "./notification-store";
 import { getAuthStore } from "./auth-store";
 import { getAuditStore } from "./audit-store";
 import { getScanResultStore } from "./scan-result-store";
+import { getCreatorStore } from "./creator-store";
+import { getJobStore } from "./job-store";
+import { getCreatorAllowance } from "./creator-allowance";
+import { getConnectorMode } from "./connector-mode";
 
 /**
- * Per-workspace "sample scan" results for the real, authenticated app —
- * distinct from `get-demo-scan-results.ts` (which recomputes fresh on every
- * request, for the public Demo Mode) even though both call the exact same
- * `runScan()` pipeline against the exact same mock connector and fixture
- * providers.
+ * A workspace's scan (Brief §21, §50): fetch each monitored creator's
+ * commercial content, identify the music, assess the rights, store the
+ * results, open a case for anything flagged, and tell the team.
  *
- * Why this exists: a freshly signed-up workspace has no real TikTok
- * connection yet (Phase 10 is still gated on API access), so it would
- * otherwise sit completely empty. "Run a sample scan" shows what a real scan
- * produces, *stored in that workspace* (`modules/scan-results`, Postgres) —
- * which is what makes opening real Cases against these items meaningful: a
- * Case's `rightsAssessmentId` points at a real `RightsAssessment` row. The
- * only thing Phase 10 changes is swapping `MockTikTokConnector` for the real
- * one; storage and the pipeline call stay as they are.
+ * - **Who is scanned** is the watchlist (`modules/creators`): creators not
+ *   removed and not paused, oldest first, up to the plan's limit (§19) —
+ *   any beyond it are left out and counted, not silently dropped.
+ * - **Which window**: everything since the creator was last reached (with
+ *   a day's overlap, so a post published while the last scan ran isn't
+ *   missed), or the last 30 days for a creator never scanned. In demo mode
+ *   a first scan reaches back to the start of the demo dataset's scenarios
+ *   instead, so a new workspace sees all of them.
+ * - **Every run is a `Job`** (§21), created when it starts and completed
+ *   or failed when it ends, with per-creator results as its payload — what
+ *   a creator's monitoring history (§8) and "last scan" (§7) read.
  *
- * `runSampleScanForWorkspace` also carries out the pipeline's documented
- * next steps (`scan-pipeline/types.ts`: "Rights Engine → Case Creation →
- * Notifications"), so a flagged item is tracked as a Case the moment a scan
- * finds it, and every workspace member has an in-app notification about it.
- * Notifications are in-app only — there's no email provider yet
- * (RELEASE_CHECKLIST.md).
+ * Until the real TikTok connector exists (`connector-mode.ts`), the
+ * connector, music identification, rights records and campaigns are the
+ * demo dataset's. Swapping in the real ones changes nothing below.
  */
 
-// From the start of the demo dataset's scenarios up to now: the scenarios,
-// plus whatever the six named creators have "posted" since.
-const SINCE = DEMO_WINDOW_START;
+const INITIAL_LOOKBACK_DAYS = 30;
+const DAY_MS = 86_400_000;
 
 /** One stored scan item, as the workspace pages render it. */
 export type WorkspaceScanItem = StoredScanItem;
@@ -57,99 +66,178 @@ export async function getWorkspaceScanItem(
   return getScanResultStore().results.findByContentId(workspaceId, contentId);
 }
 
-export async function runSampleScanForWorkspace(
+export type RunWorkspaceScanResult =
+  | { ok: true; job: JobRecord<ScanJobPayload> }
+  | { ok: false; error: "NO_PLAN" | "NO_CREATORS" };
+
+export async function runWorkspaceScan(
   workspaceId: string,
-  /** The user who clicked "Run a sample scan" — threaded through only so
-   *  any case this run opens can be audit-logged against a real actor
-   *  rather than `null`. */
+  /** Who started it — recorded on the job, and the actor of any case it
+   *  opens in the audit log. */
   triggeredByUserId: string,
-): Promise<WorkspaceScanItem[]> {
+): Promise<RunWorkspaceScanResult> {
+  const allowance = await getCreatorAllowance(workspaceId);
+  if (allowance.cap <= 0) return { ok: false, error: "NO_PLAN" };
+
+  const creatorRepository = getCreatorStore().creators;
+  const monitored = (await creatorRepository.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
+  if (monitored.length === 0) return { ok: false, error: "NO_CREATORS" };
+  const creators = monitored.slice(0, allowance.cap);
+
+  const connectorMode = getConnectorMode();
+  const jobs = getJobStore().jobs;
+  const startedAt = new Date();
+  const payload = emptyScanPayload({
+    triggeredByUserId,
+    connectorMode,
+    creatorsTotal: creators.length,
+    skippedOverLimit: monitored.length - creators.length,
+  });
+  const job = await jobs.create<ScanJobPayload>({
+    workspaceId,
+    type: SCAN_JOB_TYPE,
+    status: "RUNNING",
+    attempts: 1,
+    startedAt,
+    payload,
+  });
+
+  try {
+    const final = await scanCreators(workspaceId, triggeredByUserId, creators, startedAt, payload);
+    return {
+      ok: true,
+      job: await jobs.update<ScanJobPayload>(job.id, { status: "COMPLETED", completedAt: new Date(), payload: final }),
+    };
+  } catch (error) {
+    await jobs.update<ScanJobPayload>(job.id, {
+      status: "FAILED",
+      completedAt: new Date(),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+async function scanCreators(
+  workspaceId: string,
+  triggeredByUserId: string,
+  creators: CreatorRecord[],
+  now: Date,
+  payload: ScanJobPayload,
+): Promise<ScanJobPayload> {
   const connector = new MockTikTokConnector();
   const musicProvider = new FixtureMusicIdentificationProvider();
   const rightsRepository = new FixtureRightsRepository();
   const campaignRepository = new FixtureCampaignRepository();
+  const results = getScanResultStore().results;
+  const creatorRepository = getCreatorStore().creators;
 
-  const now = new Date();
-  const perCreator = await Promise.all(
-    DEMO_NAMED_CREATORS.map(async (creator): Promise<ScanItemInput[]> => {
-      const result = await runScan({
-        connector,
-        musicProvider,
-        getRightsRecordsForTrack: (trackId) => rightsRepository.getRecordsForTrack(trackId),
-        getCampaignIdsForCreator: async (creatorExternalId) =>
-          (await campaignRepository.findForCreator(creatorExternalId)).map((c) => c.id),
-        creatorExternalId: creator.handle,
-        creatorUsername: creator.handle,
-        creatorCountry: creator.country,
-        since: SINCE,
-        until: now,
-      });
-      return result.items.map((item) => ({
-        ...item,
-        creatorExternalId: creator.handle,
-        creatorUsername: creator.handle,
-      }));
-    }),
-  );
-
-  // Stored first, so every flagged item has a real `RightsAssessment` row
-  // for its Case to point at. Re-running keeps the same rows — and so every
-  // existing Case stays attached (see `modules/scan-results/types.ts`).
-  const items = await getScanResultStore().results.saveScan({
-    workspaceId,
-    musicProviderName: musicProvider.providerName,
-    items: perCreator.flat(),
-  });
-
-  // Case Creation: only for items the Rights Engine flagged — a CLEARED
-  // assessment has nothing to investigate. `openCase` is idempotent, so a
-  // re-run never duplicates an open case or disturbs one a human has since
-  // moved to RESOLVED/DISMISSED; it only fills in cases for items that
-  // don't have one yet.
-  const caseRepository = getCaseStore().cases;
-  // Every current member hears about a new case, not just OWNER/ADMIN/
-  // ANALYST: a notification is visibility, not a mutation, and this app
-  // never gates visibility by role (ARCHITECTURE.md → "Auth &
-  // authorization"). Looked up once per scan, not once per flagged item.
-  const memberships = await getAuthStore().memberships.findForWorkspace(workspaceId);
-  const recipientUserIds = memberships.map((m) => m.userId);
-  const notificationRepository = getNotificationStore().notifications;
-
-  for (const item of items) {
-    if (item.kind !== "ASSESSED" || item.assessment.status === "CLEARED") continue;
-
-    const result = await openCase(
-      { workspaceId, rightsAssessmentId: item.rightsAssessmentId },
-      { caseRepository },
-    );
-    // Only a genuinely new case is announced and audited — re-running a
-    // scan never re-notifies about a case that's been there since yesterday.
-    if (result.created) {
-      await notifyCaseOpened(
-        {
-          workspaceId,
-          recipientUserIds,
-          payload: {
-            caseId: result.case.id,
-            contentId: item.content.externalContentId,
-            creatorUsername: item.creatorUsername,
-            status: item.assessment.status,
-          },
-        },
-        { notificationRepository },
-      );
-      // The same action/targetType as the manual "Open a case" path
-      // (`case-actions.ts`'s `openCaseAction`) — this is the more common of
-      // the two, since a scan opens a case for every flagged item.
-      await getAuditStore().auditLogs.create({
-        workspaceId,
-        actorId: triggeredByUserId,
-        action: "case.opened",
-        targetType: "case",
-        targetId: result.case.id,
-      });
+  // Fetch: one creator at a time — a real connector is rate-limited, and
+  // one failing creator mustn't stop the rest (Brief §37).
+  const items: ScanItemInput[] = [];
+  const perCreator: ScanJobCreatorResult[] = [];
+  for (const creator of creators) {
+    const result = await runScan({
+      connector,
+      musicProvider,
+      getRightsRecordsForTrack: (trackId) => rightsRepository.getRecordsForTrack(trackId),
+      getCampaignIdsForCreator: async (creatorExternalId) =>
+        (await campaignRepository.findForCreator(creatorExternalId)).map((c) => c.id),
+      creatorExternalId: creator.externalId,
+      creatorUsername: creator.handle,
+      creatorCountry: creator.country,
+      since: windowStart(creator, now),
+      until: now,
+    });
+    perCreator.push({
+      creatorId: creator.id,
+      handle: creator.handle,
+      videos: result.items.length,
+      matches: result.items.filter((item) => item.kind === "ASSESSED").length,
+      error: result.connectorError,
+    });
+    for (const item of result.items) {
+      items.push({ ...item, creatorId: creator.id, creatorExternalId: creator.externalId, creatorUsername: creator.handle });
     }
   }
 
-  return items;
+  // Store: every flagged item gets a real `RightsAssessment` row for its
+  // case to point at. What was there before tells new matches from known.
+  const known = new Set(
+    (await results.findForWorkspace(workspaceId)).flatMap((item) => (item.rightsAssessmentId ? [item.rightsAssessmentId] : [])),
+  );
+  const stored = await results.saveScan({ workspaceId, musicProviderName: musicProvider.providerName, items });
+
+  for (const [index, creator] of creators.entries()) {
+    await creatorRepository.update(creator.id, scanOutcomeChanges(creator, { at: now, error: perCreator[index].error }));
+  }
+
+  const casesOpened = await openCasesForFlaggedItems(workspaceId, triggeredByUserId, stored);
+
+  return {
+    ...payload,
+    videosChecked: items.length,
+    matches: stored.filter((item) => item.kind === "ASSESSED").length,
+    newMatches: stored.filter((item) => item.rightsAssessmentId && !known.has(item.rightsAssessmentId)).length,
+    casesOpened,
+    creators: perCreator,
+  };
+}
+
+function windowStart(creator: CreatorRecord, now: Date): Date {
+  if (creator.lastSeenAt) return new Date(creator.lastSeenAt.getTime() - DAY_MS);
+  const lookback = new Date(now.getTime() - INITIAL_LOOKBACK_DAYS * DAY_MS);
+  return getConnectorMode() === "DEMO" && DEMO_WINDOW_START < lookback ? DEMO_WINDOW_START : lookback;
+}
+
+/**
+ * Case Creation (Brief §51): a case for every assessed item the Rights
+ * Engine didn't clear — a CLEARED one has nothing to investigate.
+ * `openCase` is idempotent, so a re-run never duplicates a case or
+ * disturbs one a human has since resolved; only genuinely new cases are
+ * announced to every member (a notification is visibility, not a mutation
+ * — ARCHITECTURE.md → "Auth & authorization") and audit-logged.
+ */
+async function openCasesForFlaggedItems(
+  workspaceId: string,
+  triggeredByUserId: string,
+  items: StoredScanItem[],
+): Promise<number> {
+  const caseRepository = getCaseStore().cases;
+  const notificationRepository = getNotificationStore().notifications;
+  const memberships = await getAuthStore().memberships.findForWorkspace(workspaceId);
+  const recipientUserIds = memberships.map((m) => m.userId);
+
+  let opened = 0;
+  for (const item of items) {
+    if (item.kind !== "ASSESSED" || item.assessment.status === "CLEARED") continue;
+
+    const result = await openCase({ workspaceId, rightsAssessmentId: item.rightsAssessmentId }, { caseRepository });
+    if (!result.created) continue;
+    opened += 1;
+
+    await notifyCaseOpened(
+      {
+        workspaceId,
+        recipientUserIds,
+        payload: {
+          caseId: result.case.id,
+          contentId: item.content.externalContentId,
+          creatorUsername: item.creatorUsername,
+          status: item.assessment.status,
+        },
+      },
+      { notificationRepository },
+    );
+    // The same action/targetType as the manual "Open a case" path
+    // (`case-actions.ts`'s `openCaseAction`).
+    await getAuditStore().auditLogs.create({
+      workspaceId,
+      actorId: triggeredByUserId,
+      action: "case.opened",
+      targetType: "case",
+      targetId: result.case.id,
+    });
+  }
+  return opened;
 }

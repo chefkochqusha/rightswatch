@@ -8,7 +8,11 @@ import { demoContentFor } from "../demo-data/content";
 // Lena's two September scenario posts, oldest first.
 const LENA_POSTS = demoContentFor("lena.creates", new Date("2026-09-01T00:00:00Z"), new Date("2026-09-30T23:59:59Z"));
 const CONTENT = LENA_POSTS[0];
-const CREATOR = { creatorExternalId: CONTENT.creatorExternalId, creatorUsername: CONTENT.creatorUsername };
+const CREATOR = {
+  creatorId: "creator-lena",
+  creatorExternalId: CONTENT.creatorExternalId,
+  creatorUsername: CONTENT.creatorUsername,
+};
 const MATCH = {
   trackId: "demo-track-midnight-run",
   title: "Midnight Run",
@@ -119,5 +123,19 @@ describe("InMemoryScanResultRepository", () => {
 
     const read = await repo.findForWorkspace("w1");
     assert.deepEqual(read.map((s) => s.content.externalContentId), [newer.externalContentId, older.externalContentId]);
+  });
+
+  test("findForCreator returns one creator's items within one workspace", async () => {
+    const repo = new InMemoryScanResultRepository();
+    const [, other] = LENA_POSTS;
+    await save(repo, "w1", [
+      assessed(),
+      { kind: "NO_MUSIC_MATCH", content: other, ...CREATOR, creatorId: "creator-someone-else" },
+    ]);
+
+    const lenas = await repo.findForCreator("w1", "creator-lena");
+    assert.deepEqual(lenas.map((s) => s.content.externalContentId), [CONTENT.externalContentId]);
+    assert.equal(lenas[0].creatorId, "creator-lena");
+    assert.deepEqual(await repo.findForCreator("w2", "creator-lena"), []);
   });
 });

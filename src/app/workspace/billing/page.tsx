@@ -1,7 +1,7 @@
 import { requireSession } from "@/app/_lib/current-user";
 import { canManageWorkspace } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
-import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
+import { getCreatorStore } from "@/app/_lib/creator-store";
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge";
 import { formatPlanPrice, SCAN_CADENCE_LABELS } from "@/components/billing/labels";
 import { PLAN_CATALOG, TRIAL_LENGTH_DAYS, isMockCustomerId } from "@/modules/billing";
@@ -34,9 +34,9 @@ export default async function BillingPage() {
   // `RoutingPaymentProvider`) and has nothing on Stripe's side to manage.
   const hasStripeCustomer = Boolean(subscription && !isMockCustomerId(subscription.stripeCustomerId));
 
-  const trackedCreators = new Set(
-    (await getWorkspaceScanItems(session.workspace.id)).map((item) => item.creatorExternalId),
-  ).size;
+  // Brief §20's usage figure: creators monitored right now — what a plan's
+  // limit counts (§19), so paused and removed creators don't.
+  const trackedCreators = await getCreatorStore().creators.countMonitored(session.workspace.id);
 
   return (
     <div>
@@ -130,6 +130,9 @@ export default async function BillingPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {PLAN_CATALOG.map((plan) => {
           const isCurrentPlan = !isCanceled && currentPlan?.id === plan.id;
+          // Too small for what's monitored now (Brief §19) — pausing or
+          // removing creators first makes room.
+          const tooSmall = !isCurrentPlan && plan.creatorCap < trackedCreators;
           const buttonLabel = isCurrentPlan
             ? "Current plan"
             : subscription && !isCanceled
@@ -160,7 +163,11 @@ export default async function BillingPage() {
                   </dd>
                 </div>
               </dl>
-              {canManage ? (
+              {canManage && tooSmall ? (
+                <p className="mt-5 text-[0.8125rem] text-t2">
+                  You monitor {trackedCreators} creators. Pause or remove some to switch to {plan.name}.
+                </p>
+              ) : canManage ? (
                 <form action={choosePlanAction} className="mt-5">
                   <input type="hidden" name="planTier" value={plan.tier} />
                   <button

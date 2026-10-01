@@ -15,7 +15,28 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "case.opened": "Opened a case",
   "case.status_changed": "Changed the case status",
   "case.assignee_changed": "Changed the case assignment",
+  "creator.added": "Added a creator to the watchlist",
+  "creator.restored": "Put a creator back on the watchlist",
+  "creator.paused": "Paused monitoring of a creator",
+  "creator.resumed": "Resumed monitoring of a creator",
+  "creator.removed": "Removed a creator from the watchlist",
+  "creator.updated": "Updated a creator's details",
 };
+
+/** The same actions, naming the creator — when the entry recorded who. */
+const CREATOR_ACTION_TEMPLATES: Partial<Record<string, (handle: string) => string>> = {
+  "creator.added": (handle) => `Added @${handle} to the watchlist`,
+  "creator.restored": (handle) => `Put @${handle} back on the watchlist`,
+  "creator.paused": (handle) => `Paused monitoring of @${handle}`,
+  "creator.resumed": (handle) => `Resumed monitoring of @${handle}`,
+  "creator.removed": (handle) => `Removed @${handle} from the watchlist`,
+  "creator.updated": (handle) => `Updated @${handle}'s details`,
+};
+
+export function getCreatorActionLabel(action: string, handle: string | null): string {
+  const template = CREATOR_ACTION_TEMPLATES[action];
+  return template && handle ? template(handle) : getAuditActionLabel(action);
+}
 
 /** Falls back to the raw action string itself — still renders something
  *  sensible for an action this file hasn't been taught about yet. */

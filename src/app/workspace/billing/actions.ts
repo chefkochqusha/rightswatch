@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
+import { getCreatorStore } from "@/app/_lib/creator-store";
 import {
   subscribeWorkspace,
   cancelSubscription,
@@ -30,6 +31,16 @@ export async function choosePlanAction(formData: FormData) {
   }
   const session = await requireWorkspaceManager();
   const store = getBillingStore();
+
+  // A plan smaller than what's already monitored would leave creators over
+  // its limit (Brief §19). The page doesn't offer that switch; this refuses
+  // a stale or forged one.
+  const plan = await store.plans.findByTier(rawTier as PlanTier);
+  const monitored = await getCreatorStore().creators.countMonitored(session.workspace.id);
+  if (plan && plan.creatorCap < monitored) {
+    throw new Error(`${plan.name} allows ${plan.creatorCap} creators; this workspace monitors ${monitored}.`);
+  }
+
   await subscribeWorkspace(
     {
       workspaceId: session.workspace.id,
@@ -42,8 +53,7 @@ export async function choosePlanAction(formData: FormData) {
       paymentProvider: store.paymentProvider,
     },
   );
-  revalidatePath("/workspace/billing");
-  revalidatePath("/workspace");
+  revalidatePath("/workspace", "layout");
 }
 
 export async function cancelSubscriptionAction() {

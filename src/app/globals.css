@@ -16,6 +16,7 @@
   --t2: #6e6e73; /* secondary text */
   --ln: rgba(0, 0, 0, 0.09); /* hairline borders */
   --ac: #0071e3; /* accent / primary action */
+  --acs: #0077ed; /* accent, hovered */
   --hv: rgba(0, 0, 0, 0.045); /* hover fill */
 
   /* Rights Engine severities (DESIGN_SYSTEM.md: mapped 1:1) */
@@ -38,6 +39,7 @@
     --t2: #a1a1a6;
     --ln: rgba(255, 255, 255, 0.13);
     --ac: #2997ff;
+    --acs: #47a6ff;
     --hv: rgba(255, 255, 255, 0.07);
 
     --gn: #5fd383;
@@ -59,6 +61,7 @@
   --color-t2: var(--t2);
   --color-line: var(--ln);
   --color-accent: var(--ac);
+  --color-accent-strong: var(--acs);
   --color-hover: var(--hv);
   --color-cleared: var(--gn);
   --color-cleared-bg: var(--gb);

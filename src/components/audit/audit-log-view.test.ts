@@ -131,6 +131,21 @@ describe("buildAuditLogView", () => {
     assert.equal(view.description, "invite.sent");
   });
 
+  test("creator entries name the creator and link to its page", () => {
+    const [added, removed, unnamed] = buildAuditLogView(
+      [
+        makeEntry({ action: "creator.added", targetType: "creator", targetId: "creator-1", metadata: { handle: "lena.creates" } }),
+        makeEntry({ action: "creator.removed", targetType: "creator", targetId: "creator-1", metadata: { handle: "lena.creates" } }),
+        makeEntry({ action: "creator.paused", targetType: "creator", targetId: "creator-2", metadata: null }),
+      ],
+      { ...noContext, members: new Map(), casesById: new Map() },
+    );
+    assert.equal(added.description, "Added @lena.creates to the watchlist");
+    assert.equal(added.href, "/workspace/creators/creator-1");
+    assert.equal(removed.description, "Removed @lena.creates from the watchlist");
+    assert.equal(unnamed.description, "Paused monitoring of a creator");
+  });
+
   test("preserves input order (callers pass entries already sorted newest-first)", () => {
     const views = buildAuditLogView(
       [makeEntry({ id: "a" }), makeEntry({ id: "b" }), makeEntry({ id: "c" })],

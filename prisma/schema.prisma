@@ -87,6 +87,7 @@ model Workspace {
   usageRecords  UsageRecord[]
   connectors    Connector[]
   auditLogs     AuditLog[]
+  jobs          Job[]
 
   @@map("workspaces")
 }
@@ -123,15 +124,41 @@ enum Platform {
   YOUTUBE // reserved — not built yet
 }
 
+// Master Brief §8's creator statuses. `monitoringEnabled` is the switch a
+// member flips (pause/resume); `status` is what the watchlist shows, kept in
+// step with it and with how the last scan went.
+enum CreatorStatus {
+  PENDING // added, not scanned yet
+  ACTIVE // monitored, and the last scan reached it
+  PAUSED // monitoring paused by a member
+  ERROR // the last scan couldn't fetch this creator's content
+}
+
+// Master Brief §8. For a TikTok creator, `externalId` is the username: the
+// Commercial Content API is queried by username (§4) and returns no other
+// stable creator id. A renamed account therefore reads as a new creator.
 model Creator {
-  id          String   @id @default(cuid())
-  workspaceId String
-  platform    Platform @default(TIKTOK)
-  externalId  String // stable platform id — never assume it's globally unique across platforms
-  handle      String
-  displayName String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String        @id @default(cuid())
+  workspaceId       String
+  platform          Platform      @default(TIKTOK)
+  externalId        String // stable platform id — never assume it's globally unique across platforms
+  handle            String
+  displayName       String?
+  profileUrl        String?
+  country           String? // ISO 3166-1 alpha-2, as a member entered it — the territory signal for posts the platform reports none for
+  followerCount     Int?
+  status            CreatorStatus @default(PENDING)
+  monitoringEnabled Boolean       @default(true)
+  lastSeenAt        DateTime? // last time a scan reached this creator
+  // Additions to §8's field list, both documented in ARCHITECTURE.md:
+  // why the last scan failed (shown while status is ERROR, §37), and when a
+  // member removed the creator from the watchlist. Removal is a soft delete:
+  // the creator's content, assessments and cases stay (§13: "Every case
+  // should preserve evidence"), and adding the same username restores it.
+  lastError         String?
+  removedAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   campaigns Campaign[] @relation("CampaignCreators")
@@ -592,6 +619,11 @@ enum JobStatus {
 // BullMQ/Redis owns actual queueing, this is the durable record of it.
 model Job {
   id          String    @id @default(cuid())
+  // The workspace a job works for — a scan is always one workspace's. An
+  // addition to §21's field list: without it, "this workspace's last scan"
+  // (Brief §7's connector health) and a creator's monitoring history (§8)
+  // would mean reading every job's payload.
+  workspaceId String?
   type        String
   status      JobStatus @default(QUEUED)
   attempts    Int       @default(0)
@@ -602,7 +634,10 @@ model Job {
   payload     Json?
   createdAt   DateTime  @default(now())
 
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
   @@index([type, status])
+  @@index([workspaceId, type, createdAt])
   @@map("jobs")
 }
 

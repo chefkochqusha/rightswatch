@@ -95,9 +95,9 @@ page inventing its own sizes:
 
 | Role | Classes | Used for |
 |---|---|---|
-| Page title | `text-2xl font-semibold tracking-tight` | "Dashboard", "Notifications", "Team", "Billing", "Welcome, {name}" |
+| Page title | `PageHeader`: `text-[2rem] leading-[1.1] font-semibold tracking-[-0.02em]`, description `text-[0.9375rem] text-t2` | "Overview", "Creators", a creator's "@handle" — Brief §28's tight leading and negative tracking for large type. Pages not yet moved to `PageHeader` still use `text-2xl font-semibold tracking-tight` |
 | Auth card title | `text-xl font-semibold tracking-tight` | Login / signup card heading |
-| Section title | `text-sm font-semibold` | A card's own heading, e.g. "Rights assessments" |
+| Section title | `text-[1.0625rem] font-semibold tracking-[-0.01em]` | A section's own heading, e.g. "Music matches", "Add a creator" (older sections: `text-sm font-semibold`) |
 | Body / primary | `text-sm text-tx` (default color) | Table cells, row primary text |
 | Secondary / caption | `text-sm text-t2` or `text-[0.8125rem] text-t2` | Subtitles, helper text, timestamps |
 | Small label | `text-[0.8125rem] font-medium text-tx` | Form field labels |
@@ -117,8 +117,9 @@ prototype's `h1` rule is the reference to match, not a size to invent fresh.
 **The workspace sidebar** (`app/workspace/layout.tsx`,
 `components/layout/workspace-nav.tsx`) — the authenticated app's chrome,
 the prototype's layout carried over: a `15.5rem` sidebar on `bg-surface-2`
-(sticky, full height) beside the content column. The RW mark and a tracked
-`RIGHTSWATCH` wordmark sit at the top; below them the sections in Brief
+(sticky, full height) beside the content column. The RW mark and the
+"RightsWatch" wordmark (sentence case, not tracked capitals) sit at the
+top; below them the sections in Brief
 §6's order (Overview, Creators, Music Matches, Cases, Rights Library,
 Reports, Team, Billing, Settings), then a second group (Notifications with
 its unread-count pill, `bg-review-bg text-review`, capped at "99+"; Audit
@@ -129,10 +130,10 @@ the active one is `bg-surface text-tx ring-1 ring-line` with
 detail page lights up the section it belongs to (an item's page lights up
 the list it came from).
 
-The content column opens with a top bar: the workspace's name, a `DEMO
-MODE` pill while scans run on demo data (`app/_lib/connector-mode.ts`),
-and on the right who's signed in, their role, and Log out (a form button,
-not a link). Content sits in `max-w-[76rem] px-10 py-8`.
+The content column opens with a top bar: the workspace's name, a "Demo
+data" pill while scans run on demo data (`app/_lib/connector-mode.ts`),
+and on the right who's signed in with their role beneath, and Log out (a
+form button, not a link). Content sits in `max-w-[76rem] px-10 py-8`.
 
 Below `md` (768px) the sidebar collapses into a block above the content:
 the mark, then the same links in one horizontally scrolling row (Brief
@@ -150,10 +151,11 @@ links (Dashboard, Creators), a "Demo Mode" pill, and Log in / Sign up.
   it. Demo Mode's pages use `mx-auto max-w-(--content-width) px-6` with
   `[--content-width:1100px]`, `py-4` for the header bar and `py-8` for main
   content.
-- **Card / section radius:** `rounded-lg` (Tailwind's default, 0.5rem) — not
-  the prototype's bespoke `1.125rem`. The real app leans on Tailwind's own
-  scale pragmatically rather than matching the prototype pixel-for-pixel
-  outside of color and font stack.
+- **Card / section radius:** `rounded-[1.125rem]` (18px) — Brief §31's
+  "approximate radius 18–20px", and the prototype's own value. Inputs use
+  `rounded-lg`, popovers and callouts `rounded-2xl`. Sections built before
+  this was settled still use `rounded-lg`, and move over as each page is
+  redesigned.
 - **Pill radius:** `rounded-full` — nav pills, badges, the Demo Mode tag,
   and every primary button in the app, auth forms included (see "Buttons &
   links"). This one does match the prototype's `980px` (effectively a full
@@ -185,27 +187,30 @@ color, a secondary detail line underneath it in `text-t2` within the same
 cell. Matches the prototype's table rhythm (a bold primary line with a
 muted caption line beneath it) even though the exact class names differ.
 
-**Status badges** (`StatusBadge`, `CaseStatusBadge`) — `inline-flex w-fit
-items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium
-whitespace-nowrap`, with a small `h-1.5 w-1.5 rounded-full bg-current` dot
-before the label. The color pair comes from the severity table above. This
-is the one component every "is this okay?" signal in the app renders
-through, whether it's a rights assessment or a case.
+**Status badges** (`StatusBadge`, `CreatorStatusBadge`) — icon, label and
+color, never color alone (Brief §30): `inline-flex w-fit items-center
+gap-1 rounded-full py-1 pr-2.5 pl-2 text-xs font-medium whitespace-nowrap`
+with a 12px stroke icon from `components/ui/icons.tsx` before the label —
+a check for Cleared/Active, an eye for Needs review, a question mark for
+Unknown, a warning triangle for Potential mismatch/Error, a clock for
+Pending, a pause glyph for Paused. The color pair comes from the severity
+table above. `CaseStatusBadge` still uses the older dot and moves to icons
+with the cases redesign.
 
-**Buttons & links:**
-- Primary: `rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg
-  hover:opacity-90` — a dark pill with inverse text, using the near-black
-  `--tx` token rather than the accent color. Used for every primary action
-  in the app: workspace actions (e.g. "Send invite"; the header's pill
-  "Sign up" link matches the same classes), the error/404 pages' "Try
-  again" and "Back to dashboard", and the auth forms' submit buttons
-  (`w-full rounded-full bg-tx px-4 py-2.5 ... text-bg` — `py-2.5` instead
-  of `py-2`, otherwise the same treatment). The auth forms originally
-  shipped with a second, different pattern (`rounded-lg bg-accent ...
-  text-white`, closer to the validated prototype's own blue-button
-  convention) that coexisted with this one; unified to this dark-pill
-  pattern since it was already the app's majority convention everywhere
-  else, rather than leaving two primary-button treatments in place.
+**Buttons & links** — `buttonStyles(variant, size)` in
+`components/ui/button.ts`, so a `<button>` and a `<Link>` acting as the
+same control look the same. Every variant is a pill that scales to 0.97
+while pressed (100ms ease-out — feedback on press, not release) and dims
+when disabled:
+- Primary: `bg-accent text-white hover:bg-accent-strong` — Brief §30's
+  "primary action blue", one per view. This supersedes the earlier
+  dark-pill primary (`bg-tx text-bg`), which pages built before
+  `buttonStyles` still use until they're redesigned.
+- Secondary: `bg-surface ring-1 ring-line` — any other action.
+- Plain: accent text, a faint accent wash on hover — an action that reads
+  as a link.
+- Danger: red text, the mismatch tint on hover — removing something.
+- Sizes: `sm` (32px tall, 0.8125rem) and `md` (36px, 0.875rem).
 - Secondary / ghost: `rounded-full border border-line px-3 py-1.5
   text-[0.8125rem] font-medium text-t2 hover:bg-hover hover:text-tx` (e.g.
   "Mark all as read").
@@ -219,22 +224,24 @@ through, whether it's a rights assessment or a case.
 - Disabled state: `disabled:opacity-60`.
 
 **Form fields** (`FormField`) — label `block text-[0.8125rem] font-medium
-text-tx`; input `mt-1.5 block w-full rounded-md border border-line bg-bg
-px-3 py-2 text-sm text-tx placeholder:text-t2`; error text `mt-1.5
-text-[0.8125rem] text-mismatch`. `FormField` itself adds no per-field focus
+text-tx`; input `mt-1.5 block w-full rounded-lg border border-line bg-bg
+px-3 py-2 text-sm text-tx placeholder:text-t2`, with a red border while
+`aria-invalid`; below it either a hint (`text-t2`) or the error
+(`text-mismatch`), tied to the input with `aria-describedby`. A country is
+a `CountrySelect` with the same treatment, its options named on the server
+(a browser's locale data can name a country differently and break
+hydration). `FormField` itself adds no per-field focus
 styling — it inherits the one global `:focus-visible` rule (see
 "Accessibility") — and a `<select>` gets the same input treatment. The case
 panel's note `<textarea>` is the one exception, adding its own explicit
 `focus:ring-2 focus:ring-accent focus:outline-none`; treat `FormField`'s
 plain approach as the default for any new field, not this one.
 
-**Empty states** — centered text inside a card: heading `text-sm
-font-semibold`, body `mx-auto mt-2 max-w-md text-sm text-t2`. Used
-identically in both places this app currently needs one — "No scans yet"
-(the workspace home, before "Run a sample scan" has ever been clicked) and
-"No notifications yet" — so it's already an established pattern, not a
-one-off, and the next empty table should reuse it rather than invent a
-third variant.
+**Empty states** (`EmptyState`) — centered inside the section: a heading
+that says plainly what isn't there yet, one sentence on how it fills, and
+the action that fills it (Brief §36 — "No creators are being monitored
+yet.", "No music matches detected.", "Nothing needs review right now.").
+No illustration, no joke.
 
 **Notification list rows** — unread rows get a faint tinted background
 (`bg-review-bg/40`) and a small solid dot (`h-2 w-2 rounded-full bg-review`)

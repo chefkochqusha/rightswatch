@@ -20,12 +20,15 @@ import type { ScanItemResult } from "../scan-pipeline/types";
  */
 
 interface CreatorContext {
+  /** The watchlist creator (`Creator.id`) the item was found for. */
+  creatorId: string;
   creatorExternalId: string;
   creatorUsername: string;
 }
 
 /** One `runScan()` item plus the creator it was found for — what a scan
- *  hands to `saveScan`. */
+ *  hands to `saveScan`. The creator already exists: a scan only fetches
+ *  creators on the watchlist (`modules/creators`), and never adds one. */
 export type ScanItemInput = ScanItemResult & CreatorContext;
 
 /**
@@ -67,7 +70,11 @@ export interface ScanResultRepository {
     items: ScanItemInput[];
   }): Promise<StoredScanItem[]>;
 
+  /** Newest first. */
   findForWorkspace(workspaceId: string): Promise<StoredScanItem[]>;
+
+  /** One creator's items, newest first. Scoped by workspace. */
+  findForCreator(workspaceId: string, creatorId: string): Promise<StoredScanItem[]>;
 
   /** Scoped by workspace: another workspace's item with the same platform
    *  id is never returned. */

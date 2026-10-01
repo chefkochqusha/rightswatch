@@ -66,6 +66,15 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     return rows.map(toStoredItem).filter((item): item is StoredScanItem => item !== null);
   }
 
+  async findForCreator(workspaceId: string, creatorId: string): Promise<StoredScanItem[]> {
+    const rows = await getPrisma().content.findMany({
+      where: { creatorId, creator: { workspaceId } },
+      include: CONTENT_INCLUDE,
+      orderBy: { publishedAt: "desc" },
+    });
+    return rows.map(toStoredItem).filter((item): item is StoredScanItem => item !== null);
+  }
+
   async findByContentId(workspaceId: string, externalContentId: string): Promise<StoredScanItem | null> {
     // A video belongs to one creator, so within a workspace its platform id
     // is unique in practice; the workspace filter is what keeps another
@@ -86,22 +95,11 @@ async function writeItem(
 ): Promise<string> {
   const { content } = item;
 
-  const creator = await tx.creator.upsert({
-    where: {
-      workspaceId_platform_externalId: {
-        workspaceId,
-        platform: content.platform,
-        externalId: item.creatorExternalId,
-      },
-    },
-    create: {
-      workspaceId,
-      platform: content.platform,
-      externalId: item.creatorExternalId,
-      handle: item.creatorUsername,
-    },
-    update: { handle: item.creatorUsername },
-  });
+  // The creator is on this workspace's watchlist already — a scan never
+  // adds one. Checked inside the transaction so an item can't be filed
+  // under another workspace's creator.
+  const creator = await tx.creator.findFirst({ where: { id: item.creatorId, workspaceId }, select: { id: true } });
+  if (!creator) throw new Error(`Creator ${item.creatorId} isn't in workspace ${workspaceId}.`);
 
   const contentRow = await tx.content.upsert({
     where: { creatorId_externalContentId: { creatorId: creator.id, externalContentId: content.externalContentId } },
@@ -201,7 +199,11 @@ function toStoredItem(row: ContentRow): StoredScanItem | null {
   const commercial = row.commercialContent;
   if (!commercial) return null;
 
-  const creator = { creatorExternalId: row.creator.externalId, creatorUsername: row.creator.handle };
+  const creator = {
+    creatorId: row.creator.id,
+    creatorExternalId: row.creator.externalId,
+    creatorUsername: row.creator.handle,
+  };
   const content: NormalizedCommercialContent = {
     platform: row.platform as Platform,
     externalContentId: row.externalContentId,
