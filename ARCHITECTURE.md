@@ -159,11 +159,15 @@ application code until a provider is chosen.
 
 ### Email
 
-No provider is integrated. Every place that would otherwise need outbound
-email works around it by surfacing the content in-app instead:
-`inviteTeammate`'s invite links are shown in-app for the inviter to copy and
-send themselves, and in-app notifications are the only notification channel
-(see "Notifications" below) for the same reason.
+`modules/email` defines an `EmailSender` with two implementations:
+`OutboxEmailSender` (keeps messages in memory; the default) and
+`ResendEmailSender`, chosen only when both `RESEND_API_KEY` and `EMAIL_FROM`
+are set (`app/_lib/email.ts`). Links in an email take their origin from
+`APP_URL` / `VERCEL_PROJECT_PRODUCTION_URL` in production, never from the
+request's Host header. Today only password reset sends email. Invite links
+are still shown in-app for the inviter to copy, and in-app notifications
+are the only notification channel (see "Notifications" below). A
+domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
 
 ### Payments
 
@@ -448,9 +452,9 @@ including its "Database Sessions" shape:
   Brief §17 ("session management") needs.
 - **`proxy.ts`** does only "optimistic" checks: verify the cookie's
   signature, redirect if it's missing on a protected route. It runs on every
-  request, including prefetches, so it never touches a repository. Demo
-  Mode (`/`, `/dashboard`, `/creators`, `/assessments/*`) is deliberately
-  untouched here, since it's meant to be public with no signup at all.
+  request, including prefetches, so it never touches a repository. The
+  landing page (`/`) and the public demo entry (`/demo`) are deliberately
+  untouched here, since they're meant to be public with no signup at all.
 - **`app/_lib/current-user.ts`** is the Data Access Layer:
   `getCurrentSession()` / `requireSession()` do the real, secure check (the
   session row is live; the user and membership still exist), and every page
@@ -509,6 +513,14 @@ listed under "Known gaps"):
   doesn't let clients spoof. Both limiters are per serverless instance; a
   shared one needs Upstash Redis (`RELEASE_CHECKLIST.md`), and the interface
   is already shaped for a drop-in `RedisRateLimiter`.
+- **Password reset** (`modules/auth/password-reset*.ts`,
+  `/forgot-password`, `/reset-password`): the request page answers the same
+  way whether or not the email exists, and sends a link with a signed,
+  single-purpose token (HKDF key "password-reset-token", 1 hour). The token
+  carries a short fingerprint of the current password hash, so it works
+  once: after the password changes, the same link is dead. A reset also
+  deletes every session of that user (`SessionRepository.deleteAllForUser`).
+  Reset requests are rate limited (3 per window, in memory like the login limits).
 - **`SESSION_SECRET`:** a short or placeholder value is logged once per
   process rather than refused, so a deployment that might be using one
   isn't taken down; a fresh random value is part of `RELEASE_CHECKLIST.md`.
@@ -535,13 +547,11 @@ Saving the same scan twice touches the same rows, keeps every
 later scan that identifies nothing, or fails, can't erase an earlier
 identification.
 
-`Scheduler` doesn't exist yet — nothing schedules scans on a cadence. Two
-callers invoke `runScan()` directly today:
+`Scheduler` doesn't exist yet — nothing schedules scans on a cadence. One
+caller invokes `runScan()` directly today:
 
-- **`get-demo-scan-results.ts`** — Demo Mode's public pages, recomputed
-  fresh on every request, nothing persisted.
-- **`workspace-scan-store.ts`'s `runWorkspaceScan`** — "Run scan" in the
-  real workspace, and the one caller that stores its results and carries
+- **`workspace-scan-store.ts`'s `runWorkspaceScan`** — "Run scan" in a
+  workspace (the public demo workspace is filled by the same call), and the one caller that stores its results and carries
   out the pipeline's last two steps, Case Creation and Notifications (see
   those sections below):
   - **Who:** the watchlist's monitored creators, oldest first, up to the
@@ -697,21 +707,34 @@ every change is audit-logged against the song (`song.*`, `rights.*`).
 (Brief §43)
 
 A Case is what a human on the customer's team actually works with once the
-Rights Engine and scan pipeline produce a non-`CLEARED` assessment — assign
-it, note on it, move it between `OPEN`, `IN_PROGRESS`, `RESOLVED` and
-`DISMISSED`. There's no enforced sequence between the four — the UI renders
-all four as buttons at once, any of them reachable from any other, since
-the app doesn't yet have a reason to forbid, say, reopening a `RESOLVED`
-case. All of this is built end-to-end on the item detail page (`case-panel.tsx` /
-`case-actions.ts`): status-transition buttons, an assign-to-me/unassign
-toggle, and a `CaseNote` activity log with a form to add to it — every
-mutation gated by `requireCaseManager` (OWNER/ADMIN/ANALYST) regardless of
-what the page itself renders. `rightsAssessmentId` is 1:1 by schema
+Rights Engine and scan pipeline produce a non-`CLEARED` assessment. It has
+the Brief §12 statuses (Open, In review, Waiting, Cleared, Resolved,
+Dismissed) and priorities (Low, Medium, High, Critical), an assignee, and
+a `CaseNote` activity log. A new case starts High for a potential
+mismatch and Medium for anything the check couldn't settle
+(`priority.ts`); a re-run of the scan never changes a priority a person
+set. There's no enforced sequence between statuses — any is reachable from
+any other.
+
+Two places show cases: the item detail page (`case-panel.tsx` /
+`case-actions.ts` — status, priority, assignee, notes) and `/workspace/cases`
+(`app/workspace/cases/page.tsx`, `modules/cases/case-list.ts`) — the
+working list, filterable by status, priority and assignee, most urgent
+first. Every mutation is gated by `requireCaseManager`
+(OWNER/ADMIN/ANALYST) regardless of what the page renders; a VIEWER reads
+everything and changes nothing. `rightsAssessmentId` is 1:1 by schema
 constraint, so `openCase()` is idempotent: calling it twice for the same
 assessment returns the existing case rather than erroring or duplicating it
 (see "Database architecture" → idempotency). `CaseEvidence` (file
 attachments) is the one entity in this domain still out of scope, blocked
 on an object-storage decision (see "Open decisions").
+
+**Reports.** `/workspace/reports` summarises the stored scan results and
+offers a CSV export (`workspace/reports/export/route.ts`,
+`modules/reports`: `detections-report.ts` builds the rows, `csv.ts`
+escapes them, including leading `=`, `+`, `-`, `@` so a spreadsheet never
+runs a cell as a formula). Demo posts are labelled "Demo data: not a real
+post" in the export instead of carrying a made-up TikTok link.
 
 **Audit trail.** Every case-lifecycle mutation writes an `AuditLog` row
 (`modules/audit` — Prisma-backed (Neon), not itself a numbered Brief
@@ -780,21 +803,35 @@ and the one usage figure the UI actually needs (monitored creators vs.
 snapshot. Building either now would be speculative scope. How the limit is
 enforced is under "Creator management".
 
-## Demo Mode vs. the real workspace
+## The landing page, the public demo and the real workspace
 
-Two parallel surfaces exist on purpose:
-
-- **Demo Mode** (`/`, `/dashboard`, `/creators`, `/assessments/*`) — Phase
-  6. Public, unauthenticated, fixture data recomputed fresh on every
-  request. Exists so a prospect can see the product with zero signup.
-- **The real workspace** (`/workspace/*`) — Phase 5 (signup/auth) onward.
-  Authenticated, session-gated by `proxy.ts` + `current-user.ts`.
+- **Landing page** (`app/(site)/*`: `/`, `/imprint`, `/privacy`) — public
+  marketing site with its own layout (`components/marketing/*`): hero with a
+  drifting feed of sample videos, a keyword marquee, how it works, the
+  verdict explainer, pricing from `PLAN_CATALOG`, FAQ. `imprint` and
+  `privacy` are placeholders until the company details exist
+  (`RELEASE_CHECKLIST.md`).
+- **Public demo** (`/demo` actions, `app/_lib/demo-access.ts`) — "Try the
+  demo" starts a session for a read-only VIEWER in one shared workspace
+  (`northstar-demo`) filled with the demo dataset by the same
+  `loadDemoWorkspace` + `runWorkspaceScan` calls any workspace can use. It is
+  the real app, not a separate mock-up. The accounts have random, unknown
+  passwords on a reserved `.invalid` email domain, so nobody can log in to
+  them; the workspace pays with the mock payment provider even when Stripe is
+  configured; a banner in the workspace layout marks the data as fictional
+  and links to sign-up. The first visit after a fresh database creates it;
+  later visits reuse it. Starting a session is rate limited per address.
+- **The real workspace** (`/workspace/*`) — authenticated, session-gated by
+  `proxy.ts` + `current-user.ts`. Its home (`/workspace`) is a feed of the
+  latest videos with identified music, with the workspace's songs along the
+  top as filters (`?song=`), `?show=` for review/cleared and a "show more"
+  limit.
 
 There's no real TikTok connection yet — Phase 10 is still gated on
-TikTok's reply — so the real workspace runs in demo mode
+TikTok's reply — so every workspace runs in demo mode
 (`app/_lib/connector-mode.ts`), labeled "Demo data" in its top bar: "Run
-scan" (`workspace-scan-store.ts`) runs the same demo connector and fixture
-providers as Demo Mode, over the workspace's own watchlist. The demo
+scan" (`workspace-scan-store.ts`) runs the demo connector and fixture
+providers over the workspace's own watchlist. The demo
 connector has posts for any username — the scenarios for §62's six
 creators (one click adds them), generated ones for anyone else — so a
 creator a member adds is scanned like any other; and the demo provider
@@ -805,24 +842,23 @@ that workspace and real Cases are opened against them (a real
 thing Phase 10 changes is swapping `MockTikTokConnector` for a real one —
 the watchlist, storage and the pipeline call stay as they are.
 
+Note that TikTok's Commercial Content API returns no music information
+(Brief §4), so a "TikToks by song" feed can only be built from the matches
+the music provider identifies for watched creators — which is what the home
+feed does.
+
 ## Routing, errors & metadata
 
 Three Next.js App Router special files sit at the `src/app/` root and apply
-across both Demo Mode and the real workspace, since there's no route-group
-split between them (see above):
+across the landing page, the demo and the workspace:
 
-- **`not-found.tsx`** — renders for both of this app's real `notFound()`
-  call sites (`assessments/[contentId]/page.tsx`,
-  `workspace/items/[contentId]/page.tsx`) and any unmatched URL. It
+- **`not-found.tsx`** — renders for the `notFound()` call in
+  `workspace/items/[contentId]/page.tsx` and any unmatched URL. It
   deliberately doesn't check the session to pick a smarter "back" link:
   this file sits at the root of every route's rendering boundary, and a
   dynamic API here (such as reading the session cookie) forces every other
   page in the app into dynamic rendering too — confirmed by triggering the
-  regression locally (it turned `/`, `/creators`, `/dashboard`, `/login`,
-  `/signup`, and every prerendered `/assessments/*` path from static/SSG
-  into server-rendered-on-demand) before reverting it. `/` has the same
-  constraint and the same answer — it always sends visitors to
-  `/dashboard` regardless of session (`app/page.tsx`).
+  regression locally before reverting it. Its link goes to `/`.
 - **`error.tsx`** — a Client Component error boundary for an uncaught
   exception under the root layout, using `retry` (stable as of Next
   16.3, matching this project's 16.3.6) rather than the older `reset`.
@@ -837,8 +873,7 @@ segment for the client to resolve instead of always rendering the fallback
 UI server-side, so `curl` alone can show the wrong thing (Next's own
 `__next_error__` shell) even when the boundary is working correctly.
 
-`assessments/[contentId]/page.tsx` and
-`workspace/items/[contentId]/page.tsx` also each have a `generateMetadata`
+`workspace/items/[contentId]/page.tsx` also has a `generateMetadata`
 giving the browser tab a per-item title (`"@handle — RightsWatch"`)
 instead of sharing one generic title across every open tab. Their
 not-found branch sets the title explicitly (`"Page not found —
@@ -858,7 +893,7 @@ table doesn't guess at what they might cover.
 |---|---|---|
 | 4 | Prisma schema / data layer | Schema written and live on Neon; client can't generate locally in this sandbox, but does on Vercel's build |
 | 5 | Auth module — signup, login, sessions, one workspace per user | Built |
-| 6 | Demo Mode — public, fixture-data pages, no signup | Built |
+| 6 | Demo Mode — first public fixture pages; replaced by the public demo workspace (see "The landing page, the public demo and the real workspace") | Built |
 | 10 | Real TikTok connector | Blocked on TikTok API access/credentials |
 
 A separate, unrelated "Phase 2" label appears in this project's own task
@@ -943,10 +978,9 @@ reads as an oversight:
   per-process, in-memory limiter only sees one serverless instance's
   traffic; this waits on the same shared store (Upstash Redis) the login
   limiter should move to
-- Email verification and password reset — Brief §17 asks for their
-  architecture; next on the build list. Until then signup is the one place
-  that still reveals whether an email is registered (see "Auth &
-  authorization")
+- Email verification — Brief §17; password reset is built (see "Auth &
+  authorization"). Signup is still the one place that reveals whether an
+  email is registered
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
 - Managing campaigns (§2, and §8's "group creators" and "assign
