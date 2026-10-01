@@ -716,6 +716,22 @@ every change is audit-logged against the song (`song.*`, `rights.*`).
   posts (`demoCatalogueSongFor`), so searching for a song, adding it and
   scanning shows it being found.
 
+## Music Matches
+
+(Brief §6)
+
+`/workspace/matches` lists every song the scans identified in watched
+creators' paid posts, one row per song: posts, creators, the verdicts on
+those posts and when the newest one was published. `summarizeSongMatches`
+(`modules/scan-results/song-summary.ts`) does the grouping and orders songs
+by need: most potential mismatches first, then most posts waiting on a
+person. A song heard in a post that isn't in the library is listed too
+("Not in your library"), since that is how a missing song gets noticed.
+Each row opens the song's page under the Rights Library, which shows the
+posts that use it. TikTok's Commercial Content API gives no music data
+(Brief §4), so this is built from what the music provider identified, not
+from TikTok.
+
 ## Case management
 
 (Brief §43)
