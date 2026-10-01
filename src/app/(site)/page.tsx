@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { HeroFeed } from "@/components/marketing/hero-feed";
+import { DemoButton } from "@/components/marketing/demo-button";
 import { KeywordMarquee } from "@/components/marketing/keyword-marquee";
 import { CoverArt } from "@/components/music/cover-art";
 import { CreatorAvatar } from "@/components/creators/avatar";
@@ -92,9 +93,7 @@ export default function LandingPage() {
             <Link href="/signup" className={`${buttonStyles("primary")} !h-12 !bg-ultra !px-6 !text-base hover:!opacity-90`}>
               Start monitoring
             </Link>
-            <Link href="/dashboard" className={`${buttonStyles("secondary")} !h-12 !px-6 !text-base`}>
-              Try the demo
-            </Link>
+            <DemoButton className={`${buttonStyles("secondary")} !h-12 !px-6 !text-base`} />
           </div>
         </div>
         <HeroFeed />
@@ -224,9 +223,7 @@ export default function LandingPage() {
             <p>
               Your team gets a notification, notes stay with the case, and every change is written to an audit log that says who did what and when.
             </p>
-            <Link href="/dashboard" className={buttonStyles("secondary")}>
-              See it in the demo
-            </Link>
+            <DemoButton className={buttonStyles("secondary")}>See it in the demo</DemoButton>
           </div>
         </div>
       </section>
@@ -287,9 +284,7 @@ export default function LandingPage() {
             <Link href="/signup" className="inline-flex h-12 items-center rounded-full bg-white px-6 text-base font-medium text-black transition active:scale-[0.97]">
               Start monitoring
             </Link>
-            <Link href="/dashboard" className="inline-flex h-12 items-center rounded-full px-6 text-base font-medium text-white ring-1 ring-white/50 ring-inset transition hover:bg-white/10 active:scale-[0.97]">
-              Try the demo
-            </Link>
+            <DemoButton className="inline-flex h-12 items-center rounded-full px-6 text-base font-medium text-white ring-1 ring-white/50 ring-inset transition hover:bg-white/10 active:scale-[0.97]" />
           </div>
         </div>
       </section>

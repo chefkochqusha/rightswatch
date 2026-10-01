@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getConnectorMode } from "@/app/_lib/connector-mode";
 import { requireSession } from "@/app/_lib/current-user";
 import { getNotificationStore } from "@/app/_lib/notification-store";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
+import { leaveDemoAction } from "@/app/demo/actions";
 import { logOutAction } from "@/app/workspace/actions";
 import { WorkspaceNav } from "@/components/layout/workspace-nav";
 import type { WorkspaceNavItem } from "@/components/layout/nav-active";
@@ -31,6 +33,8 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
     session.workspace.id,
     session.user.id,
   );
+
+  const isDemo = session.workspace.slug === DEMO_WORKSPACE_SLUG;
 
   const primary: WorkspaceNavItem[] = [
     { href: "/workspace", label: "Overview", alsoActiveFor: ["/workspace/items"] },
@@ -67,6 +71,18 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
       </div>
 
       <div className="flex min-w-0 flex-col">
+        {isDemo && (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-tx px-4 py-2.5 text-[0.8125rem] text-bg md:px-10">
+            <p>
+              <span className="font-semibold">Public demo.</span> Fictional creators and rights data, view only. Nothing here is a real TikTok post.
+            </p>
+            <form action={leaveDemoAction}>
+              <button type="submit" className="rounded-full bg-bg px-3.5 py-1 text-[0.8125rem] font-semibold text-tx hover:opacity-90">
+                Start your own workspace
+              </button>
+            </form>
+          </div>
+        )}
         <header className="flex items-center justify-between gap-4 border-b border-line bg-bg px-4 py-3 md:sticky md:top-0 md:z-10 md:px-10">
           <div className="flex min-w-0 items-center gap-2 text-[0.8125rem]">
             <span className="truncate font-semibold text-tx">{session.workspace.name}</span>

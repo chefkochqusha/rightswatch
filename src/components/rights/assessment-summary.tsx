@@ -4,14 +4,10 @@ import { PLATFORM_LABELS, REASON_LABELS, formatConfidence, matchMethodLabel } fr
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
 /**
- * The assessment/content/raw-payload panels shared between the public
- * Demo Mode detail page (`app/assessments/[contentId]`) and the real,
- * authenticated workspace's item detail page (`app/workspace/items/
- * [contentId]`) — extracted so the two don't drift out of sync with each
- * other as the design evolves. Deliberately excludes anything
- * case-related (that's real-workspace-only, and rendered alongside this,
- * not inside it) and the page header (username, back link, status badge)
- * since those differ between the two callers.
+ * The assessment/content/raw-payload panels shown on the
+ * workspace's item detail page (`app/workspace/items/[contentId]`).
+ * Deliberately excludes anything case-related (rendered alongside this,
+ * not inside it) and the page header (username, back link, status badge).
  */
 export function AssessmentSummary({ item }: { item: ScanItemResult }) {
   return (

@@ -57,9 +57,8 @@ export function formatConfidence(confidence: number): string {
 /**
  * Worst-first ranking for tables that list assessments across many
  * creators — the whole point of the product is surfacing what needs a
- * human look before what's already fine. Shared by the Demo Mode dashboard
- * and the real workspace's sample-scan table so the two never rank
- * statuses differently.
+ * human look before what's already fine. Shared by every table
+ * that ranks assessments so none of them ranks statuses differently.
  */
 export const STATUS_SORT_ORDER: Record<RightsAssessmentStatus, number> = {
   POTENTIAL_MISMATCH: 0,

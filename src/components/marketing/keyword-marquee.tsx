@@ -5,9 +5,8 @@
  * dot between each. Adapted here to this app's own palette, type scale and
  * restraint level (DESIGN_SYSTEM.md "Color"/"Typography") rather than the
  * reference's own branding — nothing in this file introduces a new color
- * or font. Only used on `/dashboard`, today's de facto landing page (`/`
- * redirects there) — not repeated on every Demo Mode page, the same way a
- * marketing marquee wouldn't repeat on every screen of a real product.
+ * or font. Only used on the landing page — not repeated on every
+ * screen of the app, the same way a marketing marquee wouldn't repeat there.
  *
  * Two copies of `items` render back-to-back so the CSS animation
  * (`globals.css`) can loop seamlessly: it only ever translates by exactly

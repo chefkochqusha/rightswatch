@@ -38,10 +38,9 @@ export async function generateMetadata({
 }
 
 /**
- * The real workspace's counterpart to Demo Mode's `/assessments/[contentId]`
- * — same `AssessmentSummary` panel, but scoped to the caller's own session
- * and workspace (never another workspace's items), and with a real case-
- * management panel alongside it instead of nothing. See `case-panel.tsx`
+ * One scanned post: the assessment panel, scoped to the caller's own
+ * session and workspace (never another workspace's items), with the case
+ * panel alongside it. See `case-panel.tsx`
  * for why a case only ever appears for an `ASSESSED` item.
  */
 export default async function WorkspaceItemDetailPage({

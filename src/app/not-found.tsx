@@ -7,20 +7,12 @@ export const metadata = {
 /**
  * App-wide 404 (Next.js App Router `not-found.js` convention — see
  * `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/not-found.md`).
- * A root `not-found.tsx` handles both of this app's real `notFound()` call
- * sites — `assessments/[contentId]/page.tsx` (Demo Mode) and
- * `workspace/items/[contentId]/page.tsx` (the real workspace) — and, per
- * that same doc, any URL that doesn't match a route at all.
+ * It handles the `notFound()` call in `workspace/items/[contentId]/page.tsx`
+ * and any URL that doesn't match a route.
  *
- * There's no route-group split between Demo Mode and the workspace (see
- * ARCHITECTURE.md), so this one page has to serve both contexts.
- * Deliberately doesn't check the session to pick a smarter "back" link:
- * this file sits at the root of every route, and reading the session cookie
- * here (a dynamic API) would force every other page in the app — including
- * the ones `generateStaticParams`/`generateMetadata` prerender today — into
- * dynamic rendering too, since they all share this same not-found boundary.
- * `/` always sends visitors to `/dashboard` regardless of session for the
- * same reason (see `app/page.tsx`), so this just follows that precedent.
+ * Deliberately doesn't read the session to pick a smarter "back" link: that
+ * is a dynamic API, and this boundary is shared by every route. `/` is the
+ * public landing page for everyone, so the link goes there.
  */
 export default function NotFound() {
   return (
@@ -31,10 +23,10 @@ export default function NotFound() {
         The page you&rsquo;re looking for doesn&rsquo;t exist, or may have been moved.
       </p>
       <Link
-        href="/dashboard"
+        href="/"
         className="mt-6 rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
       >
-        Back to dashboard
+        Back to the start
       </Link>
     </div>
   );

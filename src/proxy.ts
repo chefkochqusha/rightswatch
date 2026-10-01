@@ -16,9 +16,9 @@ import { SESSION_COOKIE_NAME } from "@/app/_lib/session-cookie-name";
  * proxy.js reference doc, "Execution order") — so `signUp`/`logIn` never
  * assume a request already passed through here.
  *
- * Demo Mode (`/`, `/dashboard`, `/creators`, `/assessments/*`) is
- * deliberately public and untouched here — it exists precisely so a
- * prospect can see the product with no signup at all (Phase 6).
+ * The landing page (`/`) and the public demo (`/demo`, which starts a
+ * read-only session in the shared demo workspace) are deliberately public
+ * and untouched here — a prospect can see the product with no signup.
  *
  * `/invite/accept` is also public and deliberately absent from
  * `AUTH_PAGES`: unlike `/login`/`/signup`, an existing session doesn't

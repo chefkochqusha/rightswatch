@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DemoButton } from "./demo-button";
 
 /** The public site's footer. The legal pages are linked from every page (§58). */
 export function SiteFooter() {
@@ -15,7 +16,7 @@ export function SiteFooter() {
           </p>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm">
-          <Link href="/dashboard" className="text-t2 hover:text-tx">Demo</Link>
+          <DemoButton className="text-left text-t2 hover:text-tx">Demo</DemoButton>
           <Link href="/imprint" className="text-t2 hover:text-tx">Imprint</Link>
           <Link href="/login" className="text-t2 hover:text-tx">Log in</Link>
           <Link href="/privacy" className="text-t2 hover:text-tx">Privacy</Link>
