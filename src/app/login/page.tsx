@@ -14,17 +14,19 @@ export const metadata = {
 export default async function LogInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ expired?: string }>;
+  searchParams: Promise<{ expired?: string; reset?: string }>;
 }) {
-  const { expired } = await searchParams;
+  const { expired, reset } = await searchParams;
 
   return (
     <AuthShell
       title="Log in"
       subtitle={
-        expired
-          ? "Your session has ended. Log in again to continue."
-          : "Welcome back to your RightsWatch workspace."
+        reset
+          ? "Your password is updated. Log in with the new one."
+          : expired
+            ? "Your session has ended. Log in again to continue."
+            : "Welcome back to your RightsWatch workspace."
       }
       footer={
         <>

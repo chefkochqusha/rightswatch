@@ -36,6 +36,8 @@ interface AuthStore {
   /** Login failures per client IP, across all emails: 30 per 15 minutes —
    *  enough headroom for an office behind one address, not for spraying. */
   loginIpRateLimiter: RateLimiter;
+  /** Reset-link requests per email: 3 per 15 minutes, so one inbox can't be flooded. */
+  resetRateLimiter: RateLimiter;
 }
 
 const globalForAuth = globalThis as unknown as { __rightswatchAuthStore?: AuthStore };
@@ -50,6 +52,7 @@ export function getAuthStore(): AuthStore {
       sessions: new PrismaSessionRepository(),
       loginRateLimiter: new InMemoryRateLimiter(),
       loginIpRateLimiter: new InMemoryRateLimiter({ maxAttempts: 30 }),
+      resetRateLimiter: new InMemoryRateLimiter({ maxAttempts: 3 }),
     };
   }
   return globalForAuth.__rightswatchAuthStore;

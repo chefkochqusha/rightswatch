@@ -14,7 +14,7 @@ import { hkdfSync } from "node:crypto";
  * purpose in circulation — which is how a token-format change ships on
  * purpose rather than by accident.
  */
-export type KeyPurpose = "session-token" | "invite-token";
+export type KeyPurpose = "session-token" | "invite-token" | "password-reset-token";
 
 export function deriveKey(secret: string, purpose: KeyPurpose): Buffer {
   return Buffer.from(hkdfSync("sha256", secret, "", `rightswatch/${purpose}/v1`, 32));

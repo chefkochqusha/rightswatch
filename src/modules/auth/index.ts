@@ -10,6 +10,9 @@ export {
 } from "./session-lifecycle";
 export type { SessionLifecycleDependencies } from "./session-lifecycle";
 export { deriveKey } from "./derive-key";
+export { requestPasswordReset, resetPassword } from "./password-reset";
+export type { ResetPasswordResult } from "./password-reset";
+export { PASSWORD_RESET_TTL_MS } from "./password-reset-token";
 export { UniqueConstraintError } from "./errors";
 
 export type {

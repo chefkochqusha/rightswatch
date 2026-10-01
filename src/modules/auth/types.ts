@@ -87,6 +87,9 @@ export interface SessionRepository {
   delete(id: string): Promise<void>;
   /** Housekeeping at each login, so a user's expired rows don't pile up. */
   deleteExpiredForUser(userId: string, now: Date): Promise<void>;
+  /** Ends every session a user has — after a password reset, so whoever
+   *  knew the old password is logged out everywhere. */
+  deleteAllForUser(userId: string): Promise<void>;
 }
 
 export interface WorkspaceRepository {

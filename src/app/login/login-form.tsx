@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { FormField } from "@/components/ui/form-field";
 import { logInAction, type LogInFormState } from "./actions";
@@ -25,6 +26,11 @@ export function LogInForm() {
         placeholder="Your password"
         autoComplete="current-password"
       />
+      <p className="text-[0.8125rem]">
+        <Link href="/forgot-password" className="text-t2 hover:text-tx hover:underline">
+          Forgot your password?
+        </Link>
+      </p>
       {state.formError && <p className="text-[0.8125rem] text-mismatch">{state.formError}</p>}
       <button
         type="submit"

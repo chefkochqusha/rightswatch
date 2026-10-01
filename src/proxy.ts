@@ -53,7 +53,7 @@ export default function proxy(request: NextRequest) {
   // database, `requireSession()` can. When it sends a browser here with
   // `?expired=1`, let the login page render instead of bouncing back to
   // `/workspace`, which would loop.
-  if (AUTH_PAGES.includes(pathname) && session && !request.nextUrl.searchParams.has("expired")) {
+  if (AUTH_PAGES.includes(pathname) && session && !request.nextUrl.searchParams.has("expired") && !request.nextUrl.searchParams.has("reset")) {
     return NextResponse.redirect(new URL("/workspace", request.url));
   }
 

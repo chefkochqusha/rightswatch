@@ -149,6 +149,10 @@ export class PrismaSessionRepository implements SessionRepository {
   async deleteExpiredForUser(userId: string, now: Date): Promise<void> {
     await getPrisma().session.deleteMany({ where: { userId, expiresAt: { lte: now } } });
   }
+
+  async deleteAllForUser(userId: string): Promise<void> {
+    await getPrisma().session.deleteMany({ where: { userId } });
+  }
 }
 
 /**

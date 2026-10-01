@@ -87,8 +87,9 @@ Cases (Brief §12) have a list at `/workspace/cases` (priority, six statuses, as
 
 Reports (Brief §25, §26) are at `/workspace/reports`: verdict split, songs and creators to review, case counts, and a CSV download (spreadsheet-safe, audit-logged).
 
-Still to build from the Master Brief: settings, password reset and
-email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
+Password reset works (`/forgot-password`): a signed one-hour link, single-use, ending all sessions; email goes through Resend once configured.
+
+Still to build from the Master Brief: settings, email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 
 Billing runs on Stripe (test mode) as soon as its five environment

@@ -204,6 +204,12 @@ export class InMemorySessionRepository implements SessionRepository {
     this.byId.delete(id);
   }
 
+  async deleteAllForUser(userId: string): Promise<void> {
+    for (const [id, session] of this.byId) {
+      if (session.userId === userId) this.byId.delete(id);
+    }
+  }
+
   async deleteExpiredForUser(userId: string, now: Date): Promise<void> {
     for (const [id, session] of this.byId) {
       if (session.userId === userId && session.expiresAt.getTime() <= now.getTime()) this.byId.delete(id);
