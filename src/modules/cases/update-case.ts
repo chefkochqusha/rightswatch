@@ -1,9 +1,11 @@
-import type { CaseRecord, CaseRepository, CaseStatus } from "./types";
+import type { CasePriority, CaseRecord, CaseRepository, CaseStatus } from "./types";
 
 export interface UpdateCaseInput {
   caseId: string;
   /** Omit to leave the status untouched. */
   status?: CaseStatus;
+  /** Omit to leave the priority untouched. */
+  priority?: CasePriority;
   /** Omit to leave the assignee untouched; pass `null` to unassign. */
   assignedToId?: string | null;
 }
@@ -35,8 +37,9 @@ export async function updateCase(
     return { ok: false, error: "CASE_NOT_FOUND" };
   }
 
-  const changes: Partial<Pick<CaseRecord, "status" | "assignedToId">> = {};
+  const changes: Partial<Pick<CaseRecord, "status" | "priority" | "assignedToId">> = {};
   if (input.status !== undefined) changes.status = input.status;
+  if (input.priority !== undefined) changes.priority = input.priority;
   if (input.assignedToId !== undefined) changes.assignedToId = input.assignedToId;
 
   const updated = await deps.caseRepository.update(input.caseId, changes);

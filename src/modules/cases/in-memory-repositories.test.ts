@@ -9,6 +9,7 @@ describe("InMemoryCaseRepository", () => {
       workspaceId: "workspace-1",
       rightsAssessmentId: "assessment-1",
       assignedToId: null,
+      priority: "MEDIUM",
     });
     assert.equal(created.status, "OPEN");
     assert.equal(created.workspaceId, "workspace-1");
@@ -21,6 +22,7 @@ describe("InMemoryCaseRepository", () => {
       workspaceId: "workspace-1",
       rightsAssessmentId: "assessment-1",
       assignedToId: "user-1",
+      priority: "MEDIUM",
     });
 
     assert.equal((await repo.findById(created.id))?.id, created.id);
@@ -31,9 +33,9 @@ describe("InMemoryCaseRepository", () => {
 
   test("findForWorkspace only returns that workspace's cases", async () => {
     const repo = new InMemoryCaseRepository();
-    await repo.create({ workspaceId: "workspace-1", rightsAssessmentId: "a1", assignedToId: null });
-    await repo.create({ workspaceId: "workspace-1", rightsAssessmentId: "a2", assignedToId: null });
-    await repo.create({ workspaceId: "workspace-2", rightsAssessmentId: "a3", assignedToId: null });
+    await repo.create({ workspaceId: "workspace-1", rightsAssessmentId: "a1", assignedToId: null, priority: "MEDIUM" });
+    await repo.create({ workspaceId: "workspace-1", rightsAssessmentId: "a2", assignedToId: null, priority: "MEDIUM" });
+    await repo.create({ workspaceId: "workspace-2", rightsAssessmentId: "a3", assignedToId: null, priority: "MEDIUM" });
 
     const forWorkspace1 = await repo.findForWorkspace("workspace-1");
     assert.equal(forWorkspace1.length, 2);
@@ -46,6 +48,7 @@ describe("InMemoryCaseRepository", () => {
       workspaceId: "workspace-1",
       rightsAssessmentId: "a1",
       assignedToId: null,
+      priority: "MEDIUM",
     });
 
     const updated = await repo.update(created.id, { status: "IN_PROGRESS" });

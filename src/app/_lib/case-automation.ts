@@ -1,4 +1,4 @@
-import { openCase } from "@/modules/cases";
+import { openCase, priorityForVerdict } from "@/modules/cases";
 import { notifyCaseOpened } from "@/modules/notifications";
 import type { StoredScanItem } from "@/modules/scan-results";
 import { getCaseStore } from "./case-store";
@@ -32,7 +32,10 @@ export async function openCasesForFlaggedItems(
   for (const item of items) {
     if (item.kind !== "ASSESSED" || item.assessment.status === "CLEARED") continue;
 
-    const result = await openCase({ workspaceId, rightsAssessmentId: item.rightsAssessmentId }, { caseRepository });
+    const result = await openCase(
+      { workspaceId, rightsAssessmentId: item.rightsAssessmentId, priority: priorityForVerdict(item.assessment.status) },
+      { caseRepository },
+    );
     if (!result.created) continue;
     opened += 1;
 

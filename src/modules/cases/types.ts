@@ -16,13 +16,28 @@
  * is idempotent rather than erroring on a second call.
  */
 
-export type CaseStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED" | "DISMISSED";
+/**
+ * Brief §12's case statuses: Open, In review (`IN_PROGRESS`), Waiting (on
+ * someone outside the team), Cleared (looked at, nothing wrong), Resolved
+ * (acted on) and Dismissed (not worth pursuing).
+ */
+export type CaseStatus = "OPEN" | "IN_PROGRESS" | "WAITING" | "CLEARED" | "RESOLVED" | "DISMISSED";
+
+/** Statuses of a case somebody still has to do something about. */
+export const ACTIVE_CASE_STATUSES: readonly CaseStatus[] = ["OPEN", "IN_PROGRESS", "WAITING"];
+
+/** Brief §12's priorities. */
+export type CasePriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+/** Most urgent first. */
+export const CASE_PRIORITY_ORDER: Record<CasePriority, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
 export interface CaseRecord {
   id: string;
   workspaceId: string;
   rightsAssessmentId: string;
   status: CaseStatus;
+  priority: CasePriority;
   assignedToId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +56,7 @@ export interface CaseRepository {
     workspaceId: string;
     rightsAssessmentId: string;
     assignedToId: string | null;
+    priority: CasePriority;
   }): Promise<CaseRecord>;
   findById(id: string): Promise<CaseRecord | null>;
   /** The lookup `openCase` uses to enforce the 1:1 relationship. */
@@ -48,7 +64,7 @@ export interface CaseRepository {
   findForWorkspace(workspaceId: string): Promise<CaseRecord[]>;
   update(
     id: string,
-    changes: Partial<Pick<CaseRecord, "status" | "assignedToId">>,
+    changes: Partial<Pick<CaseRecord, "status" | "priority" | "assignedToId">>,
   ): Promise<CaseRecord>;
 }
 

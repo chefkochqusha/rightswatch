@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   CaseNoteRecord,
   CaseNoteRepository,
+  CasePriority,
   CaseRecord,
   CaseRepository,
 } from "./types";
@@ -20,6 +21,7 @@ export class InMemoryCaseRepository implements CaseRepository {
     workspaceId: string;
     rightsAssessmentId: string;
     assignedToId: string | null;
+    priority: CasePriority;
   }): Promise<CaseRecord> {
     const now = new Date();
     const record: CaseRecord = {
@@ -27,6 +29,7 @@ export class InMemoryCaseRepository implements CaseRepository {
       workspaceId: input.workspaceId,
       rightsAssessmentId: input.rightsAssessmentId,
       status: "OPEN",
+      priority: input.priority,
       assignedToId: input.assignedToId,
       createdAt: now,
       updatedAt: now,
@@ -52,7 +55,7 @@ export class InMemoryCaseRepository implements CaseRepository {
 
   async update(
     id: string,
-    changes: Partial<Pick<CaseRecord, "status" | "assignedToId">>,
+    changes: Partial<Pick<CaseRecord, "status" | "priority" | "assignedToId">>,
   ): Promise<CaseRecord> {
     const existing = this.byId.get(id);
     if (!existing) {

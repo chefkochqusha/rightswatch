@@ -1,9 +1,11 @@
-import type { CaseRecord, CaseRepository } from "./types";
+import type { CasePriority, CaseRecord, CaseRepository } from "./types";
 
 export interface OpenCaseInput {
   workspaceId: string;
   rightsAssessmentId: string;
   assignedToId?: string | null;
+  /** Defaults to MEDIUM; `priorityForVerdict` suggests one from the verdict. */
+  priority?: CasePriority;
 }
 
 export interface OpenCaseDependencies {
@@ -38,6 +40,7 @@ export async function openCase(
     workspaceId: input.workspaceId,
     rightsAssessmentId: input.rightsAssessmentId,
     assignedToId: input.assignedToId ?? null,
+    priority: input.priority ?? "MEDIUM",
   });
   return { created: true, case: created };
 }

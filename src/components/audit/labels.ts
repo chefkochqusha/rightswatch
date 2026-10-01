@@ -15,6 +15,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "case.opened": "Opened a case",
   "case.status_changed": "Changed the case status",
   "case.assignee_changed": "Changed the case assignment",
+  "case.priority_changed": "Changed the case priority",
   "creator.added": "Added a creator to the watchlist",
   "creator.restored": "Put a creator back on the watchlist",
   "creator.paused": "Paused monitoring of a creator",

@@ -5,6 +5,7 @@ import type {
   CaseNoteRepository,
   CaseRecord,
   CaseRepository,
+  CasePriority,
   CaseStatus,
 } from "./types";
 
@@ -38,17 +39,23 @@ function toPrismaCaseStatus(status: CaseStatus): PrismaCaseStatus {
 function fromPrismaCaseStatus(status: string): CaseStatus {
   return status as CaseStatus;
 }
+type PrismaCasePriority = Parameters<typeof _phantomPrismaClient.case.create>[0]["data"]["priority"] & string;
+function toPrismaCasePriority(priority: CasePriority): PrismaCasePriority {
+  return priority as PrismaCasePriority;
+}
 
 export class PrismaCaseRepository implements CaseRepository {
   async create(input: {
     workspaceId: string;
     rightsAssessmentId: string;
     assignedToId: string | null;
+    priority: CasePriority;
   }): Promise<CaseRecord> {
     const row = await getPrisma().case.create({
       data: {
         workspaceId: input.workspaceId,
         rightsAssessmentId: input.rightsAssessmentId,
+        priority: toPrismaCasePriority(input.priority),
         assignedToId: input.assignedToId,
       },
     });
@@ -72,13 +79,14 @@ export class PrismaCaseRepository implements CaseRepository {
 
   async update(
     id: string,
-    changes: Partial<Pick<CaseRecord, "status" | "assignedToId">>,
+    changes: Partial<Pick<CaseRecord, "status" | "priority" | "assignedToId">>,
   ): Promise<CaseRecord> {
     const row = await getPrisma().case.update({
       where: { id },
       data: {
         ...changes,
         status: changes.status ? toPrismaCaseStatus(changes.status) : undefined,
+        priority: changes.priority ? toPrismaCasePriority(changes.priority) : undefined,
       },
     });
     return mapCase(row);
@@ -113,6 +121,7 @@ function mapCase(row: {
   workspaceId: string;
   rightsAssessmentId: string;
   status: string;
+  priority: string;
   assignedToId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -122,6 +131,7 @@ function mapCase(row: {
     workspaceId: row.workspaceId,
     rightsAssessmentId: row.rightsAssessmentId,
     status: fromPrismaCaseStatus(row.status),
+    priority: row.priority as CasePriority,
     assignedToId: row.assignedToId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

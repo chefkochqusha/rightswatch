@@ -416,8 +416,17 @@ model RightsAssessment {
 enum CaseStatus {
   OPEN
   IN_PROGRESS
+  WAITING
+  CLEARED
   RESOLVED
   DISMISSED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 model Case {
@@ -425,6 +434,7 @@ model Case {
   workspaceId        String
   rightsAssessmentId String     @unique
   status             CaseStatus @default(OPEN)
+  priority           CasePriority @default(MEDIUM)
   assignedToId       String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -436,6 +446,7 @@ model Case {
   evidence         CaseEvidence[]
 
   @@index([workspaceId])
+  @@index([workspaceId, status])
   @@map("cases")
 }
 

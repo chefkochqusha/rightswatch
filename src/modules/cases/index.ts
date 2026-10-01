@@ -1,5 +1,10 @@
+export { ACTIVE_CASE_STATUSES, CASE_PRIORITY_ORDER } from "./types";
+export { priorityForVerdict } from "./priority";
+export { statusInGroup, sortCasesByUrgency } from "./case-list";
+export type { CaseGroup } from "./case-list";
 export type {
   CaseStatus,
+  CasePriority,
   CaseRecord,
   CaseNoteRecord,
   CaseRepository,

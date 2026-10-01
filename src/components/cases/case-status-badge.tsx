@@ -11,6 +11,8 @@ import { CASE_STATUS_LABELS } from "./labels";
 const STYLES: Record<CaseStatus, string> = {
   OPEN: "bg-review-bg text-review",
   IN_PROGRESS: "bg-unknown-bg text-unknown",
+  WAITING: "bg-unknown-bg text-unknown",
+  CLEARED: "bg-cleared-bg text-cleared",
   RESOLVED: "bg-cleared-bg text-cleared",
   DISMISSED: "bg-hover text-t2",
 };

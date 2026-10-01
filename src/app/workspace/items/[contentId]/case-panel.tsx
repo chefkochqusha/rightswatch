@@ -1,15 +1,19 @@
 import { getCaseStore } from "@/app/_lib/case-store";
+import { getWorkspaceMembers } from "@/app/_lib/members";
 import { CaseStatusBadge } from "@/components/cases/case-status-badge";
-import { CASE_STATUS_LABELS } from "@/components/cases/labels";
-import type { CaseStatus } from "@/modules/cases";
+import { CasePriorityBadge } from "@/components/cases/case-priority-badge";
+import { CASE_PRIORITY_LABELS, CASE_STATUS_HINTS, CASE_STATUS_LABELS } from "@/components/cases/labels";
+import type { CasePriority, CaseStatus } from "@/modules/cases";
 import {
   openCaseAction,
   updateCaseStatusAction,
-  toggleAssignToMeAction,
+  setCasePriorityAction,
+  assignCaseAction,
   addCaseNoteAction,
 } from "./case-actions";
 
-const CASE_STATUSES: CaseStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED", "DISMISSED"];
+const CASE_STATUSES: CaseStatus[] = ["OPEN", "IN_PROGRESS", "WAITING", "CLEARED", "RESOLVED", "DISMISSED"];
+const CASE_PRIORITIES: CasePriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -76,14 +80,18 @@ export async function CasePanel({
     );
   }
 
-  const notes = await store.notes.findForCase(existingCase.id);
-  const isAssignedToMe = existingCase.assignedToId === currentUserId;
+  const [notes, members] = await Promise.all([store.notes.findForCase(existingCase.id), getWorkspaceMembers(existingCase.workspaceId)]);
+  const nameOf = new Map(members.map((member) => [member.userId, member.name]));
+  const assignee = existingCase.assignedToId ? (nameOf.get(existingCase.assignedToId) ?? "A former member") : null;
 
   return (
     <section className="rounded-lg border border-line bg-surface p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">Case</h2>
-        <CaseStatusBadge status={existingCase.status} />
+        <div className="flex items-center gap-3">
+          <CasePriorityBadge priority={existingCase.priority} />
+          <CaseStatusBadge status={existingCase.status} />
+        </div>
       </div>
       <p className="mt-1 text-[0.8125rem] text-t2">
         Opened {dateTimeFormatter.format(existingCase.createdAt)}
@@ -97,6 +105,7 @@ export async function CasePanel({
               <input type="hidden" name="status" value={status} />
               <button
                 type="submit"
+                title={CASE_STATUS_HINTS[status]}
                 disabled={existingCase.status === status}
                 className={
                   existingCase.status === status
@@ -111,26 +120,49 @@ export async function CasePanel({
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
-        <p className="text-[0.8125rem] text-t2">
-          {existingCase.assignedToId
-            ? isAssignedToMe
-              ? "Assigned to you"
-              : "Assigned to a teammate"
-            : "Unassigned"}
-        </p>
-        {canManage && (
-          <form action={toggleAssignToMeAction}>
-            <input type="hidden" name="contentId" value={contentId} />
-            <button
-              type="submit"
-              className="text-[0.8125rem] font-medium text-accent hover:underline"
-            >
-              {isAssignedToMe ? "Unassign yourself" : "Assign to me"}
-            </button>
-          </form>
-        )}
-      </div>
+      <dl className="mt-4 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+        <div>
+          <dt className="text-[0.8125rem] text-t2">Priority</dt>
+          <dd className="mt-1">
+            {canManage ? (
+              <form action={setCasePriorityAction} className="flex items-center gap-2">
+                <input type="hidden" name="contentId" value={contentId} />
+                <select name="priority" defaultValue={existingCase.priority} aria-label="Priority" className="h-8 rounded-lg border border-line bg-surface px-2 text-sm text-tx">
+                  {CASE_PRIORITIES.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {CASE_PRIORITY_LABELS[priority]}
+                    </option>
+                  ))}
+                </select>
+                <button type="submit" className="text-[0.8125rem] font-medium text-accent hover:underline">Save</button>
+              </form>
+            ) : (
+              <span className="text-sm">{CASE_PRIORITY_LABELS[existingCase.priority]}</span>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[0.8125rem] text-t2">Assigned to</dt>
+          <dd className="mt-1">
+            {canManage ? (
+              <form action={assignCaseAction} className="flex items-center gap-2">
+                <input type="hidden" name="contentId" value={contentId} />
+                <select name="assigneeId" defaultValue={existingCase.assignedToId ?? ""} aria-label="Assigned to" className="h-8 max-w-44 rounded-lg border border-line bg-surface px-2 text-sm text-tx">
+                  <option value="">Nobody</option>
+                  {members.map((member) => (
+                    <option key={member.userId} value={member.userId}>
+                      {member.userId === currentUserId ? `${member.name} (you)` : member.name}
+                    </option>
+                  ))}
+                </select>
+                <button type="submit" className="text-[0.8125rem] font-medium text-accent hover:underline">Save</button>
+              </form>
+            ) : (
+              <span className="text-sm">{assignee ?? "Nobody"}</span>
+            )}
+          </dd>
+        </div>
+      </dl>
 
       <div className="mt-5 border-t border-line pt-4">
         <h3 className="text-[0.8125rem] font-semibold text-t2">
@@ -144,7 +176,7 @@ export async function CasePanel({
               <li key={note.id} className="rounded-md bg-surface-2 p-3">
                 <p className="text-sm whitespace-pre-wrap text-tx">{note.body}</p>
                 <p className="mt-1.5 text-[0.75rem] text-t2">
-                  {note.authorId === currentUserId ? currentUserName : "Teammate"} ·{" "}
+                  {note.authorId === currentUserId ? currentUserName : (nameOf.get(note.authorId) ?? "A former member")} ·{" "}
                   {dateTimeFormatter.format(note.createdAt)}
                 </p>
               </li>

@@ -15,6 +15,7 @@ function makeCase(id: string, rightsAssessmentId: string): CaseRecord {
     workspaceId: "workspace-1",
     rightsAssessmentId,
     status: "OPEN",
+    priority: "MEDIUM",
     assignedToId: null,
     createdAt: new Date(),
     updatedAt: new Date(),

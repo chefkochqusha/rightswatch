@@ -5,10 +5,12 @@ import { requireCaseManager } from "@/app/_lib/authorize";
 import { getCaseStore } from "@/app/_lib/case-store";
 import { getAuditStore } from "@/app/_lib/audit-store";
 import { getWorkspaceScanItem } from "@/app/_lib/workspace-scan-store";
-import { openCase, addCaseNote, updateCase } from "@/modules/cases";
-import type { CaseStatus } from "@/modules/cases";
+import { openCase, addCaseNote, updateCase, priorityForVerdict } from "@/modules/cases";
+import type { CasePriority, CaseStatus } from "@/modules/cases";
+import { getWorkspaceMembers } from "@/app/_lib/members";
 
-const CASE_STATUSES: CaseStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED", "DISMISSED"];
+const CASE_STATUSES: CaseStatus[] = ["OPEN", "IN_PROGRESS", "WAITING", "CLEARED", "RESOLVED", "DISMISSED"];
+const CASE_PRIORITIES: CasePriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 /**
  * Every case action starts here: confirms the caller is at least an
@@ -29,15 +31,15 @@ async function requireAssessedItem(contentId: string) {
   if (!item || item.kind !== "ASSESSED") {
     throw new Error("No rights assessment exists for this content item.");
   }
-  return { session, item, rightsAssessmentId: item.rightsAssessmentId };
+  return { session, item, rightsAssessmentId: item.rightsAssessmentId, verdict: item.assessment.status };
 }
 
 export async function openCaseAction(formData: FormData) {
   const contentId = String(formData.get("contentId") ?? "");
-  const { session, rightsAssessmentId } = await requireAssessedItem(contentId);
+  const { session, rightsAssessmentId, verdict } = await requireAssessedItem(contentId);
   const store = getCaseStore();
   const result = await openCase(
-    { workspaceId: session.workspace.id, rightsAssessmentId },
+    { workspaceId: session.workspace.id, rightsAssessmentId, priority: priorityForVerdict(verdict) },
     { caseRepository: store.cases },
   );
   // Same idempotency-respecting check as `workspace-scan-store.ts`'s
@@ -55,6 +57,7 @@ export async function openCaseAction(formData: FormData) {
   }
   revalidatePath(`/workspace/items/${contentId}`);
   revalidatePath("/workspace");
+  revalidatePath("/workspace/cases");
 }
 
 export async function updateCaseStatusAction(formData: FormData) {
@@ -87,19 +90,50 @@ export async function updateCaseStatusAction(formData: FormData) {
   }
   revalidatePath(`/workspace/items/${contentId}`);
   revalidatePath("/workspace");
+  revalidatePath("/workspace/cases");
 }
 
-export async function toggleAssignToMeAction(formData: FormData) {
+export async function setCasePriorityAction(formData: FormData) {
   const contentId = String(formData.get("contentId") ?? "");
+  const rawPriority = String(formData.get("priority") ?? "");
+  if (!CASE_PRIORITIES.includes(rawPriority as CasePriority)) {
+    throw new Error(`Unrecognized case priority: ${rawPriority}`);
+  }
   const { session, rightsAssessmentId } = await requireAssessedItem(contentId);
   const store = getCaseStore();
   const existing = await store.cases.findByRightsAssessmentId(rightsAssessmentId);
   if (!existing) throw new Error("No case exists yet for this content item.");
-  const nextAssignee = existing.assignedToId === session.user.id ? null : session.user.id;
-  await updateCase(
-    { caseId: existing.id, assignedToId: nextAssignee },
-    { caseRepository: store.cases },
-  );
+  if (existing.priority === rawPriority) return;
+  await updateCase({ caseId: existing.id, priority: rawPriority as CasePriority }, { caseRepository: store.cases });
+  await getAuditStore().auditLogs.create({
+    workspaceId: session.workspace.id,
+    actorId: session.user.id,
+    action: "case.priority_changed",
+    targetType: "case",
+    targetId: existing.id,
+    metadata: { from: existing.priority, to: rawPriority },
+  });
+  revalidatePath(`/workspace/items/${contentId}`);
+  revalidatePath("/workspace/cases");
+}
+
+/** Assigns the case to a member of this workspace, or to nobody (empty). */
+export async function assignCaseAction(formData: FormData) {
+  const contentId = String(formData.get("contentId") ?? "");
+  const rawAssignee = String(formData.get("assigneeId") ?? "");
+  const { session, rightsAssessmentId } = await requireAssessedItem(contentId);
+  const store = getCaseStore();
+  const existing = await store.cases.findByRightsAssessmentId(rightsAssessmentId);
+  if (!existing) throw new Error("No case exists yet for this content item.");
+
+  let nextAssignee: string | null = null;
+  if (rawAssignee) {
+    const members = await getWorkspaceMembers(session.workspace.id);
+    if (!members.some((member) => member.userId === rawAssignee)) throw new Error("That person isn't a member of this workspace.");
+    nextAssignee = rawAssignee;
+  }
+  if (existing.assignedToId === nextAssignee) return;
+  await updateCase({ caseId: existing.id, assignedToId: nextAssignee }, { caseRepository: store.cases });
   await getAuditStore().auditLogs.create({
     workspaceId: session.workspace.id,
     actorId: session.user.id,
@@ -109,6 +143,7 @@ export async function toggleAssignToMeAction(formData: FormData) {
     metadata: { from: existing.assignedToId, to: nextAssignee },
   });
   revalidatePath(`/workspace/items/${contentId}`);
+  revalidatePath("/workspace/cases");
 }
 
 // `addCaseNoteAction` deliberately doesn't write an audit entry: a note

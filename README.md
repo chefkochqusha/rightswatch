@@ -83,8 +83,9 @@ in Postgres (Neon).
 
 The overview is a feed (KPIs, your songs, latest videos with music) and `/` is the public landing page, with pricing read from the plan catalog.
 
-Still to build from the Master Brief: a cases list and
-report export, settings, password reset and
+Cases (Brief §12) have a list at `/workspace/cases` (priority, six statuses, assignee, search) and a panel on each post.
+
+Still to build from the Master Brief: report export, settings, password reset and
 email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 
