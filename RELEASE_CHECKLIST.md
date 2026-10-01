@@ -72,3 +72,6 @@ or a business decision at release time, it gets a line here.
   case, invite a teammate, subscribe, log out and back in.
 - [ ] **Launch video** of the finished product (same approach as the earlier
   showreel: Opus + the brag-slim skill).
+- [ ] **Warm up the public demo** after the first deploy on a fresh database: click
+  "Try the demo" once. The first visit fills the demo workspace (about a minute
+  on a slow database); later visits are instant.

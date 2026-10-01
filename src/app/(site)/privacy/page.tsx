@@ -11,3 +11,7 @@ export default function Page() {
     </div>
   );
 }
+
+// The footer's "Try the demo" Server Action fills the demo workspace on the first visit,
+// which takes longer than the default limit.
+export const maxDuration = 120;

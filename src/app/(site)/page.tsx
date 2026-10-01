@@ -11,6 +11,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SearchIcon } from "@/components/ui/icons";
 import { PLAN_CATALOG } from "@/modules/billing/plan-catalog";
 
+// The "Try the demo" button runs a Server Action that fills the demo workspace on the
+// first visit after a fresh database, which takes longer than the default limit.
+export const maxDuration = 120;
+
 export const metadata: Metadata = {
   title: "RightsWatch: know where your music appears commercially",
   description:
