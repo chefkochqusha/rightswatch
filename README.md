@@ -81,8 +81,10 @@ pipeline (against a demo TikTok connector and demo music identification),
 cases, notifications, the audit log and billing. Everything they store is
 in Postgres (Neon).
 
-Still to build from the Master Brief: the home feed, a cases list and
-report export, settings, the landing and pricing pages, password reset and
+The overview is a feed (KPIs, your songs, latest videos with music) and `/` is the public landing page, with pricing read from the plan catalog.
+
+Still to build from the Master Brief: a cases list and
+report export, settings, password reset and
 email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 

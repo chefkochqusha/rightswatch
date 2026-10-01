@@ -249,8 +249,9 @@ before the text; read rows are plain. The whole row is a single `Link` to
 the underlying item, never a button plus a separate link.
 
 **Keyword marquee** (`components/marketing/keyword-marquee.tsx`) — a
-full-bleed, continuously-scrolling strip of short keywords, `/dashboard`
-only (today's de facto landing page — `/` redirects there). Two rows, each
+full-bleed, continuously-scrolling strip of short keywords. On `/dashboard`
+it runs in the app's own tones; on the landing page it is `tone="band"`:
+big display type, white on the brand-blue band. Two rows, each
 scrolling the opposite direction: audience segments (the Brief's own four
 customer types, §1) and capability phrases (held to the same cautious,
 signal-not-verdict voice as everything under "Copy & tone" below). Words
@@ -336,3 +337,22 @@ memory. Like `ARCHITECTURE.md`, nothing here is a new design decision; it's
 the first time the real app's already-implemented conventions have been
 written down in one place instead of living only as scattered comments and
 the components themselves.
+
+## Landing page (`src/app/(site)`)
+
+The public pages (`/`, `/imprint`, `/privacy`) share one layout with the site
+header and footer. They are deliberately *not* the app's quiet chrome:
+
+- **Display type**: Bricolage Grotesque Variable with its optical-size axis
+  (`@fontsource-variable`, self-hosted, so no request to Google), class
+  `font-display`, weight 800 and tight tracking at headline sizes. Body copy
+  stays on the app's system stack.
+- **One signal colour**: `--color-ultra` (#1f3dff) for the marquee band and
+  the closing section. Verdict colours appear only where they mean a verdict.
+- **The hero is the product**: `components/marketing/hero-feed.tsx` shows the
+  feed moving (three columns of video posters drifting past each other),
+  built from the real `VideoPoster` and `StatusBadge`. Labelled demo data.
+- **Motion**: the hero drift and the marquee only; both stop under
+  `prefers-reduced-motion`. No per-section entrance animations.
+- **Copy**: sentence case, "potential mismatch" never "infringement", no logos
+  or testimonials, prices from `PLAN_CATALOG`.

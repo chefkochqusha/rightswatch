@@ -19,12 +19,12 @@ export function VideoPoster({
   return (
     <span aria-hidden="true" className={`relative isolate block aspect-[9/16] overflow-hidden rounded-[0.875rem] bg-[#2a2a2e] ${className}`}>
       {song && (
-        <CoverArt
-          title={song.title}
-          artist={song.artist}
-          artworkUrl={song.artworkUrl}
-          className="absolute -inset-1/4 scale-110 blur-xl saturate-[1.15]"
-        />
+        // The cover sits in its own absolutely-sized wrapper: CoverArt is
+        // `relative` itself, so putting `absolute` on it would lose to that
+        // and leave it zero-high.
+        <span className="absolute -inset-1/4 block scale-110 blur-xl saturate-[1.15]">
+          <CoverArt title={song.title} artist={song.artist} artworkUrl={song.artworkUrl} className="h-full w-full" />
+        </span>
       )}
       {/* A scrim, so the marks on top read on any cover. */}
       <span className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/55" />

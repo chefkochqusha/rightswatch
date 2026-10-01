@@ -26,6 +26,12 @@ or a business decision at release time, it gets a line here.
   fetched by the server, never by the visitor's browser, so no visitor data
   goes to the Internet Archive.
 
+- [ ] **Landing page wording**: the pricing section states net monthly prices
+  and a 14-day free trial; add VAT wording and the cancellation terms once the
+  business status and terms are settled. The "Book a demo" call to action from
+  the Brief is "Try the demo" (the public demo workspace) until a booking
+  link or sales inbox exists.
+
 ## Services & credentials
 
 - [ ] **TikTok Commercial Content API** — apply at

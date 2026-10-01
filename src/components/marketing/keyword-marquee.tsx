@@ -20,32 +20,38 @@ export function KeywordMarquee({
   items,
   direction = "left",
   className = "",
+  tone = "default",
 }: {
   items: readonly string[];
   direction?: "left" | "right";
   className?: string;
+  /** `band`: big display type in white on the brand-blue band. */
+  tone?: "default" | "band";
 }) {
+  const band = tone === "band";
   const doubled = [...items, ...items];
 
   return (
     <div className={`overflow-hidden ${className}`} aria-hidden="true">
       <div
-        className={`flex w-max shrink-0 items-center gap-x-10 ${
+        className={`flex w-max shrink-0 items-center ${band ? "gap-x-14" : "gap-x-10"} ${
           direction === "left" ? "animate-marquee-left" : "animate-marquee-right"
         }`}
       >
         {doubled.map((label, i) => (
-          <span key={i} className="flex shrink-0 items-center gap-x-10">
+          <span key={i} className={`flex shrink-0 items-center ${band ? "gap-x-14" : "gap-x-10"}`}>
             <span
               className={
-                i % 2 === 0
-                  ? "text-2xl font-semibold tracking-tight text-tx sm:text-3xl"
-                  : "marquee-outline-text text-2xl font-semibold tracking-tight sm:text-3xl"
+                band
+                  ? `font-display text-[clamp(2.5rem,6vw,5rem)] leading-none font-extrabold tracking-[-0.03em] ${i % 2 === 0 ? "text-white" : "marquee-outline-inverse"}`
+                  : i % 2 === 0
+                    ? "text-2xl font-semibold tracking-tight text-tx sm:text-3xl"
+                    : "marquee-outline-text text-2xl font-semibold tracking-tight sm:text-3xl"
               }
             >
               {label}
             </span>
-            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
+            <span className={`shrink-0 rounded-full ${band ? "h-3 w-3 bg-white" : "h-2 w-2 bg-accent"}`} />
           </span>
         ))}
       </div>
