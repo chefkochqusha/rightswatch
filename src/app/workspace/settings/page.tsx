@@ -3,6 +3,7 @@ import { dataModeFor } from "@/app/_lib/connector-mode";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
+import { getRecognitionMode } from "@/app/_lib/recognition";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
 import { PageHeader } from "@/components/ui/page-header";
 import { ROLE_LABELS } from "@/components/team/labels";
@@ -66,11 +67,17 @@ export default async function SettingsPage() {
       name: "Music in posts",
       what: "Identifies which song a post uses",
       ...(isRealData
-        ? {
-            state: "Not connected",
-            tone: "off" as const,
-            detail: "TikTok's commercial data carries no music information, so identifying songs in posts needs audio recognition, which isn't connected yet. Until then posts are listed as having no song identified.",
-          }
+        ? getRecognitionMode() === "AUDD"
+          ? {
+              state: "AudD",
+              tone: "ok" as const,
+              detail: "Songs in real posts are identified with AudD. AudD reports a match but no confidence score, so the percentage shown for its matches is a fixed value, not a measurement.",
+            }
+          : {
+              state: "Not connected",
+              tone: "off" as const,
+              detail: "TikTok's commercial data carries no music information, so identifying songs in posts needs audio recognition, which isn't connected yet. Until then posts are listed as having no song identified.",
+            }
         : {
             state: "Demo",
             tone: "demo" as const,

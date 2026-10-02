@@ -44,8 +44,17 @@ or a business decision at release time, it gets a line here.
   and tested with stubbed answers only, so expect the first live call to need a
   small fix; a failure shows as "couldn't be fetched" with the reason on the
   creator. The public demo workspace stays on fake data either way.
-- [ ] **Music identification**: a paid provider (e.g. an audio-fingerprinting
-  API) or manual identification by the team. Decide at release.
+- [ ] **Music identification (AudD)**: an AudD adapter is built
+  (`modules/music/audd-provider.ts`) and stays off until `AUDD_API_TOKEN` is set
+  in Vercel; without it posts are listed as "no song yet" and the team
+  identifies them by hand. It is written against AudD's public docs and
+  tested with a stubbed `fetch`, not yet against the live service: expect a
+  small fix on the first real post. Costs about 5 USD per 1,000 requests; a
+  scan sends every fetched post, and the daily re-fetch overlaps the day
+  before, so a post is sent about twice. AudD gives no confidence score, so
+  its matches carry a fixed 90 % (the settings page says so). Check AudD's and
+  TikTok's terms for fetching a video by link before using it (also on the
+  lawyer list).
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.

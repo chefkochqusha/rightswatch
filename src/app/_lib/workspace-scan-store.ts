@@ -1,6 +1,6 @@
 import { runScan } from "@/modules/scan-pipeline";
 import { MockTikTokConnector, TikTokCommercialContentConnector, type PlatformConnector } from "@/modules/connectors";
-import { FixtureMusicIdentificationProvider, NoRecognitionProvider, type MusicIdentificationProvider } from "@/modules/music";
+import { FixtureMusicIdentificationProvider, type MusicIdentificationProvider } from "@/modules/music";
 import { PrismaCampaignRepository } from "@/modules/campaigns/prisma-repository";
 import { toRightsRecordInput } from "@/modules/rights";
 import type { RightsRecordInput } from "@/modules/rights-engine/types";
@@ -23,6 +23,7 @@ import { getCreatorAllowance } from "./creator-allowance";
 import { getAuthStore } from "./auth-store";
 import { dataModeFor, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
 import { openCasesForFlaggedItems } from "./case-automation";
+import { getRecognitionProvider } from "./recognition";
 
 /**
  * A workspace's scan (Brief §21, §50): fetch each monitored creator's
@@ -222,7 +223,7 @@ function scanProviders(
   const credentials = mode === "REAL" ? getTikTokCredentials() : null;
   if (mode === "REAL" && !credentials) throw new Error("TikTok credentials are missing.");
   if (credentials) {
-    return { connector: new TikTokCommercialContentConnector(credentials), musicProvider: new NoRecognitionProvider() };
+    return { connector: new TikTokCommercialContentConnector(credentials), musicProvider: getRecognitionProvider() };
   }
   return { connector: new MockTikTokConnector(), musicProvider: new FixtureMusicIdentificationProvider({ catalogue }) };
 }

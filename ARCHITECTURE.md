@@ -347,9 +347,12 @@ neither (Brief §4).
 `DEMO_MODE` isn't "true"; otherwise `DEMO`. `dataModeFor(workspace)` is the
 per-workspace answer: the public demo workspace is always `DEMO`, so it keeps
 its made-up posts however the app is configured. In `REAL` mode a scan uses the
-real connector and `NoRecognitionProvider` — no audio recognition exists yet,
-so a real post is stored as "no song identified" rather than given an invented
-one — the "Load demo data" and "Add the six demo creators" buttons disappear,
+real connector and the recognition provider `app/_lib/recognition.ts` picks:
+`AuddRecognitionProvider` (`modules/music/audd-provider.ts`, each post's video
+URLs sent to AudD in turn; no score from AudD, so a fixed 0.9; written against
+the public docs and tested with a stubbed fetch) when `AUDD_API_TOKEN` is set,
+else `NoRecognitionProvider`, so a real post is stored as "no song identified"
+rather than given an invented one — the "Load demo data" and "Add the six demo creators" buttons disappear,
 and the "Demo data" labels go.
 
 `Connector` and `ConnectorCredential` exist in the Prisma schema
