@@ -14,15 +14,17 @@ export const metadata = {
 export default async function LogInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ expired?: string; reset?: string }>;
+  searchParams: Promise<{ expired?: string; reset?: string; deleted?: string }>;
 }) {
-  const { expired, reset } = await searchParams;
+  const { expired, reset, deleted } = await searchParams;
 
   return (
     <AuthShell
       title="Log in"
       subtitle={
-        reset
+        deleted
+          ? "Your workspace and everything in it was deleted."
+          : reset
           ? "Your password is updated. Log in with the new one."
           : expired
             ? "Your session has ended. Log in again to continue."

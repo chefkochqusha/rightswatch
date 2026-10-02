@@ -12,6 +12,8 @@ export type { SessionLifecycleDependencies } from "./session-lifecycle";
 export { deriveKey } from "./derive-key";
 export { requestPasswordReset, resetPassword } from "./password-reset";
 export { changePassword } from "./change-password";
+export { deleteWorkspace } from "./delete-workspace";
+export type { DeleteWorkspaceResult } from "./delete-workspace";
 export { sendEmailVerification, verifyEmail } from "./email-verification";
 export type { SendVerificationResult, VerifyEmailResult } from "./email-verification";
 export type { ChangePasswordResult } from "./change-password";

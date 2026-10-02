@@ -185,6 +185,20 @@ are still shown in-app for the inviter to copy, and in-app notifications
 are the only notification channel (see "Notifications" below). A
 domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
 
+**Deleting a workspace (GDPR Art. 17).** Settings has a "Delete workspace"
+card for the owner (never in the public demo): the workspace's name typed out
+plus the owner's password, 5 password guesses per 15 minutes.
+`modules/auth/delete-workspace.ts` checks that, runs `beforeDelete` (the app
+passes "cancel the subscription"; if that throws nothing is deleted), then
+`AccountRepository.deleteWorkspace`: in one transaction the workspace row goes
+(the schema's cascades take creators, posts, matches, rights, cases, notes,
+the audit log, notifications and the subscription record with it) and then
+every account left without a workspace (sessions cascade). An account that
+also belongs to another workspace stays. It isn't a soft delete and there is
+no undo. Data held by processors (Stripe's invoices, Resend's logs) is theirs
+to delete or keep by their own rules. Not built: automatic deletion of old
+data, and a data export beyond the report CSV.
+
 **Accessibility.** Checked with axe-core (WCAG 2.1 AA plus best practices) on
 every public and app page in light and dark mode: no violations. What keeps it
 that way: `--t2` and the accent/green tokens are tuned to 4.5:1 on every

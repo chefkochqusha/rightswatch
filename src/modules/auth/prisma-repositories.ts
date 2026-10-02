@@ -131,6 +131,20 @@ export class PrismaAccountRepository implements AccountRepository {
       throw error;
     }
   }
+
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    await getPrisma().$transaction(async (tx) => {
+      const members = await tx.membership.findMany({ where: { workspaceId }, select: { userId: true } });
+      // The workspace first: everything under it goes with it (the schema's
+      // cascades), the audit log included, which must not outlive it because
+      // it points at the people who are deleted next.
+      await tx.workspace.delete({ where: { id: workspaceId } });
+      // Then the accounts that belonged only to it. Their sessions go with them.
+      await tx.user.deleteMany({
+        where: { id: { in: members.map((m) => m.userId) }, memberships: { none: {} } },
+      });
+    });
+  }
 }
 
 export class PrismaSessionRepository implements SessionRepository {

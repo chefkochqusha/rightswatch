@@ -73,6 +73,14 @@ export interface AccountRepository {
     role: Role;
     workspace: { existingId: string } | { newName: string; newSlug: string };
   }): Promise<{ user: UserRecord; workspace: WorkspaceRecord; membership: MembershipRecord }>;
+
+  /**
+   * Erases a workspace and everything under it (creators, posts, matches,
+   * rights, cases, notes, audit log, subscription record, notifications), and
+   * then every account that has no workspace left. Accounts that belong to
+   * another workspace too are kept.
+   */
+  deleteWorkspace(workspaceId: string): Promise<void>;
 }
 
 /** Mirrors the `Session` model in `prisma/schema.prisma`. `id` is the SHA-256

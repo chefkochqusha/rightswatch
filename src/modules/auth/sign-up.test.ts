@@ -111,6 +111,7 @@ describe("signUp under concurrency (the account write is atomic)", () => {
         }
         return inner.createAccount(input);
       },
+      deleteWorkspace: (id) => inner.deleteWorkspace(id),
     };
     return { repo, calls };
   }
@@ -153,6 +154,7 @@ describe("signUp under concurrency (the account write is atomic)", () => {
       async createAccount() {
         throw new Error("connection reset");
       },
+      async deleteWorkspace() {},
     };
     await assert.rejects(() => signUp(VALID, { ...deps, accountRepository: failing }), /connection reset/);
     assert.equal(await deps.userRepository.findByEmail("jane@acme.com"), null);

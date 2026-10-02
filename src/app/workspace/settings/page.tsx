@@ -6,6 +6,7 @@ import { getEmailSender } from "@/app/_lib/email";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
 import { PageHeader } from "@/components/ui/page-header";
 import { ROLE_LABELS } from "@/components/team/labels";
+import { DeleteWorkspaceForm } from "./delete-workspace-form";
 import { PasswordForm } from "./password-form";
 
 export const metadata = {
@@ -138,6 +139,17 @@ export default async function SettingsPage() {
             </>
           )}
         </div>
+
+        {!isDemo && session.role === "OWNER" && (
+          <div className="mt-6 rounded-lg border border-mismatch/40 bg-surface p-5">
+            <h3 className="text-sm font-semibold">Delete workspace</h3>
+            <p className="mt-1 mb-4 max-w-xl text-[0.8125rem] text-t2">
+              Deletes {session.workspace.name} and everything in it for good: creators, posts, matches, your rights library, cases, notes, the audit
+              log and every team member&apos;s account. Your subscription ends. This can&apos;t be undone.
+            </p>
+            <DeleteWorkspaceForm workspaceName={session.workspace.name} />
+          </div>
+        )}
       </section>
     </div>
   );

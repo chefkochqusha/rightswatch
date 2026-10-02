@@ -38,6 +38,10 @@ import type {
 export class InMemoryUserRepository implements UserRepository {
   private readonly byId = new Map<string, UserRecord>();
 
+  async delete(id: string): Promise<void> {
+    this.byId.delete(id);
+  }
+
   async findByEmail(email: string): Promise<UserRecord | null> {
     const normalized = email.toLowerCase();
     for (const user of this.byId.values()) {
@@ -79,6 +83,10 @@ export class InMemoryUserRepository implements UserRepository {
 export class InMemoryWorkspaceRepository implements WorkspaceRepository {
   private readonly byId = new Map<string, WorkspaceRecord>();
 
+  async delete(id: string): Promise<void> {
+    this.byId.delete(id);
+  }
+
   async findBySlug(slug: string): Promise<WorkspaceRecord | null> {
     for (const workspace of this.byId.values()) {
       if (workspace.slug === slug) return workspace;
@@ -110,6 +118,12 @@ export class InMemoryWorkspaceRepository implements WorkspaceRepository {
 
 export class InMemoryMembershipRepository implements MembershipRepository {
   private readonly byId = new Map<string, MembershipRecord>();
+
+  async deleteForWorkspace(workspaceId: string): Promise<void> {
+    for (const [id, membership] of this.byId) {
+      if (membership.workspaceId === workspaceId) this.byId.delete(id);
+    }
+  }
 
   async create(input: {
     userId: string;
@@ -194,6 +208,15 @@ export class InMemoryAccountRepository implements AccountRepository {
       role: input.role,
     });
     return { user, workspace, membership };
+  }
+
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    const members = await this.memberships.findForWorkspace(workspaceId);
+    await this.memberships.deleteForWorkspace(workspaceId);
+    await this.workspaces.delete(workspaceId);
+    for (const { userId } of members) {
+      if ((await this.memberships.findForUser(userId)).length === 0) await this.users.delete(userId);
+    }
   }
 }
 
