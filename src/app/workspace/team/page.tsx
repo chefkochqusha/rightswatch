@@ -1,5 +1,6 @@
 import { requireSession } from "@/app/_lib/current-user";
 import { getAuthStore } from "@/app/_lib/auth-store";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { ROLE_LABELS } from "@/components/team/labels";
 import type { MembershipRecord, UserRecord } from "@/modules/auth";
 import { InviteForm } from "./invite-form";
@@ -82,7 +83,9 @@ export default async function TeamPage() {
                       <span className="ml-1.5 text-[0.8125rem] text-t2">(you)</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 align-top text-t2">{user.email}</td>
+                  <td className="px-5 py-3.5 align-top text-t2">
+                    {session.workspace.slug === DEMO_WORKSPACE_SLUG ? "Hidden in the demo" : user.email}
+                  </td>
                   <td className="px-5 py-3.5 align-top text-t2">{ROLE_LABELS[membership.role]}</td>
                   <td className="px-5 py-3.5 align-top whitespace-nowrap text-t2">
                     {dateFormatter.format(membership.createdAt)}

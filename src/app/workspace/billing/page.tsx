@@ -2,6 +2,7 @@ import { requireSession } from "@/app/_lib/current-user";
 import { canManageWorkspace } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { getCreatorStore } from "@/app/_lib/creator-store";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge";
 import { formatPlanPrice, SCAN_CADENCE_LABELS } from "@/components/billing/labels";
 import { PLAN_CATALOG, TRIAL_LENGTH_DAYS, isMockCustomerId } from "@/modules/billing";
@@ -49,9 +50,10 @@ export default async function BillingPage() {
 
       {!isStripeMode && (
         <p className="mt-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-[0.8125rem] text-t2">
-          <span className="font-medium text-tx">Demo billing.</span> Plans, trials, switching and
-          cancelling all work, but no payment is taken and no invoices exist. Real billing through
-          Stripe turns on once it&apos;s connected.
+          <span className="font-medium text-tx">Demo billing.</span>{" "}
+          {session.workspace.slug === DEMO_WORKSPACE_SLUG
+            ? "This is how plans look in a workspace. In the public demo you can look but not change anything."
+            : "Plans, trials, switching and cancelling all work, but no payment is taken and no invoices exist. Real billing through Stripe turns on once it\u2019s connected."}
         </p>
       )}
 
