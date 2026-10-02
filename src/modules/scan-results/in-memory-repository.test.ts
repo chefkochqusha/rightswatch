@@ -179,5 +179,53 @@ describe("InMemoryScanResultRepository", () => {
     assert.equal(again.rightsAssessmentId, first.rightsAssessmentId, "the same assessment, so a case stays attached");
     assert.deepEqual(await repo.reassessTrack({ workspaceId: "w2", trackId: "t-1", assess: verdict("CLEARED") }), []);
   });
+
+  test("identifyPost turns a post with no song into an assessed one, marked manual", async () => {
+    const repo = new InMemoryScanResultRepository();
+    await save(repo, "w1", [noMatch]);
+    const track = { id: "track-1", title: "Midnight Run", artist: "Aiko", isrc: "DEMO12600001" };
+
+    const item = await repo.identifyPost({
+      workspaceId: "w1",
+      externalContentId: CONTENT.externalContentId,
+      track,
+      assess: async (match) => {
+        assert.equal(match.musicMatch.trackId, "track-1");
+        return { status: "POTENTIAL_MISMATCH", reason: "NO_RIGHTS_RECORD", matchedRecordIds: [], explanation: "none" };
+      },
+    });
+
+    assert.equal(item?.kind, "ASSESSED");
+    assert.ok(item && item.kind === "ASSESSED" && item.musicMatch.manual && item.musicMatch.provider === "manual");
+    assert.ok(item?.rightsAssessmentId);
+    assert.equal((await repo.findByContentId("w1", CONTENT.externalContentId))?.kind, "ASSESSED");
+  });
+
+  test("a later scan that finds nothing doesn't undo a manual identification, and keeps its assessment id", async () => {
+    const repo = new InMemoryScanResultRepository();
+    await save(repo, "w1", [noMatch]);
+    const item = await repo.identifyPost({
+      workspaceId: "w1",
+      externalContentId: CONTENT.externalContentId,
+      track: { id: "track-1", title: "Midnight Run", artist: "Aiko", isrc: null },
+      assess: async () => ({ status: "CLEARED", reason: null, matchedRecordIds: [], explanation: "ok" }),
+    });
+    await save(repo, "w1", [noMatch]);
+    const after = await repo.findByContentId("w1", CONTENT.externalContentId);
+    assert.equal(after?.kind, "ASSESSED");
+    assert.equal(after?.rightsAssessmentId, item?.rightsAssessmentId);
+  });
+
+  test("identifyPost returns null for a post the workspace doesn't have", async () => {
+    const repo = new InMemoryScanResultRepository();
+    await save(repo, "w1", [noMatch]);
+    const result = await repo.identifyPost({
+      workspaceId: "w2",
+      externalContentId: CONTENT.externalContentId,
+      track: { id: "t", title: "T", artist: null, isrc: null },
+      assess: async () => ({ status: "CLEARED", reason: null, matchedRecordIds: [], explanation: "" }),
+    });
+    assert.equal(result, null);
+  });
 });
 

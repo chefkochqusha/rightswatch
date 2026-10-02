@@ -25,6 +25,7 @@ const FILTERS = [
   { key: "all", label: "All" },
   { key: "review", label: "To review" },
   { key: "cleared", label: "Cleared" },
+  { key: "nosong", label: "No song yet" },
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
@@ -78,6 +79,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
   const isMatched = (item: StoredScanItem) => item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC";
   const isToReview = (item: StoredScanItem) => item.kind === "ASSESSED" && item.assessment.status !== "CLEARED";
   const matched = items.filter(isMatched);
+  const unidentified = items.filter((item) => item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR");
   const toReview = matched.filter(isToReview);
 
   const filter: FilterKey = FILTERS.find((f) => f.key === query.show)?.key ?? "all";
@@ -87,12 +89,15 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), PAGE_SIZE), 240) : PAGE_SIZE;
 
   const trackIdOf = (item: StoredScanItem) => (isMatched(item) && "musicMatch" in item ? item.musicMatch.trackId : null);
-  const feed = matched.filter((item) => {
-    if (songFilter && trackIdOf(item) !== songFilter) return false;
-    if (filter === "review") return isToReview(item);
-    if (filter === "cleared") return item.kind === "ASSESSED" && item.assessment.status === "CLEARED";
-    return true;
-  });
+  const feed =
+    filter === "nosong"
+      ? unidentified
+      : matched.filter((item) => {
+          if (songFilter && trackIdOf(item) !== songFilter) return false;
+          if (filter === "review") return isToReview(item);
+          if (filter === "cleared") return item.kind === "ASSESSED" && item.assessment.status === "CLEARED";
+          return true;
+        });
   const visible = feed.slice(0, limit);
 
   const songFor = (item: StoredScanItem): DetectionSong | null => {
@@ -162,7 +167,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
         </section>
       )}
 
-      {matched.length > 0 && (
+      {items.length > 0 && (
         <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-line py-5 sm:grid-cols-5">
           <Kpi label="Creators monitored" value={monitored.length} />
           <Kpi label="Videos checked" value={items.length} />
@@ -207,7 +212,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
       <section aria-labelledby="feed-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="feed-heading" className="text-[1.0625rem] font-semibold tracking-[-0.01em]">
-            {activeSong ? `Videos with ${activeSong.title}` : "Latest videos with music"}
+            {filter === "nosong" ? "Posts with no song identified" : activeSong ? `Videos with ${activeSong.title}` : "Latest videos with music"}
           </h2>
           <nav aria-label="Filter the feed" className="flex gap-1 rounded-full bg-hover p-1">
             {FILTERS.map((f) => (
@@ -226,13 +231,31 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
         {feed.length === 0 ? (
           <div className="mt-4 rounded-[1.125rem] border border-line bg-surface">
             <EmptyState
-              title={matched.length === 0 ? "No music matches yet." : "Nothing here with this filter."}
-              description={
-                matched.length === 0
-                  ? "Once a scan finds commercial posts by the creators you monitor, they show up here as a feed, newest first, with what the rights check says about each one."
-                  : "Try another filter, or pick a different song."
+              title={
+                filter === "nosong"
+                  ? "Every post has a song."
+                  : matched.length === 0 && unidentified.length > 0
+                    ? "No songs identified yet."
+                    : matched.length === 0
+                      ? "No music matches yet."
+                      : "Nothing here with this filter."
               }
-            />
+              description={
+                filter === "nosong"
+                  ? "Posts where no song could be identified would be listed here."
+                  : matched.length === 0 && unidentified.length > 0
+                    ? "Scans found paid posts, but no song was identified in them. Open one and say which of your songs it uses, and the rights check runs."
+                    : matched.length === 0
+                      ? "Once a scan finds commercial posts by the creators you monitor, they show up here as a feed, newest first, with what the rights check says about each one."
+                      : "Try another filter, or pick a different song."
+              }
+            >
+              {filter !== "nosong" && matched.length === 0 && unidentified.length > 0 && (
+                <Link href={feedHref({ show: "nosong", song: null })} className={buttonStyles("primary", "md")}>
+                  See the {unidentified.length} posts
+                </Link>
+              )}
+            </EmptyState>
           </div>
         ) : (
           <>

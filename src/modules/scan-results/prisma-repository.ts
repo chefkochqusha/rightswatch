@@ -162,6 +162,63 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     });
     return toStoredItems(rows);
   }
+
+  async identifyPost(input: {
+    workspaceId: string;
+    externalContentId: string;
+    track: { id: string; title: string; artist: string | null; isrc: string | null };
+    assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+  }): Promise<StoredScanItem | null> {
+    const prisma = getPrisma();
+    const row = await prisma.content.findFirst({
+      where: { externalContentId: input.externalContentId, creator: { workspaceId: input.workspaceId } },
+      include: { creator: true, commercialContent: true },
+    });
+    if (!row?.commercialContent) return null;
+    // The song must be this workspace's, never another's.
+    const track = await prisma.musicTrack.findFirst({ where: { id: input.track.id, workspaceId: input.workspaceId }, select: { id: true } });
+    if (!track) throw new Error(`Track ${input.track.id} isn't in workspace ${input.workspaceId}.`);
+
+    const musicMatch: NormalizedMusicMatch = {
+      trackId: input.track.id,
+      title: input.track.title,
+      artist: input.track.artist ?? "",
+      isrc: input.track.isrc,
+      confidence: 1,
+      provider: "manual",
+      manual: true,
+    };
+    const assessment = await input.assess({
+      content: toContent(row, row.commercialContent),
+      musicMatch,
+      creatorId: row.creator.id,
+      creatorExternalId: row.creator.externalId,
+      creatorUsername: row.creator.handle,
+    });
+    const verdict = toVerdict(assessment);
+
+    await prisma.$transaction(async (tx) => {
+      const match = await tx.musicMatch.upsert({
+        where: {
+          commercialContentId_musicTrackId_provider: {
+            commercialContentId: row.commercialContent!.id,
+            musicTrackId: track.id,
+            provider: "manual",
+          },
+        },
+        create: { commercialContentId: row.commercialContent!.id, musicTrackId: track.id, provider: "manual", confidence: 1, manual: true },
+        update: { confidence: 1, manual: true, matchedAt: new Date() },
+      });
+      await tx.rightsAssessment.upsert({
+        where: { musicMatchId: match.id },
+        create: { musicMatchId: match.id, ...verdict },
+        update: { ...verdict, assessedAt: new Date() },
+      });
+    });
+
+    const fresh = await prisma.content.findUniqueOrThrow({ where: { id: row.id }, include: CONTENT_INCLUDE });
+    return toStoredItem(fresh);
+  }
 }
 
 async function writeItem(

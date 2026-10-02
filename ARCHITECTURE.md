@@ -749,6 +749,17 @@ every change is audit-logged against the song (`song.*`, `rights.*`).
 
 ## Music Matches
 
+**Identifying a post's song by hand.** Real posts carry no music data, and no
+audio recognition is connected, so every post a real scan finds starts as "no
+song identified". The home feed lists those under "No song yet". On such a
+post's page an analyst or above picks which of the workspace's own library
+songs it uses (`identify-post.ts`, `ScanResultRepository.identifyPost`): a
+match is stored marked `manual` at full confidence, the post is assessed like
+any other, a case opens if it isn't cleared, and the audit log records who
+identified what ("post.song_identified"). Only a post with no song yet can be
+identified this way, so a provider's identification is never hidden. Later
+scans don't undo it: an assessed identification outranks "nothing found".
+
 (Brief §6)
 
 `/workspace/matches` lists every song the scans identified in watched
@@ -1020,8 +1031,8 @@ reads as an oversight:
 - Running the real TikTok connector — it's written and tested against stubbed
   responses, and waits on TikTok's API-access reply for credentials (TikTok
   webhooks, the other `WebhookEvent` source, come with it). Also unbuilt:
-  audio recognition, so real posts carry no identified song yet, and
-  identifying a post's song by hand
+  audio recognition, so real posts carry no identified song until a person
+  says which one (see "Music Matches")
 - Stripe going live — built and tested; waiting on a Stripe account, three
   test-mode prices and a webhook destination (`STRIPE_INTEGRATION.md`)
 - Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen

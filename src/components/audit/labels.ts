@@ -23,6 +23,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "creator.resumed": "Resumed monitoring of a creator",
   "creator.removed": "Removed a creator from the watchlist",
   "creator.updated": "Updated a creator's details",
+  "post.song_identified": "Identified the song in a post",
   "song.added": "Added a song to the catalogue",
   "song.removed": "Took a song out of the catalogue",
   "song.updated": "Updated a song's catalogue details",

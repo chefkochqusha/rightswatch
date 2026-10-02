@@ -6,7 +6,9 @@ import { canManageCases } from "@/app/_lib/authorize";
 import { getWorkspaceScanItem } from "@/app/_lib/workspace-scan-store";
 import { AssessmentSummary } from "@/components/rights/assessment-summary";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getLibraryStore } from "@/app/_lib/library-store";
 import { CasePanel } from "./case-panel";
+import { IdentifyForm } from "./identify-form";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
@@ -52,6 +54,7 @@ export default async function WorkspaceItemDetailPage({
   const session = await requireSession();
   const item = await getWorkspaceScanItem(session.workspace.id, contentId);
   if (!item) notFound();
+  const catalogue = item.kind === "ASSESSED" ? [] : await getLibraryStore().catalog.findCatalogue(session.workspace.id);
 
   return (
     <div>
@@ -83,14 +86,26 @@ export default async function WorkspaceItemDetailPage({
           />
         ) : (
           <section className="rounded-lg border border-line bg-surface p-5">
-            <h2 className="text-sm font-semibold">Case</h2>
+            <h2 className="text-sm font-semibold">{item.kind === "OTHER_MUSIC" ? "Case" : "Song in this post"}</h2>
             <p className="mt-2 text-sm text-t2">
-              A case can be opened once a track has been identified and assessed. This item{" "}
-              {item.kind === "NO_MUSIC_MATCH"
-                ? "has no identified track yet"
-                : "failed music identification"}
-              .
+              {item.kind === "OTHER_MUSIC"
+                ? "A song was identified, but it isn't in your library, so there is nothing to check it against. Add it in the Rights Library and this post is checked."
+                : item.kind === "NO_MUSIC_MATCH"
+                  ? "No song was identified in this post."
+                  : "Identifying the song in this post didn't complete."}{" "}
+              {item.kind !== "OTHER_MUSIC" && "If you know which of your songs it uses, say so and the rights check runs."}
             </p>
+            {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length > 0 && (
+              <IdentifyForm
+                contentId={contentId}
+                songs={catalogue.map((track) => ({ id: track.id, label: track.artist ? `${track.title} — ${track.artist}` : track.title }))}
+              />
+            )}
+            {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length === 0 && (
+              <p className="mt-3 text-sm text-t2">
+                Your library has no songs yet. <Link href="/workspace/rights" className="font-medium text-accent hover:underline">Add one in the Rights Library</Link> first.
+              </p>
+            )}
           </section>
         )}
       </div>

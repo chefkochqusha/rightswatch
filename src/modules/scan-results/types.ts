@@ -105,6 +105,23 @@ export interface ScanResultRepository {
     trackId: string;
     assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
   }): Promise<StoredScanItem[]>;
+
+  /**
+   * A person's identification of the song in one post (Brief §1,
+   * ManualMusicIdentification): stores a match for the post marked `manual`
+   * with full confidence, then assesses it, so the post becomes an assessed
+   * item like any a provider identified. The song must already be the
+   * workspace's own catalogue song. Later scans never undo it — an assessed
+   * identification outranks "nothing found" — and it replaces nothing a
+   * provider found: an earlier identification stays, only outranked.
+   * Returns null when the workspace has no such post.
+   */
+  identifyPost(input: {
+    workspaceId: string;
+    externalContentId: string;
+    track: { id: string; title: string; artist: string | null; isrc: string | null };
+    assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+  }): Promise<StoredScanItem | null>;
 }
 
 /** A post a song was identified in, as `reassessTrack` hands it over. */

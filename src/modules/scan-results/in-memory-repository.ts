@@ -77,6 +77,41 @@ export class InMemoryScanResultRepository implements ScanResultRepository {
     return newestFirst(reassessed);
   }
 
+  async identifyPost(input: {
+    workspaceId: string;
+    externalContentId: string;
+    track: { id: string; title: string; artist: string | null; isrc: string | null };
+    assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+  }): Promise<StoredScanItem | null> {
+    const stored = this.itemsOf(input.workspaceId);
+    const existing = stored.get(input.externalContentId);
+    if (!existing) return null;
+
+    const musicMatch: NormalizedMusicMatch = {
+      trackId: input.track.id,
+      title: input.track.title,
+      artist: input.track.artist ?? "",
+      isrc: input.track.isrc,
+      confidence: 1,
+      provider: "manual",
+      manual: true,
+    };
+    const { creatorId, creatorExternalId, creatorUsername, content } = existing;
+    const assessment = await input.assess({ creatorId, creatorExternalId, creatorUsername, content, musicMatch });
+    const next: StoredScanItem = {
+      kind: "ASSESSED",
+      content,
+      musicMatch,
+      assessment,
+      creatorId,
+      creatorExternalId,
+      creatorUsername,
+      rightsAssessmentId: this.assessmentId(input.workspaceId, content.externalContentId, musicMatch),
+    };
+    stored.set(content.externalContentId, next);
+    return next;
+  }
+
   private itemsOf(workspaceId: string): Map<string, StoredScanItem> {
     const stored = this.byWorkspace.get(workspaceId) ?? new Map<string, StoredScanItem>();
     this.byWorkspace.set(workspaceId, stored);
