@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { requireSession } from "@/app/_lib/current-user";
 import { getNotificationStore } from "@/app/_lib/notification-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
@@ -93,7 +93,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
         <header className="flex items-center justify-between gap-4 border-b border-line bg-bg px-4 py-3 md:sticky md:top-0 md:z-10 md:px-10">
           <div className="flex min-w-0 items-center gap-2 text-[0.8125rem]">
             <span className="truncate font-semibold text-tx">{session.workspace.name}</span>
-            {getConnectorMode() === "DEMO" && (
+            {dataModeFor(session.workspace) === "DEMO" && (
               <span
                 title="TikTok isn't connected yet, so scans run against fictional demo data."
                 className="shrink-0 rounded-full bg-review-bg px-2.5 py-0.5 text-xs font-medium text-review"

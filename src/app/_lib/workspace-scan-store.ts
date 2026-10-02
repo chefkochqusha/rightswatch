@@ -1,6 +1,6 @@
 import { runScan } from "@/modules/scan-pipeline";
-import { MockTikTokConnector } from "@/modules/connectors";
-import { FixtureMusicIdentificationProvider } from "@/modules/music";
+import { MockTikTokConnector, TikTokCommercialContentConnector, type PlatformConnector } from "@/modules/connectors";
+import { FixtureMusicIdentificationProvider, NoRecognitionProvider, type MusicIdentificationProvider } from "@/modules/music";
 import { PrismaCampaignRepository } from "@/modules/campaigns/prisma-repository";
 import { toRightsRecordInput } from "@/modules/rights";
 import type { RightsRecordInput } from "@/modules/rights-engine/types";
@@ -20,7 +20,8 @@ import { getCreatorStore } from "./creator-store";
 import { getJobStore } from "./job-store";
 import { getLibraryStore } from "./library-store";
 import { getCreatorAllowance } from "./creator-allowance";
-import { getConnectorMode } from "./connector-mode";
+import { getAuthStore } from "./auth-store";
+import { dataModeFor, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
 import { openCasesForFlaggedItems } from "./case-automation";
 
 /**
@@ -88,7 +89,9 @@ export async function runWorkspaceScan(
   if (monitored.length === 0) return { ok: false, error: "NO_CREATORS" };
   const creators = monitored.slice(0, allowance.cap);
 
-  const connectorMode = getConnectorMode();
+  const workspace = await getAuthStore().workspaces.findById(workspaceId);
+  if (!workspace) throw new Error("Workspace not found.");
+  const connectorMode = dataModeFor(workspace);
   const jobs = getJobStore().jobs;
   const startedAt = new Date();
   const payload = emptyScanPayload({
@@ -107,7 +110,7 @@ export async function runWorkspaceScan(
   });
 
   try {
-    const final = await scanCreators(workspaceId, triggeredByUserId, creators, startedAt, payload);
+    const final = await scanCreators(workspaceId, triggeredByUserId, creators, startedAt, payload, connectorMode);
     return {
       ok: true,
       job: await jobs.update<ScanJobPayload>(job.id, { status: "COMPLETED", completedAt: new Date(), payload: final }),
@@ -128,13 +131,14 @@ async function scanCreators(
   creators: CreatorRecord[],
   now: Date,
   payload: ScanJobPayload,
+  mode: ConnectorMode,
 ): Promise<ScanJobPayload> {
   const library = getLibraryStore();
   const catalogue = await library.catalog.findCatalogue(workspaceId);
-  const connector = new MockTikTokConnector();
-  const musicProvider = new FixtureMusicIdentificationProvider({
-    catalogue: catalogue.map((track) => ({ trackId: track.id, title: track.title, artist: track.artist, isrc: track.isrc })),
-  });
+  const { connector, musicProvider } = scanProviders(
+    mode,
+    catalogue.map((track) => ({ trackId: track.id, title: track.title, artist: track.artist, isrc: track.isrc })),
+  );
   const campaigns = new PrismaCampaignRepository(workspaceId);
   const results = getScanResultStore().results;
   const creatorRepository = getCreatorStore().creators;
@@ -167,7 +171,7 @@ async function scanCreators(
       creatorExternalId: creator.externalId,
       creatorUsername: creator.handle,
       creatorCountry: creator.country,
-      since: windowStart(creator, now),
+      since: windowStart(creator, now, mode),
       until: now,
     });
     perCreator.push({
@@ -205,9 +209,27 @@ async function scanCreators(
   };
 }
 
-function windowStart(creator: CreatorRecord, now: Date): Date {
+/**
+ * The connector and music identification for a scan. Demo: the demo
+ * dataset's, for both. Real: TikTok's Commercial Content API, and no music
+ * recognition until a provider is connected, so posts are stored as "no
+ * song identified" rather than given an invented one.
+ */
+function scanProviders(
+  mode: ConnectorMode,
+  catalogue: { trackId: string; title: string; artist: string | null; isrc: string | null }[],
+): { connector: PlatformConnector; musicProvider: MusicIdentificationProvider } {
+  const credentials = mode === "REAL" ? getTikTokCredentials() : null;
+  if (mode === "REAL" && !credentials) throw new Error("TikTok credentials are missing.");
+  if (credentials) {
+    return { connector: new TikTokCommercialContentConnector(credentials), musicProvider: new NoRecognitionProvider() };
+  }
+  return { connector: new MockTikTokConnector(), musicProvider: new FixtureMusicIdentificationProvider({ catalogue }) };
+}
+
+function windowStart(creator: CreatorRecord, now: Date, mode: ConnectorMode): Date {
   const lookback = new Date(now.getTime() - INITIAL_LOOKBACK_DAYS * DAY_MS);
-  if (getConnectorMode() === "DEMO") return DEMO_WINDOW_START < lookback ? DEMO_WINDOW_START : lookback;
+  if (mode === "DEMO") return DEMO_WINDOW_START < lookback ? DEMO_WINDOW_START : lookback;
   if (creator.lastSeenAt) return new Date(creator.lastSeenAt.getTime() - DAY_MS);
   return lookback;
 }

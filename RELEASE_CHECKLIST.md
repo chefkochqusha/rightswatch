@@ -37,8 +37,13 @@ or a business decision at release time, it gets a line here.
 - [ ] **TikTok Commercial Content API** — apply at
   `developers.tiktok.com/application/commercial-content-api` (needs company
   details; approval takes a few days — the only item with lead time). Then set
-  `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` in Vercel and run one live scan.
-  Master Brief §49: adding credentials flips DEMO → REAL; nothing else changes.
+  `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` in Vercel (and delete
+  `DEMO_MODE`, or set it to `false`, if it is set there: it forces demo) and
+  run one live scan. Master Brief §49: adding credentials flips DEMO → REAL;
+  nothing else changes. The connector is written from TikTok's documentation
+  and tested with stubbed answers only, so expect the first live call to need a
+  small fix; a failure shows as "couldn't be fetched" with the reason on the
+  creator. The public demo workspace stays on fake data either way.
 - [ ] **Music identification**: a paid provider (e.g. an audio-fingerprinting
   API) or manual identification by the team. Decide at release.
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,

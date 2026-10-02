@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentSession, requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { getCaseStore } from "@/app/_lib/case-store";
@@ -100,7 +100,7 @@ export default async function SongPage({ params, searchParams }: PageProps<"/wor
   const cleared = items.filter((item) => item.kind === "ASSESSED" && item.assessment.status === "CLEARED");
   const filter = FILTERS.find((f) => f.key === query.show)?.key ?? "all";
   const shown = filter === "review" ? toReview : filter === "cleared" ? cleared : items;
-  const isDemo = getConnectorMode() === "DEMO";
+  const isDemo = dataModeFor(session.workspace) === "DEMO";
   const song = { title: track.title, artist: track.artist, artworkUrl: track.artworkUrl, inCatalogue: track.inCatalogue };
   const facts = [
     track.album,

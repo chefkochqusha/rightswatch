@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireCaseManager } from "@/app/_lib/authorize";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getAuditStore } from "@/app/_lib/audit-store";
 import {
   addCreator,
@@ -79,7 +79,7 @@ export async function addCreatorAction(_prev: CreatorFormState, formData: FormDa
  */
 export async function addDemoCreatorsAction(): Promise<void> {
   const session = await requireCaseManager();
-  if (getConnectorMode() !== "DEMO") throw new Error("Demo creators are only available in demo mode.");
+  if (dataModeFor(session.workspace) !== "DEMO") throw new Error("Demo creators are only available in demo mode.");
 
   const deps = { creatorRepository: getCreatorStore().creators, allowance: await getCreatorAllowance(session.workspace.id) };
   for (const creator of DEMO_NAMED_CREATORS) {

@@ -3,7 +3,7 @@ import { requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -86,7 +86,7 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
           ) : (
             <>
               <AddCreatorForm countries={countryOptions()} />
-              {getConnectorMode() === "DEMO" && (
+              {dataModeFor(session.workspace) === "DEMO" && (
                 <form action={addDemoCreatorsAction} className="mt-5 border-t border-line pt-4">
                   <p className="text-[0.8125rem] text-t2">
                     Trying it out? Add the six demo creators — fictional accounts with posts that reach every

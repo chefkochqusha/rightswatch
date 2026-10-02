@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { loadDemoWorkspace } from "@/app/_lib/demo-workspace";
 import { runWorkspaceScan } from "@/app/_lib/workspace-scan-store";
 
@@ -13,7 +13,7 @@ import { runWorkspaceScan } from "@/app/_lib/workspace-scan-store";
  */
 export async function loadDemoDataAction(): Promise<void> {
   const session = await requireCaseManager();
-  if (getConnectorMode() !== "DEMO") throw new Error("Demo data is only available in demo mode.");
+  if (dataModeFor(session.workspace) !== "DEMO") throw new Error("Demo data is only available in demo mode.");
   await loadDemoWorkspace(session.workspace.id, session.user.id);
   await runWorkspaceScan(session.workspace.id, session.user.id);
   revalidatePath("/workspace", "layout");

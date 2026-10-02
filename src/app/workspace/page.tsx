@@ -5,7 +5,7 @@ import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { getCaseStore } from "@/app/_lib/case-store";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -68,7 +68,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
   const caseByAssessment = new Map(cases.map((c) => [c.rightsAssessmentId, c]));
 
   const now = new Date();
-  const isDemo = getConnectorMode() === "DEMO";
+  const isDemo = dataModeFor(session.workspace) === "DEMO";
   const displayNames = new Map(creators.map((creator) => [creator.id, creator.displayName]));
   const trackById = new Map(tracks.map((track) => [track.id, track]));
   const openCases = cases.filter((c) => c.status === "OPEN" || c.status === "IN_PROGRESS").length;

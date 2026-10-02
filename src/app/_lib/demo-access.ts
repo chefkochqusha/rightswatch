@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { hashPassword, UniqueConstraintError } from "@/modules/auth";
 import { subscribeWorkspace, MockPaymentProvider } from "@/modules/billing";
 import { getAuthStore } from "./auth-store";
+import { DEMO_WORKSPACE_SLUG } from "./demo-constants";
 import { getBillingStore } from "./billing-store";
 import { loadDemoWorkspace } from "./demo-workspace";
 import { getWorkspaceScanItems, runWorkspaceScan } from "./workspace-scan-store";
@@ -21,7 +22,7 @@ import { getWorkspaceScanItems, runWorkspaceScan } from "./workspace-scan-store"
  *   fresh database waits for the dataset to load; everyone after finds it
  *   ready.
  */
-export const DEMO_WORKSPACE_SLUG = "northstar-demo";
+export { DEMO_WORKSPACE_SLUG };
 const OWNER_EMAIL = "demo-owner@demo.rightswatch.invalid";
 const VIEWER_EMAIL = "demo-viewer@demo.rightswatch.invalid";
 const READY_TIMEOUT_MS = 90_000;

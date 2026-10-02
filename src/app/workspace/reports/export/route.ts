@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   if (!session) return new Response("Log in to export a report.", { status: 401 });
 
   const period = parsePeriod(new URL(request.url).searchParams.get("period"));
-  const data = await loadReportData(session.workspace.id, period);
+  const data = await loadReportData(session.workspace, period);
   const rows = data.rows();
 
   await getAuditStore().auditLogs.create({

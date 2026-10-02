@@ -301,13 +301,28 @@ ISRC or audio, which is exactly why music identification is a separate
 boundary rather than assumed to come from the platform. Like the real API,
 it never returns a post from the future.
 
-The real connector — `TikTokCommercialContentConnector` in the Brief's own
-naming (a distinct `TikTokResearchConnector` is also named) — is Phase 10,
-and is gated: it can't be built against the live API until TikTok access and
-API credentials are confirmed (Brief §4). `.env.example`'s
-`TIKTOK_CLIENT_KEY`/`TIKTOK_CLIENT_SECRET` are blank for exactly this reason
-— until they're set, the app runs against the mock connector only, and
-`DEMO_MODE=true` forces this regardless of connector configuration.
+The real connector — `TikTokCommercialContentConnector`
+(`modules/connectors/tiktok/commercial-content-connector.ts`) — is written
+against TikTok's public documentation: a client-credentials token
+(`/v2/oauth/token/`, renewed before its two hours end and once more on a 401),
+then `POST /v2/research/adlib/commercial_content/query/` for one creator and a
+date range, following the `search_id` cursor to the last page. It has **not**
+run against the live service (that needs an approved TikTok application), only
+against stubbed responses, so every failure — refused credentials, rate
+limit, a bad answer, no network — comes back as a readable `error` on the
+fetch, which the scan records per creator ("1 creator couldn't be fetched"),
+never as "zero posts found". It returns no music and no territory: the API has
+neither (Brief §4).
+
+**What switches it on:** `getConnectorMode()` (`app/_lib/connector-mode.ts`) is
+`REAL` only when both `TIKTOK_CLIENT_KEY` and `TIKTOK_CLIENT_SECRET` are set and
+`DEMO_MODE` isn't "true"; otherwise `DEMO`. `dataModeFor(workspace)` is the
+per-workspace answer: the public demo workspace is always `DEMO`, so it keeps
+its made-up posts however the app is configured. In `REAL` mode a scan uses the
+real connector and `NoRecognitionProvider` — no audio recognition exists yet,
+so a real post is stored as "no song identified" rather than given an invented
+one — the "Load demo data" and "Add the six demo creators" buttons disappear,
+and the "Demo data" labels go.
 
 `Connector` and `ConnectorCredential` exist in the Prisma schema
 (workspace-scoped connection status, and credentials encrypted at rest per
@@ -940,7 +955,7 @@ table doesn't guess at what they might cover.
 | 4 | Prisma schema / data layer | Schema written and live on Neon; client can't generate locally in this sandbox, but does on Vercel's build |
 | 5 | Auth module — signup, login, sessions, one workspace per user | Built |
 | 6 | Demo Mode — first public fixture pages; replaced by the public demo workspace (see "The landing page, the public demo and the real workspace") | Built |
-| 10 | Real TikTok connector | Blocked on TikTok API access/credentials |
+| 10 | Real TikTok connector | Written and tested with stubbed responses; credentials and a first live scan are pending |
 
 A separate, unrelated "Phase 2" label appears in this project's own task
 tracking and in code comments added during the Neon/Prisma cutover (e.g.
@@ -984,7 +999,7 @@ local development and never commit real values.
 | `SESSION_SECRET` | Every signing key (session cookie, invite links) is derived from it | Required for auth to work at all; at least 32 random characters, replaced with a fresh value before launch (`RELEASE_CHECKLIST.md`) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
 | `MUSIC_SEARCH_PROVIDER` | Song search for the Rights Library: `musicbrainz` (default) or `demo` | Unset in production (MusicBrainz); `demo` for local checks and tests, where the public service isn't reachable |
-| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank until Phase 10 — mock connector used instead |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank — demo connector used. Setting both switches every workspace except the public demo to the real one |
 | `REDIS_URL` | BullMQ (Upstash Redis, or any Redis-compatible URL) | Unused — nothing queues jobs yet |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
 | `SENTRY_DSN` | Monitoring | Blank — not wired up |
@@ -1002,8 +1017,11 @@ reads as an oversight:
   (see "Open decisions" → Data layer). That wasn't true when the `cases`
   foreign-key regression above shipped, which is why the constraint was
   first enforced in production; it's caught locally now.
-- The real TikTok connector — Phase 10, waiting on TikTok's API-access reply
-  (TikTok webhooks, the other `WebhookEvent` source, come with it)
+- Running the real TikTok connector — it's written and tested against stubbed
+  responses, and waits on TikTok's API-access reply for credentials (TikTok
+  webhooks, the other `WebhookEvent` source, come with it). Also unbuilt:
+  audio recognition, so real posts carry no identified song yet, and
+  identifying a post's song by hand
 - Stripe going live — built and tested; waiting on a Stripe account, three
   test-mode prices and a webhook destination (`STRIPE_INTEGRATION.md`)
 - Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { PageHeader } from "@/components/ui/page-header";
@@ -66,7 +66,7 @@ export default async function RightsLibraryPage() {
           Add songs
         </h2>
         <SongSearch canManage={canManage} />
-        {canManage && getConnectorMode() === "DEMO" && catalogue.length === 0 && (
+        {canManage && dataModeFor(session.workspace) === "DEMO" && catalogue.length === 0 && (
           <form action={loadDemoDataAction} className="mt-5 rounded-2xl bg-surface-2 px-4 py-3.5">
             <p className="text-[0.8125rem] leading-relaxed text-t2">
               Just looking around? Load the demo data: six fictional songs with their rights records, and 48

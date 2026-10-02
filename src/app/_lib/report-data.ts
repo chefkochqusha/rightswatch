@@ -1,7 +1,7 @@
 import { getCaseStore } from "./case-store";
 import { getWorkspaceScanItems } from "./workspace-scan-store";
 import { getWorkspaceMembers } from "./members";
-import { getConnectorMode } from "./connector-mode";
+import { dataModeFor } from "./connector-mode";
 import { CASE_PRIORITY_LABELS, CASE_STATUS_LABELS } from "@/components/cases/labels";
 import { REASON_LABELS, STATUS_LABELS } from "@/components/rights/labels";
 import type { CasePriority, CaseStatus } from "@/modules/cases";
@@ -18,7 +18,8 @@ export function parsePeriod(value: unknown): ReportPeriod {
 }
 
 /** What a workspace's report is built from, in the period asked for. */
-export async function loadReportData(workspaceId: string, period: ReportPeriod, now = new Date()) {
+export async function loadReportData(workspace: { id: string; slug: string }, period: ReportPeriod, now = new Date()) {
+  const workspaceId = workspace.id;
   const [items, cases, members] = await Promise.all([
     getWorkspaceScanItems(workspaceId),
     getCaseStore().cases.findForWorkspace(workspaceId),
@@ -32,7 +33,7 @@ export async function loadReportData(workspaceId: string, period: ReportPeriod, 
     reasonLabel: (reason) => REASON_LABELS[reason as keyof typeof REASON_LABELS] ?? reason,
     caseStatusLabel: (status) => CASE_STATUS_LABELS[status as CaseStatus] ?? status,
     casePriorityLabel: (priority) => CASE_PRIORITY_LABELS[priority as CasePriority] ?? priority,
-    isDemo: getConnectorMode() === "DEMO",
+    isDemo: dataModeFor(workspace) === "DEMO",
   };
   return { items: inPeriod, cases, lookups, rows: () => detectionRows(inPeriod, lookups) };
 }

@@ -34,7 +34,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/workspac
   const query = await searchParams;
   const session = await requireSession();
   const period = parsePeriod(query.period);
-  const data = await loadReportData(session.workspace.id, period);
+  const data = await loadReportData(session.workspace, period);
   const summary = summarize(data.items);
 
   const assessed = VERDICT_ORDER.reduce((sum, key) => sum + summary.verdicts[key], 0);

@@ -1,5 +1,5 @@
 import { getBillingStore } from "@/app/_lib/billing-store";
-import { getConnectorMode } from "@/app/_lib/connector-mode";
+import { dataModeFor } from "@/app/_lib/connector-mode";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
@@ -41,11 +41,12 @@ export default async function SettingsPage() {
   const music = getMusicSearchMode();
   const payments = getBillingStore().mode;
 
+  const isRealData = dataModeFor(session.workspace) === "REAL";
   const connections: Connection[] = [
     {
       name: "TikTok",
       what: "Where paid and commercial posts come from",
-      ...(getConnectorMode() === "REAL"
+      ...(isRealData
         ? { state: "Connected", tone: "ok" as const, detail: "Scans read TikTok's Commercial Content data." }
         : {
             state: "Demo data",
@@ -63,9 +64,17 @@ export default async function SettingsPage() {
     {
       name: "Music in posts",
       what: "Identifies which song a post uses",
-      state: "Demo",
-      tone: "demo",
-      detail: "TikTok's commercial data carries no music information, so identifying songs in posts needs audio recognition. Until that is connected, matches in demo data are made up.",
+      ...(isRealData
+        ? {
+            state: "Not connected",
+            tone: "off" as const,
+            detail: "TikTok's commercial data carries no music information, so identifying songs in posts needs audio recognition, which isn't connected yet. Until then posts are listed as having no song identified.",
+          }
+        : {
+            state: "Demo",
+            tone: "demo" as const,
+            detail: "Matches in demo data are made up. Identifying songs in real posts needs audio recognition, which isn't connected yet.",
+          }),
     },
     {
       name: "Email",
