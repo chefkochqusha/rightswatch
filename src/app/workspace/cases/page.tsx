@@ -100,7 +100,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/workspace/
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={href({ group, mine: !mine, q })}
-            aria-pressed={mine}
+            aria-current={mine ? "true" : undefined}
             className={mine ? buttonStyles("primary", "sm") : buttonStyles("secondary", "sm")}
           >
             Assigned to me

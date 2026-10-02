@@ -13,14 +13,15 @@
   --sf: #fff; /* card / surface background */
   --sb: #ededf0; /* secondary surface (inputs, subtle fills) */
   --tx: #1d1d1f; /* primary text */
-  --t2: #6e6e73; /* secondary text */
+  --t2: #66666b; /* secondary text */
   --ln: rgba(0, 0, 0, 0.09); /* hairline borders */
-  --ac: #0071e3; /* accent / primary action */
-  --acs: #0077ed; /* accent, hovered */
+  --ac: #0068d0; /* accent / primary action */
+  --acs: #0071e3; /* accent, hovered */
+  --acf: #fff; /* text on an accent fill */
   --hv: rgba(0, 0, 0, 0.045); /* hover fill */
 
   /* Rights Engine severities (DESIGN_SYSTEM.md: mapped 1:1) */
-  --gn: #1b7f3b; /* CLEARED — text */
+  --gn: #187536; /* CLEARED — text */
   --gb: #e5f4e9; /* CLEARED — background */
   --bl: #0058b0; /* REVIEW — text */
   --bb: #e6f0fc; /* REVIEW — background */
@@ -40,6 +41,7 @@
     --ln: rgba(255, 255, 255, 0.13);
     --ac: #2997ff;
     --acs: #47a6ff;
+    --acf: #001428;
     --hv: rgba(255, 255, 255, 0.07);
 
     --gn: #5fd383;
@@ -62,6 +64,7 @@
   --color-line: var(--ln);
   --color-accent: var(--ac);
   --color-accent-strong: var(--acs);
+  --color-accent-fg: var(--acf);
   --color-hover: var(--hv);
   --color-cleared: var(--gn);
   --color-cleared-bg: var(--gb);

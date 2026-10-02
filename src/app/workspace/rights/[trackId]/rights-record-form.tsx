@@ -112,7 +112,7 @@ export function RightsRecordForm({
           </div>
           <div>
             <label htmlFor={`${id}-end`} className="block text-[0.8125rem] text-t2">
-              Until <span className="text-t2/80">(optional)</span>
+              Until <span className="text-t2">(optional)</span>
             </label>
             <input
               id={`${id}-end`}

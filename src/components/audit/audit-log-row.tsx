@@ -30,7 +30,7 @@ export function AuditLogRow({ entry }: { entry: AuditLogEntryView }) {
         {entry.href && (
           <>
             {" "}
-            <Link href={entry.href} className="text-accent hover:underline">
+            <Link href={entry.href} className="text-accent underline underline-offset-2">
               {entry.hrefLabel}
             </Link>
           </>

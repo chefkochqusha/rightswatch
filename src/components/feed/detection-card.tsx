@@ -65,7 +65,7 @@ export function DetectionCard({
               </h3>
               <p className="truncate text-[0.8125rem] text-t2">
                 {brands ? `For ${brands}` : "Brand not named"}
-                {content.label && <span className="ml-2 text-t2/80">{content.label}</span>}
+                {content.label && <span className="ml-2 text-t2">{content.label}</span>}
               </p>
             </div>
           </div>

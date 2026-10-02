@@ -143,7 +143,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
                 <span
                   aria-hidden="true"
                   className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${
-                    step.done ? "bg-cleared-bg text-cleared" : index === nextStep ? "bg-accent text-white" : "bg-hover text-t2"
+                    step.done ? "bg-cleared-bg text-cleared" : index === nextStep ? "bg-accent text-accent-fg" : "bg-hover text-t2"
                   }`}
                 >
                   {step.done ? <CheckIcon className="h-3 w-3" /> : index + 1}

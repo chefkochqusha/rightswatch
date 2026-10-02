@@ -33,7 +33,7 @@ export default function ErrorBoundary({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 text-center">
       <title>Something went wrong — RightsWatch</title>
       <p className="text-sm font-semibold text-t2">Error</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-tx">Something went wrong</h1>
@@ -47,6 +47,6 @@ export default function ErrorBoundary({
       >
         Try again
       </button>
-    </div>
+    </main>
   );
 }

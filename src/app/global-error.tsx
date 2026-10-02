@@ -32,6 +32,7 @@ export default function GlobalError({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col items-center justify-center bg-bg px-6 text-center text-tx">
+        <main>
         <title>Something went wrong — RightsWatch</title>
         <p className="text-sm font-semibold text-t2">Error</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Something went wrong</h1>
@@ -45,6 +46,7 @@ export default function GlobalError({
         >
           Try again
         </button>
+        </main>
       </body>
     </html>
   );

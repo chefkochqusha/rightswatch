@@ -18,7 +18,7 @@ export function AuthShell({
   footer: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-6 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-bg px-6 py-12">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">
@@ -35,6 +35,6 @@ export function AuthShell({
 
         <p className="mt-4 text-center text-sm text-t2">{footer}</p>
       </div>
-    </div>
+    </main>
   );
 }

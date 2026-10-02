@@ -185,6 +185,14 @@ are still shown in-app for the inviter to copy, and in-app notifications
 are the only notification channel (see "Notifications" below). A
 domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
 
+**Accessibility.** Checked with axe-core (WCAG 2.1 AA plus best practices) on
+every public and app page in light and dark mode: no violations. What keeps it
+that way: `--t2` and the accent/green tokens are tuned to 4.5:1 on every
+surface they sit on, text on an accent fill uses `--acf` (white in light mode,
+dark in dark mode, so a primary button needs `text-accent-fg`, never
+`text-white`), every page has one `<main>`, banners are labelled `<aside>`s, links inside
+running text carry an underline, and each layout starts with a "Skip to content" link.
+
 **Search and sharing.** `app/robots.ts` and `app/sitemap.ts` expose the public
 site only (landing, imprint, privacy); the app (the public demo included),
 sign-in pages and `/api` are disallowed, and the workspace layout sets

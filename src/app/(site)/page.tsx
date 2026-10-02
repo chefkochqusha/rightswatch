@@ -94,7 +94,7 @@ export default function LandingPage() {
             RightsWatch watches the paid posts of the TikTok creators you follow, hears which of your songs are in them, and checks each one against your licences. You review what doesn&apos;t add up.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Link href="/signup" className={`${buttonStyles("primary")} !h-12 !bg-ultra !px-6 !text-base hover:!opacity-90`}>
+            <Link href="/signup" className={`${buttonStyles("primary")} !h-12 !bg-ultra !text-white !px-6 !text-base hover:!opacity-90`}>
               Start monitoring
             </Link>
             <DemoButton className={`${buttonStyles("secondary")} !h-12 !px-6 !text-base`} />

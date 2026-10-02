@@ -18,7 +18,7 @@ const BASE =
   "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-[transform,background-color,color,opacity] duration-100 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50";
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-strong",
+  primary: "bg-accent text-accent-fg hover:bg-accent-strong",
   secondary: "bg-surface text-tx ring-1 ring-line ring-inset hover:bg-hover",
   plain: "text-accent hover:bg-accent/10",
   danger: "text-mismatch hover:bg-mismatch-bg",

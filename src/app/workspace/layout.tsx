@@ -61,6 +61,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
 
   return (
     <div className="flex-1 md:grid md:grid-cols-[15.5rem_minmax(0,1fr)]">
+      <a href="#main" className="sr-only z-50 rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg focus:not-sr-only focus:fixed focus:top-3 focus:left-3">Skip to content</a>
       {/* The grid cell carries the background so it runs the full height of
           a long page; the sidebar inside it stays put while the page
           scrolls. */}
@@ -81,7 +82,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
 
       <div className="flex min-w-0 flex-col">
         {isDemo && (
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-tx px-4 py-2.5 text-[0.8125rem] text-bg md:px-10">
+          <aside aria-label="Public demo" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-tx px-4 py-2.5 text-[0.8125rem] text-bg md:px-10">
             <p>
               <span className="font-semibold">Public demo.</span> Fictional creators and rights data, view only. Nothing here is a real TikTok post.
             </p>
@@ -90,7 +91,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
                 Start your own workspace
               </button>
             </form>
-          </div>
+          </aside>
         )}
         {askToVerify && <VerifyEmailBanner email={session.user.email} />}
         <header className="flex items-center justify-between gap-4 border-b border-line bg-bg px-4 py-3 md:sticky md:top-0 md:z-10 md:px-10">
@@ -121,7 +122,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
           </div>
         </header>
 
-        <main className="w-full max-w-[76rem] flex-1 px-4 py-6 md:px-10 md:py-8">{children}</main>
+        <main id="main" className="w-full max-w-[76rem] flex-1 px-4 py-6 md:px-10 md:py-8">{children}</main>
       </div>
     </div>
   );
