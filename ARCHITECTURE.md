@@ -185,6 +185,12 @@ are still shown in-app for the inviter to copy, and in-app notifications
 are the only notification channel (see "Notifications" below). A
 domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
 
+**Search and sharing.** `app/robots.ts` and `app/sitemap.ts` expose the public
+site only (landing, imprint, privacy); the app (the public demo included),
+sign-in pages and `/api` are disallowed, and the workspace layout sets
+`noindex`. `app/opengraph-image.tsx` renders the link preview. The origin comes
+from `app/_lib/site-origin.ts` (`APP_URL`, then the Vercel production domain).
+
 ### Payments
 
 Stripe, in test mode, per the Brief's billing plan (§18–20) — built, and

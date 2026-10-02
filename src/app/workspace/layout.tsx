@@ -11,6 +11,9 @@ import { WorkspaceNav } from "@/components/layout/workspace-nav";
 import type { WorkspaceNavItem } from "@/components/layout/nav-active";
 import { ROLE_LABELS } from "@/components/team/labels";
 
+// The app, the public demo included, stays out of search results.
+export const metadata = { robots: { index: false, follow: false } };
+
 /**
  * The authenticated app's chrome (Brief §6, §29): a sidebar with the
  * workspace's sections, and a top bar naming the workspace you're in and

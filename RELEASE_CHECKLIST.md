@@ -58,6 +58,8 @@ or a business decision at release time, it gets a line here.
   tested with a stubbed `fetch`, not yet against the live service — try one
   reset email and one confirmation email on the first deploy. The
   "please confirm your email" banner only appears once these are set.
+  `APP_URL` also sets the address in `sitemap.xml`, `robots.txt` and the link
+  preview image; set it to the custom domain once there is one.
 - [ ] **`CRON_SECRET`** — any long random value, set in Vercel. Vercel Cron
   calls `/api/cron/scans` once a day with it; without it the endpoint refuses
   every call. Scheduled scans only do anything once the real TikTok connector
