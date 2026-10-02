@@ -82,3 +82,7 @@ or a business decision at release time, it gets a line here.
 - [ ] **Warm up the public demo** after the first deploy on a fresh database: click
   "Try the demo" once. The first visit fills the demo workspace (about a minute
   on a slow database); later visits are instant.
+- [ ] **Content-Security-Policy** — the standard security headers are set
+  (`next.config.ts`); a CSP isn't, because Next's inline scripts need a
+  per-request nonce first. Worth doing before real customer data; it is
+  code work, no account needed.
