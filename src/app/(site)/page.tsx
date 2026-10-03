@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { HeroFeed } from "@/components/marketing/hero-feed";
 import { DemoButton } from "@/components/marketing/demo-button";
+import { Channels } from "@/components/marketing/channels";
 import { KeywordMarquee } from "@/components/marketing/keyword-marquee";
 import { CoverArt } from "@/components/music/cover-art";
 import { CreatorAvatar } from "@/components/creators/avatar";
@@ -231,6 +232,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <Channels />
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-8 border-t border-line">

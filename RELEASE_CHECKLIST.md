@@ -69,7 +69,7 @@ or a business decision at release time, it gets a line here.
   "please confirm your email" banner only appears once these are set.
   `APP_URL` also sets the address in `sitemap.xml`, `robots.txt` and the link
   preview image; set it to the custom domain once there is one.
-- [ ] **`CRON_SECRET`** — any long random value, set in Vercel. Vercel Cron
+- [x] **`CRON_SECRET`** — set in Vercel (Production, sensitive) on 2026-10-03; live after the next deploy. Any long random value, set in Vercel. Vercel Cron
   calls `/api/cron/scans` once a day with it; without it the endpoint refuses
   every call. Scheduled scans only do anything once the real TikTok connector
   is on. The Growth plan promises scans every 6 hours: Vercel's free plan
@@ -78,7 +78,7 @@ or a business decision at release time, it gets a line here.
 - [ ] **Upstash Redis** via the Vercel Marketplace — a login rate limit shared
   across serverless instances (and a real job queue, if scans outgrow cron).
 - [ ] **Custom domain** (optional).
-- [ ] **Fresh `SESSION_SECRET`**: a new random value of at least 32 characters
+- [ ] **Fresh `SESSION_SECRET`** (still open: the current value is stored as a readable secret, so re-enter it as *Sensitive*): a new random value of at least 32 characters
   in Vercel (Settings → Environment Variables), then redeploy. Logs everyone
   out once.
 
@@ -95,3 +95,14 @@ or a business decision at release time, it gets a line here.
   (`next.config.ts`); a CSP isn't, because Next's inline scripts need a
   per-request nonce first. Worth doing before real customer data; it is
   code work, no account needed.
+
+## UI kit
+
+- [x] **Watermelon UI** (ui.watermelon.sh, MIT, free): the project is set up for
+  its shadcn registry (`components.json`, `cn` in `src/lib/utils.ts`).
+  `npx shadcn@latest add https://registry.watermelon.sh/r/<block>.json` pulls a
+  block into `src/components`. Its blocks come with their own dependencies
+  (react-icons, Radix/base-ui) and a stock look, so restyle any block with the
+  tokens in `globals.css` before it goes on a page. The channels section on the
+  landing page is adapted from its integrations cards.
+

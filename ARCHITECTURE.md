@@ -363,7 +363,29 @@ them yet — there's nothing to configure before Phase 10.
 The same adapter shape is meant to extend to other platforms without
 touching business logic: `FutureInstagramConnector`, `FutureYouTubeConnector`
 (Brief §1). Neither exists — this is a named extension point, not built
-scope.
+scope. `modules/connectors/channels.ts` records where each channel stands
+(`BETA` / `NEXT` / `PLANNED`); the landing page's "TikTok first. More channels
+next." section reads it, so it can't promise a channel the code lacks.
+
+### Adding a channel
+
+The schema (`Platform` enum, `platform` on creators, content and connectors),
+the connector interface and everything downstream of
+`NormalizedCommercialContent` already allow a second platform. What is still
+TikTok-only, and has to change when the first other connector ships:
+
+1. `modules/creators/watchlist.ts` — `addCreator` normalizes the handle with
+   TikTok's rules and writes `platform: "TIKTOK"`; it needs a platform on its
+   input and a per-platform handle/profile-URL rule.
+2. `app/_lib/workspace-scan-store.ts` — builds one connector (real or mock).
+   It needs a lookup from platform to connector, and the scan loop has to pick
+   each creator's connector by `creator.platform`.
+3. `app/_lib/connector-mode.ts` — `REAL` means "TikTok credentials are set";
+   it needs a per-platform answer (and the settings page its own status line
+   per channel).
+4. The add-creator form and watchlist copy say "TikTok" and need a platform
+   choice once there is more than one.
+5. Move the channel's stage in `connectors/channels.ts` to `BETA`.
 
 Music identification (`src/modules/music/`) mirrors this exact boundary one
 layer downstream: a `MusicIdentificationProvider` is the only code allowed
