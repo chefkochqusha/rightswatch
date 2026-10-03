@@ -86,8 +86,11 @@ or a business decision at release time, it gets a line here.
 
 - [ ] **Acceptance test on production**: sign up, run a scan, open and work a
   case, invite a teammate, subscribe, log out and back in.
-- [ ] **Launch video** of the finished product (same approach as the earlier
-  showreel: Opus + the brag-slim skill).
+- [ ] **Launch video** of the finished product. A 20 s cut exists (HyperFrames,
+  real app screenshots, placeholder beat bed, no voiceover). Still open: the ad
+  **voiceover with ElevenLabs** (owner: account on a plan that allows commercial
+  use, pick a voice, generate the lines I write, send me the audio files — no API
+  key needed in chat), and a licensed music track in place of the placeholder bed.
 - [ ] **Warm up the public demo** after the first deploy on a fresh database: click
   "Try the demo" once. The first visit fills the demo workspace (about a minute
   on a slow database); later visits are instant.
