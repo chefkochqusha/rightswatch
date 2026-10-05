@@ -1,0 +1,14 @@
+# Weekly pull requests for new package versions. Versions in package.json are
+# pinned exactly, so nothing changes until one of these is merged, and each one
+# can be checked (npm test, build) before it ships.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]

@@ -8,6 +8,7 @@ import { getCaseStore } from "@/app/_lib/case-store";
 import { getJobStore } from "@/app/_lib/job-store";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { getLibraryStore } from "@/app/_lib/library-store";
+import { httpsUrl } from "@/modules/connectors";
 import { SCAN_JOB_TYPE, creatorScanHistory, type ScanJobPayload } from "@/modules/jobs";
 import { buttonStyles } from "@/components/ui/button";
 import { ExternalIcon } from "@/components/ui/icons";
@@ -78,9 +79,9 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
             </div>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] text-t2">
               {creator.displayName && <span className="text-tx">{creator.displayName}</span>}
-              {creator.profileUrl && (
+              {httpsUrl(creator.profileUrl) && (
                 <a
-                  href={creator.profileUrl}
+                  href={httpsUrl(creator.profileUrl)!}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-accent hover:underline"

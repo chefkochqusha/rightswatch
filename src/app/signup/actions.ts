@@ -7,7 +7,7 @@ import { sendVerificationLink } from "@/app/_lib/email-verification";
 import { setSessionCookie } from "@/app/_lib/session-cookie";
 
 export interface SignUpFormState {
-  fieldErrors?: Partial<Record<"workspaceName" | "email" | "password", string>>;
+  fieldErrors?: Partial<Record<"workspaceName" | "email" | "password" | "confirmBusiness", string>>;
 }
 
 /**
@@ -27,6 +27,11 @@ export async function signUpAction(
   const password = String(formData.get("password") ?? "");
   const name = String(formData.get("name") ?? "");
   const workspaceName = String(formData.get("workspaceName") ?? "");
+
+  // RightsWatch is sold to businesses (publishers, labels, agencies), not to consumers or children.
+  if (formData.get("confirmBusiness") !== "on") {
+    return { fieldErrors: { confirmBusiness: "Please confirm this is for business use and that you are at least 18." } };
+  }
 
   const store = getAuthStore();
   const result = await signUp(

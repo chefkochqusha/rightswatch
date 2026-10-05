@@ -30,6 +30,11 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "rights.added": "Added a rights record",
   "rights.updated": "Changed a rights record",
   "rights.removed": "Deleted a rights record",
+  "account.password_changed": "Changed a password",
+  "team.invited": "Invited a teammate",
+  "billing.plan_chosen": "Chose a plan",
+  "billing.canceled": "Cancelled the subscription",
+  "data.exported": "Downloaded workspace data",
 };
 
 /** The same actions, naming the creator — when the entry recorded who. */

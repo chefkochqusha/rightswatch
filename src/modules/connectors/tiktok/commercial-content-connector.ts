@@ -1,3 +1,4 @@
+import { httpsUrl } from "../safe-url";
 import type { ConnectorFetchParams, ConnectorFetchResult, NormalizedCommercialContent, PlatformConnector } from "../types";
 
 /**
@@ -169,7 +170,11 @@ function normalize(raw: ApiCommercialContent, params: ConnectorFetchParams): Nor
     brandNames: Array.isArray(raw.brand_names) ? raw.brand_names.filter((b): b is string => typeof b === "string") : [],
     label: typeof raw.label === "string" ? raw.label : null,
     videoUrls: Array.isArray(raw.videos)
-      ? (raw.videos as ApiVideo[]).flatMap((video) => (typeof video?.url === "string" ? [video.url] : []))
+      ? (raw.videos as ApiVideo[]).flatMap((video) => {
+          // Only https links go on: they are shown as links and handed to the song recognition service.
+          const url = httpsUrl(video?.url);
+          return url ? [url] : [];
+        })
       : [],
     territory: null,
     rawPayload: raw,

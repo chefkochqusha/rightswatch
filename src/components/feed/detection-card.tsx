@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CaseStatus } from "@/modules/cases";
+import { httpsUrl } from "@/modules/connectors";
 import type { StoredScanItem } from "@/modules/scan-results";
 import { VideoPoster } from "./video-poster";
 import { CoverArt } from "@/components/music/cover-art";
@@ -46,7 +47,7 @@ export function DetectionCard({
   const { content } = item;
   const href = `/workspace/items/${encodeURIComponent(content.externalContentId)}`;
   const brands = content.brandNames.join(", ");
-  const videoUrl = content.videoUrls[0];
+  const videoUrl = httpsUrl(content.videoUrls[0]);
   const match = item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC" ? item.musicMatch : null;
 
   return (

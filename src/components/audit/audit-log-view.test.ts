@@ -171,4 +171,24 @@ describe("buildAuditLogView", () => {
     );
     assert.deepEqual(views.map((v) => v.id), ["a", "b", "c"]);
   });
+  test("security and account events read as plain sentences", () => {
+    const views = buildAuditLogView(
+      [
+        makeEntry({ id: "a", action: "account.password_changed", targetType: "user", targetId: "user-1" }),
+        makeEntry({ id: "b", action: "team.invited", targetType: "invite", targetId: "sam@example.com", metadata: { role: "ANALYST" } }),
+        makeEntry({ id: "c", action: "billing.plan_chosen", targetType: "plan", targetId: "GROWTH" }),
+        makeEntry({ id: "d", action: "billing.canceled", targetType: "subscription", targetId: "workspace-1" }),
+        makeEntry({ id: "e", action: "data.exported", targetType: "export", targetId: "workspace" }),
+      ],
+      { ...noContext, members: new Map(), casesById: new Map() },
+    );
+    assert.deepEqual(views.map((v) => v.description), [
+      "Changed a password",
+      "Invited sam@example.com as Analyst",
+      "Chose the Growth plan",
+      "Cancelled the subscription",
+      "Downloaded workspace data",
+    ]);
+    assert.ok(views.every((v) => v.href === null));
+  });
 });

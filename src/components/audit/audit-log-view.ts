@@ -1,6 +1,8 @@
 import type { AuditLogRecord } from "@/modules/audit";
 import type { CaseRecord } from "@/modules/cases";
 import type { UserRecord } from "@/modules/auth";
+import { ROLE_LABELS } from "@/components/team/labels";
+import type { Role } from "@/modules/auth";
 import { getAuditActionLabel, getCaseStatusLabelOrRaw, getCreatorActionLabel, getSongActionLabel } from "./labels";
 
 /**
@@ -76,6 +78,13 @@ function describeAction(
       );
       return `Changed the case assignment from ${from} to ${to}`;
     }
+    case "team.invited": {
+      const role = getMetadataString(entry.metadata, "role");
+      const roleLabel = role && role in ROLE_LABELS ? ROLE_LABELS[role as Role] : null;
+      return roleLabel ? `Invited ${entry.targetId} as ${roleLabel}` : `Invited ${entry.targetId}`;
+    }
+    case "billing.plan_chosen":
+      return `Chose the ${entry.targetId.charAt(0)}${entry.targetId.slice(1).toLowerCase()} plan`;
     default:
       if (entry.targetType === "creator") {
         return getCreatorActionLabel(entry.action, getMetadataString(entry.metadata, "handle"));

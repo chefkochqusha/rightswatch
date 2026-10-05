@@ -65,11 +65,11 @@ describe("AuddRecognitionProvider", () => {
 
   test("when every URL fails the last error is reported, never thrown: API error, HTTP error, network error", async () => {
     const api = stub([{ status: "error", error: { error_code: 900, error_message: "Invalid token" } }]);
-    assert.match((await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: api.fetchImpl }).identify({ ...input, videoUrls: ["u"] })).error ?? "", /#900.*Invalid token/);
+    assert.match((await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: api.fetchImpl }).identify({ ...input, videoUrls: ["https://v.example/u.mp4"] })).error ?? "", /#900.*Invalid token/);
     const http = stub([{ status: 503 }]);
-    assert.match((await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: http.fetchImpl }).identify({ ...input, videoUrls: ["u"] })).error ?? "", /HTTP 503/);
+    assert.match((await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: http.fetchImpl }).identify({ ...input, videoUrls: ["https://v.example/u.mp4"] })).error ?? "", /HTTP 503/);
     const net = stub([new Error("socket hang up")]);
-    const result = await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: net.fetchImpl }).identify({ ...input, videoUrls: ["u"] });
+    const result = await new AuddRecognitionProvider({ apiToken: "t", fetchImpl: net.fetchImpl }).identify({ ...input, videoUrls: ["https://v.example/u.mp4"] });
     assert.match(result.error ?? "", /could not be reached: socket hang up/);
     assert.deepEqual(result.matches, []);
   });
@@ -83,7 +83,23 @@ describe("AuddRecognitionProvider", () => {
 
   test("the API token never appears in an error message", async () => {
     const { fetchImpl } = stub([new Error("boom")]);
-    const result = await new AuddRecognitionProvider({ apiToken: "super-secret-token", fetchImpl }).identify({ ...input, videoUrls: ["u"] });
+    const result = await new AuddRecognitionProvider({ apiToken: "super-secret-token", fetchImpl }).identify({ ...input, videoUrls: ["https://v.example/u.mp4"] });
     assert.ok(!(result.error ?? "").includes("super-secret-token"));
+  });
+
+  test("only https links are sent, and at most two per post", async () => {
+    const { fetchImpl, calls } = stub([{ status: "error", error: { error_code: 600, error_message: "x" } }, { status: "error", error: { error_code: 600, error_message: "x" } }, { status: "error", error: { error_code: 600, error_message: "x" } }]);
+    await new AuddRecognitionProvider({ apiToken: "t", fetchImpl }).identify({
+      externalContentId: "p",
+      videoUrls: ["javascript:alert(1)", "http://v.example/plain.mp4", "https://v.example/1.mp4", "https://v.example/2.mp4", "https://v.example/3.mp4"],
+    });
+    assert.deepEqual(calls.map((c) => c.body.get("url")), ["https://v.example/1.mp4", "https://v.example/2.mp4"]);
+  });
+
+  test("a post with only unusable links costs no request", async () => {
+    const { fetchImpl, calls } = stub([]);
+    const result = await new AuddRecognitionProvider({ apiToken: "t", fetchImpl }).identify({ externalContentId: "p", videoUrls: ["file:///etc/passwd"] });
+    assert.deepEqual(result, { matches: [], error: null });
+    assert.equal(calls.length, 0);
   });
 });

@@ -26,11 +26,71 @@ or a business decision at release time, it gets a line here.
   fetched by the server, never by the visitor's browser, so no visitor data
   goes to the Internet Archive.
 
-- [ ] **Landing page wording**: the pricing section states net monthly prices
-  and a 14-day free trial; add VAT wording and the cancellation terms once the
-  business status and terms are settled. The "Book a demo" call to action from
+- [ ] **Landing page wording**: the pricing section and the billing page state
+  net monthly prices, the 14-day trial, monthly renewal until cancelled and
+  cancelling in the app (2026-10-05); add the VAT line and the final terms once
+  the business status and terms are settled. The "Book a demo" call to action from
   the Brief is "Try the demo" (the public demo workspace) until a booking
   link or sales inbox exists.
+
+Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
+`DATA_FLOWS.md`). Each of these is a decision or a document, not code:
+
+- [ ] **VAT and tax** (tax advisor). Sell to businesses only (the signup box and
+  the pricing text say so). EU business customers with a valid VAT ID: reverse
+  charge. Sales to consumers in other EU countries are taxed at the customer's
+  country rate once the one-stop-shop threshold is passed (the "from the first
+  euro" claim in the reels is a simplification: confirm the threshold and your
+  small-business status). Turn on **Stripe Tax** so the invoices carry the right
+  rate and collect VAT IDs. US sales tax: decide whether to sell to US customers
+  at all; if yes, state thresholds (around $100k or 200 sales) need registration.
+- [ ] **14-day withdrawal right** applies to consumers only. Keep the product
+  B2B-only (done in the UI) and say so in the terms; if consumers are ever
+  allowed, the checkout needs the explicit waiver for digital content.
+- [ ] **Chargebacks**: watch the dispute rate in Stripe (a few percent starts
+  trouble with the card networks); answer every dispute in time; keep the
+  invoice and the audit log as evidence.
+- [ ] **Trademark check for "RightsWatch"** before the launch video and any ads.
+  A first web search found no obvious conflict, which proves nothing. Search
+  DPMAregister, EUIPO TMview and WIPO Global Brand Database in the music and
+  software classes (9, 35, 41, 42), plus the domain and app names; a trademark
+  lawyer for the final answer.
+- [ ] **Terms (AGB) with a lawyer**: liability limits that German law allows
+  (intent and gross negligence cannot be excluded), a place of jurisdiction, and
+  a **data processing agreement (AVV)** to sign with each customer, because
+  RightsWatch processes their creators' data. The reels' US-style class-action
+  waiver and arbitration clause do not carry over; a lawyer decides what does.
+- [ ] **Privacy policy lists every service in `DATA_FLOWS.md`** (Vercel, Neon,
+  Stripe, Resend, TikTok, AudD, MusicBrainz, Cover Art Archive), the 7-day (or
+  plan-dependent) backup lag after deletion, and the one session cookie. Also: an
+  imprint with a real address (Impressum) — missing or wrong ones are what
+  gets a warning letter (Abmahnung) in Germany, typically 500–1,500 € in lawyer fees
+  and a contractual penalty if repeated.
+- [ ] **Data processing agreements with the providers**: Vercel, Neon, Stripe,
+  Resend, AudD. Ask each where data is stored and which transfer mechanism covers
+  the US.
+- [ ] **Marketing email and texts**: none are sent today (only password reset and
+  confirmation). For a launch newsletter: double opt-in, imprint data, a working
+  unsubscribe link, and a postal address for US readers (CAN-SPAM). Never text a
+  phone number without written consent; the product collects none.
+- [ ] **Registered DMCA agent / takedown contact**: only needed if users can upload
+  content. There are no uploads. Revisit when `CaseEvidence` is built.
+- [ ] **AI Act, Art. 50 (chatbot must say it is an AI)**: the text applies from
+  2 August 2026 (artificialintelligenceact.eu, checked 2026-10-05); I could not
+  check for transitional rules. Not relevant while there is no chatbot or AI
+  feature; before adding one, add the notice and ask the lawyer.
+- [ ] **Launch video and ads**: no invented customers, quotes or "I used it"
+  testimonials (a presenter demos the product, never poses as a customer); put
+  "AI voice" in the video description. Lawyer to confirm the wording.
+- [ ] **Subscription wording final review**: the pricing section and billing page
+  now say "for businesses, net of tax, 14-day trial without a card, monthly,
+  renews until cancelled, cancel in the app". Add the VAT line once the tax status
+  is settled.
+- [ ] **Idea, not decided: loyalty pricing** (the price falls every month a
+  customer stays; cancelling and coming back starts at the top price). Needs a
+  plan-catalog and Stripe price-schedule change, an unmistakable explanation in
+  the pricing text and the terms, and a lawyer's look (cancelling must stay as
+  easy as signing up). Nothing is built.
 
 ## Services & credentials
 
@@ -82,6 +142,25 @@ or a business decision at release time, it gets a line here.
   in Vercel (Settings → Environment Variables), then redeploy. Logs everyone
   out once.
 
+Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPONSE.md`):
+
+- [ ] **Dev and prod separation** (owner, in Vercel and Neon): turn on preview
+  branching in the Neon integration, give `SESSION_SECRET`, `CRON_SECRET` and every
+  key a Production-only scope with separate Preview values (Stripe test keys; no
+  AudD, TikTok or Resend key in previews), keep Deployment Protection on. Until
+  then a preview build runs `prisma db push && prisma db seed` against the
+  production database.
+- [ ] **Neon plan and backups**: check which plan the project is on (history
+  window: Free 6 hours, Launch up to 7 days, Scale up to 30 days) and choose one
+  you accept before real customer data; ask Neon how backups are encrypted;
+  then run the restore drill once together (`BACKUP_RESTORE.md`).
+- [ ] **Vercel spend limit** and pause rule, and know where attack-challenge mode
+  is (a flood bills by usage even on static pages).
+- [ ] **Fill in `INCIDENT_RESPONSE.md`**: lawyer, data protection authority,
+  support address, who decides.
+- [ ] **AudD spending cap**: scans send at most 200 posts to AudD each
+  (`AUDD_MAX_POSTS_PER_SCAN` changes it). Pick the number with the price list in hand.
+
 ## Final
 
 - [ ] **Acceptance test on production**: sign up, run a scan, open and work a
@@ -100,7 +179,9 @@ or a business decision at release time, it gets a line here.
   Checkout redirects are already allowed).
 - [ ] **Security re-check before real customer data**: `SECURITY.md` has the
   audit and what is still open (shared rate limits, `SESSION_SECRET` as
-  Sensitive, the Prisma CLI advisories once Prisma 8 is stable).
+  Sensitive, dev/prod separation, the Prisma and lint-tool advisories, logins in
+  the audit log, deleting a single member's account). Re-run the checks in its
+  "After a change" section on the live address.
 
 ## UI kit
 

@@ -10,3 +10,4 @@ export { TikTokCommercialContentConnector } from './tiktok/commercial-content-co
 export type { TikTokConnectorOptions } from './tiktok/commercial-content-connector';
 export { CHANNEL_STAGES, orderedChannels, isChannelLive } from './channels';
 export type { ChannelStage } from './channels';
+export { httpsUrl } from './safe-url';

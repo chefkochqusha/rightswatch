@@ -5,6 +5,8 @@ import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
 import { getRecognitionMode } from "@/app/_lib/recognition";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
+import { canManageWorkspace } from "@/app/_lib/authorize";
+import { buttonStyles } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ROLE_LABELS } from "@/components/team/labels";
 import { DeleteWorkspaceForm } from "./delete-workspace-form";
@@ -146,6 +148,25 @@ export default async function SettingsPage() {
             </>
           )}
         </div>
+
+        {!isDemo && (
+          <div className="mt-6 rounded-lg border border-line bg-surface p-5">
+            <h3 className="text-sm font-semibold">Download your data</h3>
+            <p className="mt-1 mb-4 max-w-xl text-[0.8125rem] text-t2">
+              A JSON file you can keep or move elsewhere. It never contains password hashes. Each download is written to the activity log.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a href="/workspace/settings/export?scope=account" download className={buttonStyles("secondary", "sm")}>
+                My account data
+              </a>
+              {canManageWorkspace(session.role) && (
+                <a href="/workspace/settings/export?scope=workspace" download className={buttonStyles("secondary", "sm")}>
+                  Whole workspace
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {!isDemo && session.role === "OWNER" && (
           <div className="mt-6 rounded-lg border border-mismatch/40 bg-surface p-5">

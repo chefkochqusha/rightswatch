@@ -1,6 +1,6 @@
 import { afterEach, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { getRecognitionMode, getRecognitionProvider } from "./recognition";
+import { DEFAULT_MAX_POSTS_PER_SCAN, getRecognitionMode, getRecognitionProvider, maxPostsPerScan } from "./recognition";
 
 const original = process.env.AUDD_API_TOKEN;
 afterEach(() => {
@@ -24,5 +24,14 @@ describe("recognition provider choice", () => {
     process.env.AUDD_API_TOKEN = "abc";
     assert.equal(getRecognitionMode(), "AUDD");
     assert.equal(getRecognitionProvider().providerName, "audd");
+  });
+
+  test("the per-scan spending cap defaults to 200 posts and can be set, but never to nonsense", () => {
+    assert.equal(DEFAULT_MAX_POSTS_PER_SCAN, 200);
+    assert.equal(maxPostsPerScan(undefined), 200);
+    assert.equal(maxPostsPerScan("50"), 50);
+    for (const bad of ["0", "-5", "abc", "1.5", ""]) {
+      assert.equal(maxPostsPerScan(bad), 200, bad);
+    }
   });
 });

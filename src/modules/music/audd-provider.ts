@@ -1,7 +1,9 @@
+import { httpsUrl } from "../connectors/safe-url";
 import type { MusicIdentificationInput, MusicIdentificationProvider, MusicIdentificationResult, NormalizedMusicMatch } from "./types";
 
 const ENDPOINT = "https://api.audd.io/";
 const REQUEST_TIMEOUT_MS = 30_000;
+const MAX_URLS_PER_POST = 2;
 
 /**
  * AudD returns a song or nothing, never a score. The pipeline and the UI
@@ -42,11 +44,17 @@ export class AuddRecognitionProvider implements MusicIdentificationProvider {
   }
 
   async identify(input: MusicIdentificationInput): Promise<MusicIdentificationResult> {
-    if (input.videoUrls.length === 0) {
+    // AudD downloads the address we send, so only plain https links go out, and only a few
+    // per post: each attempt is billed.
+    const urls = input.videoUrls.flatMap((raw) => {
+      const url = httpsUrl(raw);
+      return url ? [url] : [];
+    }).slice(0, MAX_URLS_PER_POST);
+    if (urls.length === 0) {
       return { matches: [], error: null }; // nothing to listen to
     }
     let lastError: string | null = null;
-    for (const url of input.videoUrls) {
+    for (const url of urls) {
       const answer = await this.ask(url);
       if (answer.kind === "match") return { matches: [answer.match], error: null };
       if (answer.kind === "none") return { matches: [], error: null };

@@ -1,5 +1,6 @@
 "use server";
 
+import { recordAudit } from "@/app/_lib/audit-event";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { inviteTeammate } from "@/modules/auth";
@@ -40,5 +41,7 @@ export async function inviteTeammateAction(
     return { fieldErrors: { role: "Choose a role to invite them as." } };
   }
 
-  return { issuedToken: result.token, invitedEmail: email.trim().toLowerCase() };
+  const invitedEmail = email.trim().toLowerCase();
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "team.invited", targetType: "invite", targetId: invitedEmail, metadata: { role } });
+  return { issuedToken: result.token, invitedEmail };
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { changePassword, deleteWorkspace, InMemoryRateLimiter, MIN_PASSWORD_LENGTH } from "@/modules/auth";
 import { cancelSubscription } from "@/modules/billing";
+import { recordAudit } from "@/app/_lib/audit-event";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
@@ -40,6 +41,8 @@ export async function changePasswordAction(_prev: ChangePasswordFormState, formD
     } as const;
     return { formError: messages[result.error] };
   }
+
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "account.password_changed", targetType: "user", targetId: session.user.id });
 
   // Every session ended, this browser's included: start a fresh one.
   await setSessionCookie(session.user.id);

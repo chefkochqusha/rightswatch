@@ -72,7 +72,7 @@ export default async function AuditLogPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
         <p className="mt-1 text-sm text-t2">
-          Every change to cases and the watchlist in {session.workspace.name}, newest first.
+          Changes to cases, the watchlist, songs and rights, and security events (passwords, invites, plan changes, data downloads) in {session.workspace.name}, newest first.
         </p>
       </div>
 

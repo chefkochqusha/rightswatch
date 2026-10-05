@@ -129,7 +129,11 @@ export default async function BillingPage() {
         </section>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <p className="mt-6 max-w-3xl text-[0.8125rem] leading-normal text-t2">
+        Prices are per month and net of tax. The trial lasts {TRIAL_LENGTH_DAYS} days and needs no card. After it, billing is monthly and renews until you
+        cancel; you can cancel here at any time.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         {PLAN_CATALOG.map((plan) => {
           const isCurrentPlan = !isCanceled && currentPlan?.id === plan.id;
           // Too small for what's monitored now (Brief §19) — pausing or

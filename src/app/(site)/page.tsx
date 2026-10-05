@@ -260,6 +260,10 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <p className="mt-6 max-w-3xl text-[0.9375rem] leading-relaxed text-t2">
+            For businesses. Prices are per month and net of tax. The trial lasts 14 days and needs no card. After it, billing is monthly and renews until
+            you cancel; you can cancel in the app at any time.
+          </p>
         </div>
       </section>
 

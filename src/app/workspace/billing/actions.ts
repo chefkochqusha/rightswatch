@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { recordAudit } from "@/app/_lib/audit-event";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { getCreatorStore } from "@/app/_lib/creator-store";
@@ -53,6 +54,7 @@ export async function choosePlanAction(formData: FormData) {
       paymentProvider: store.paymentProvider,
     },
   );
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "billing.plan_chosen", targetType: "plan", targetId: rawTier });
   revalidatePath("/workspace", "layout");
 }
 
@@ -63,6 +65,7 @@ export async function cancelSubscriptionAction() {
     { workspaceId: session.workspace.id },
     { subscriptionRepository: store.subscriptions, paymentProvider: store.paymentProvider },
   );
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "billing.canceled", targetType: "subscription", targetId: session.workspace.id });
   revalidatePath("/workspace/billing");
   revalidatePath("/workspace");
 }

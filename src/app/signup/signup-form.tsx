@@ -40,6 +40,17 @@ export function SignUpForm() {
         error={state.fieldErrors?.password}
         autoComplete="new-password"
       />
+      <div>
+        <label className="flex items-start gap-3 text-[0.8125rem] leading-snug text-t2">
+          <input type="checkbox" name="confirmBusiness" required aria-invalid={state.fieldErrors?.confirmBusiness ? true : undefined} className="mt-0.5 h-4 w-4 shrink-0 accent-accent" />
+          <span>I&apos;m signing up for a business or professional purpose, and I&apos;m at least 18 years old.</span>
+        </label>
+        {state.fieldErrors?.confirmBusiness && (
+          <p role="alert" className="mt-1.5 text-[0.8125rem] text-mismatch">
+            {state.fieldErrors.confirmBusiness}
+          </p>
+        )}
+      </div>
       <button
         type="submit"
         disabled={pending}

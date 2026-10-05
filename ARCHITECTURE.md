@@ -307,7 +307,7 @@ Server Actions, or pages that use it.
 | `cases` | Turns a flagged assessment into actionable, assignable work | §43 |
 | `notifications` | In-app notifications for workspace members | schema only — not itself Brief-numbered |
 | `billing` | Plans and subscriptions | §18–§20 |
-| `audit` | Per-workspace audit trail of case-lifecycle events | schema only — not itself Brief-numbered |
+| `audit` | Per-workspace audit trail: case-lifecycle events, watchlist, song and rights changes, and security events (password change, invite, plan change, data download), written by `app/_lib/audit-event.ts` | schema only — not itself Brief-numbered |
 
 ## Connector architecture
 

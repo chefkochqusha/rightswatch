@@ -89,6 +89,15 @@ Reports (Brief §25, §26) are at `/workspace/reports`: verdict split, songs and
 
 Password reset works (`/forgot-password`): a signed one-hour link, single-use, ending all sessions; email goes through Resend once configured.
 
+Security and data protection (2026-10-05): a full audit is in `SECURITY.md`
+(secrets, access, CSP with nonce, request limits, link and SSRF checks, exact
+dependency versions with weekly Dependabot pull requests, accessibility scan).
+Customers can download their data as JSON (Settings), security events are in
+the audit log, and AudD spending is capped per scan. `DATA_FLOWS.md` lists
+which service sees which data, `INCIDENT_RESPONSE.md` and `BACKUP_RESTORE.md`
+are the runbooks. What still needs the owner (preview database, spend limit,
+restore drill, lawyer and tax items) is in `RELEASE_CHECKLIST.md`.
+
 Still to build from the Master Brief: settings, email verification, the real TikTok connector, and scheduled scans. Everything that needs an account,
 money or a legal decision waits for launch: `RELEASE_CHECKLIST.md`.
 

@@ -1,3 +1,4 @@
+import { httpsUrl } from "@/modules/connectors";
 import type { ScanItemResult } from "@/modules/scan-pipeline";
 import { PLATFORM_LABELS, REASON_LABELS, formatConfidence, matchMethodLabel } from "./labels";
 
@@ -68,9 +69,9 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
                 <dd className="text-tx">{item.content.territory ?? "Not reported"}</dd>
               </div>
             </dl>
-            {item.content.videoUrls[0] && (
+            {httpsUrl(item.content.videoUrls[0]) && (
               <a
-                href={item.content.videoUrls[0]}
+                href={httpsUrl(item.content.videoUrls[0])!}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 inline-block text-[0.8125rem] font-medium text-accent hover:underline"
