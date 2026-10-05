@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken } from "@/modules/auth";
 import { SESSION_COOKIE_NAME } from "@/app/_lib/session-cookie-name";
+import { buildContentSecurityPolicy, createNonce } from "@/app/_lib/csp";
 
 /**
  * Optimistic auth checks only (Next.js App Router guide, "Authorization" >
@@ -57,7 +58,16 @@ export default function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/workspace", request.url));
   }
 
-  return NextResponse.next();
+  // Content-Security-Policy with a nonce per request. The nonce goes onto the request too, so
+  // Next.js puts it on its own inline scripts. Pages that carry it render per request.
+  const nonce = createNonce();
+  const csp = buildContentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
 }
 
 export const config = {

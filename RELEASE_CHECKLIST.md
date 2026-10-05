@@ -94,10 +94,13 @@ or a business decision at release time, it gets a line here.
 - [ ] **Warm up the public demo** after the first deploy on a fresh database: click
   "Try the demo" once. The first visit fills the demo workspace (about a minute
   on a slow database); later visits are instant.
-- [ ] **Content-Security-Policy** — the standard security headers are set
-  (`next.config.ts`); a CSP isn't, because Next's inline scripts need a
-  per-request nonce first. Worth doing before real customer data; it is
-  code work, no account needed.
+- [x] **Content-Security-Policy** — done (2026-10-05): `proxy.ts` sends a CSP with a
+  per-request script nonce, every page renders per request. Re-check it in the
+  browser console after adding any third-party script, font or embed (Stripe
+  Checkout redirects are already allowed).
+- [ ] **Security re-check before real customer data**: `SECURITY.md` has the
+  audit and what is still open (shared rate limits, `SESSION_SECRET` as
+  Sensitive, the Prisma CLI advisories once Prisma 8 is stable).
 
 ## UI kit
 

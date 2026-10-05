@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { getCurrentSession } from "@/app/_lib/current-user";
 import { getLibraryStore } from "@/app/_lib/library-store";
+import { spendRequest } from "@/app/_lib/request-limit";
 import { searchSongs } from "@/app/_lib/song-search";
 import { findSameTrack } from "@/modules/catalog";
 
@@ -40,6 +41,15 @@ function error(status: number, code: string, message: string): Response {
 export async function GET(request: NextRequest): Promise<Response> {
   const session = await getCurrentSession();
   if (!session) return error(401, "UNAUTHENTICATED", "Sign in to search songs.");
+
+  // MusicBrainz asks for about one request a second from a client; a member typing fast
+  // stays well inside this, a script looping the endpoint does not.
+  const wait = spendRequest("song-search", session.user.id, { max: 40, windowMs: 60_000 });
+  if (wait !== null) {
+    const limited = error(429, "RATE_LIMITED", `Too many searches. Try again in ${wait} second${wait === 1 ? "" : "s"}.`);
+    limited.headers.set("Retry-After", String(wait));
+    return limited;
+  }
 
   const parsed = Query.safeParse({ q: request.nextUrl.searchParams.get("q") ?? "" });
   if (!parsed.success) return error(400, "INVALID_QUERY", parsed.error.issues[0]?.message ?? "Enter a search.");

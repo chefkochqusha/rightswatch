@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { clientIpFrom, spendRequest } from "@/app/_lib/request-limit";
 
 /**
  * GET /api/v1/artwork/{releaseId} — a song's cover art, fetched from the
@@ -19,9 +20,13 @@ const RELEASE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_BYTES = 2_000_000;
 
-export async function GET(_request: NextRequest, ctx: RouteContext<"/api/v1/artwork/[releaseId]">): Promise<Response> {
+export async function GET(request: NextRequest, ctx: RouteContext<"/api/v1/artwork/[releaseId]">): Promise<Response> {
   const { releaseId } = await ctx.params;
   if (!RELEASE_ID.test(releaseId)) return new Response("Not found", { status: 404 });
+
+  // Only requests that reach this server count: a cover already in the edge cache never gets here.
+  const wait = spendRequest("artwork", clientIpFrom(request.headers), { max: 120, windowMs: 60_000 });
+  if (wait !== null) return new Response("Too many requests.", { status: 429, headers: { "Retry-After": String(wait), "Cache-Control": "no-store" } });
 
   let upstream: Response;
   try {

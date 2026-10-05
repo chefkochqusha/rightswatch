@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 /**
- * Response headers every page gets. No Content-Security-Policy yet: Next's
- * inline scripts need a per-request nonce for one, which is its own piece of
- * work (listed in RELEASE_CHECKLIST.md).
+ * Response headers every page gets. The Content-Security-Policy is set per
+ * request in `src/proxy.ts` (it needs a fresh script nonce each time).
  */
 const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
