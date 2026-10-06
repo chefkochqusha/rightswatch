@@ -82,7 +82,7 @@ Local development already uses its own database (`npm run db:local`) and
    confirming by email first, which needs Resend (RELEASE_CHECKLIST.md).
 5. **CSP allows inline styles.** React's `style=""` attributes can't carry a
    nonce, and a style can't run code. Scripts are the part that matters.
-6. **Spend limits.** Set a spend limit with pause in Vercel, and turn on its
+6. **Spend limits (needs the Pro plan).** Set a spend limit with pause in Vercel (Spend Management is not available on Hobby, and Hobby is non-commercial only), and turn on its
    attack-challenge mode if a flood starts (the owner's Vercel dashboard). Usage on Vercel is billed, so even cheap
    pages cost money under a flood; the owner should read the plan's terms on
    what happens at the limit.

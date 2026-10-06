@@ -94,6 +94,19 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 
 ## Services & credentials
 
+- [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is
+  "restricted to non-commercial personal use only"; commercial usage is any
+  deployment used for the financial gain of anyone involved, including "any
+  method of requesting or processing payment from visitors" and "advertising the
+  sale of a product or service" (Vercel Fair Use Guidelines, checked 2026-10-06).
+  A paid SaaS with Stripe checkout and a pricing page is commercial. Check
+  Settings → Billing for the project's current plan (I cannot read it: the
+  Vercel connection is refused for this account). Pro is about 20 USD per
+  developer seat and month plus usage above the included credit, has a free
+  trial, and unlocks Spend Management (a spend limit with pause), 1 day instead
+  of 1 hour of runtime logs, and team seats. Upgrade at the latest before the
+  first customer, the paid pricing page being promoted, or the launch video going
+  out.
 - [ ] **TikTok Commercial Content API** — apply at
   `developers.tiktok.com/application/commercial-content-api` (needs company
   details; approval takes a few days — the only item with lead time). Then set
@@ -154,7 +167,8 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   window: Free 6 hours, Launch up to 7 days, Scale up to 30 days) and choose one
   you accept before real customer data; ask Neon how backups are encrypted;
   then run the restore drill once together (`BACKUP_RESTORE.md`).
-- [ ] **Vercel spend limit** and pause rule, and know where attack-challenge mode
+- [ ] **Vercel spend limit** and pause rule (Spend Management is a Pro feature,
+  see above), and know where attack-challenge mode
   is (a flood bills by usage even on static pages).
 - [ ] **Fill in `INCIDENT_RESPONSE.md`**: lawyer, data protection authority,
   support address, who decides.

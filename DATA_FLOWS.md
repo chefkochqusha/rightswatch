@@ -25,7 +25,7 @@ analytics or advertising identifiers (none), keystroke or session recordings
 
 | Service | What it receives | When | Notes / to check |
 |---|---|---|---|
-| **Vercel** (hosting, logs) | Every request: IP address, URL, headers. All data passes through its functions | Always | Functions run in `iad1` (US East). Moving them to `fra1` keeps processing in the EU (step "Neon region" in `RELEASE_CHECKLIST.md`). Data processing agreement (DPA) and transfer mechanism to confirm |
+| **Vercel** (hosting, logs) | Every request: IP address, URL, headers. All data passes through its functions | Always | A US company. Functions run in `iad1` (US East); `fra1` (Frankfurt) keeps processing in the EU but does not change who operates the service (step "Neon region" in `RELEASE_CHECKLIST.md`). Vercel states it is certified under the EU-US Data Privacy Framework; DPA to sign. Needs the **Pro plan** for commercial use |
 | **Neon** (Postgres) | All stored data | Always | Region still to be named by the owner. DPA to confirm. Backups: see `BACKUP_RESTORE.md` |
 | **Stripe** | Customer email, workspace id, plan; card data goes to Stripe directly | Once Stripe is on | Own controller for payment data. Webhook logs here hold ids only |
 | **Resend** (email) | Recipient address and the text of reset and confirmation emails | Once configured | Nothing is sent today. DPA to confirm |
@@ -42,6 +42,37 @@ provider, and no model reads TikTok or AudD output. If one is added: list the
 provider here first, sign a DPA, switch off training on customer data, keep
 untrusted text (creator names, brand names, notes) away from any model that can
 take actions, and tell people they are talking to an AI (AI Act, Art. 50).
+
+## Transfers to the US (Vercel, Stripe, Resend, AudD, Neon)
+
+Two separate things are often mixed up (the reel comments about Vercel and
+Cloudflare do this):
+
+1. **A data processing agreement (AVV / DPA, Art. 28)** regulates what the
+   provider may do with the data. Every provider above needs one.
+2. **A transfer mechanism (Chapter V)** is what makes sending data to a US
+   company lawful at all: an adequacy decision (the EU-US Data Privacy
+   Framework, DPF, in force since July 2023, for companies certified under it) or
+   Standard Contractual Clauses.
+
+An AVV does not replace the second; the second does not replace the first. Both
+are needed. As far as checked on 2026-10-06:
+
+- Vercel says it is certified under the DPF (its guide, last updated 2025-11-10).
+  It does not matter whether the function region is Frankfurt: the operator is
+  still a US company, which is why a lawyer may still ask for the clauses too.
+- The DPF stands, but is under appeal: the EU General Court upheld it on
+  3 September 2025 and the challenger appealed to the Court of Justice on
+  31 October 2025. I could not confirm a decision after that. If the DPF falls,
+  every US provider on this list needs standard clauses instead; keep that in
+  mind when choosing providers and ask each one for them now.
+- "Only a plain website, so no problem" is not right either: a visitor's IP
+  address is personal data even without a contact form (that was the point of
+  the Google Fonts ruling), so the privacy policy must name Vercel regardless.
+- Cloudflare is not used here.
+- EU-only hosting (a provider with an EU seat) removes the question, but
+  costs a rebuild of the deploy pipeline. Not planned: ask the lawyer whether
+  Vercel with DPF, a DPA and the Frankfurt region is acceptable for this product.
 
 ## Roles under GDPR (to confirm with the lawyer)
 

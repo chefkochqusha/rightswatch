@@ -24,7 +24,7 @@ undue delay" (Art. 33(2)): in practice the same day.
 | Cost spike (bill, bandwidth, AudD) | Remove `AUDD_API_TOKEN` (recognition stops at once), pause the project, turn on Vercel's attack challenge mode / spend limit |
 
 Then **preserve evidence**: export the Vercel runtime logs for the time window
-(they are kept only for a short time), note deployment ids, copy the activity-log
+(kept 1 hour on the Hobby plan, 1 day on Pro, per Vercel's plan comparison, so do it first), note deployment ids, copy the activity-log
 rows (`/workspace/audit`) of the affected workspace.
 
 ## 2. Assess (same day)

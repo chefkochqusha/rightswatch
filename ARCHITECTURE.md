@@ -151,7 +151,7 @@ made once and referenced everywhere rather than re-litigated per file.
   workspace. (`WebhookEvent`, the other operations table, is live — see
   "Payments".)
 - **Scheduled scans** don't need the queue. `vercel.json` has a daily cron
-  (04:30 UTC, the only frequency Vercel's free plan allows) calling
+  (04:30 UTC, the only frequency Vercel's free Hobby plan allows; Hobby is non-commercial only, so a paid launch moves to Pro, see `RELEASE_CHECKLIST.md`) calling
   `/api/cron/scans`, which refuses everything unless the request carries
   `Authorization: Bearer <CRON_SECRET>` (and refuses all of it while the
   variable is unset). `runDueScans` (`app/_lib/scheduled-scans.ts`) asks
