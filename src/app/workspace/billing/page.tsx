@@ -5,7 +5,7 @@ import { getCreatorStore } from "@/app/_lib/creator-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge";
 import { formatPlanPrice, SCAN_CADENCE_LABELS } from "@/components/billing/labels";
-import { PLAN_CATALOG, TRIAL_LENGTH_DAYS, isMockCustomerId } from "@/modules/billing";
+import { LOYALTY, PLAN_CATALOG, TRIAL_LENGTH_DAYS, annualPriceCents, isMockCustomerId, loyaltyStatus, monthOfMaxDiscount, monthlyPriceCents } from "@/modules/billing";
 import { choosePlanAction, cancelSubscriptionAction, openBillingPortalAction } from "./actions";
 
 export const metadata = {
@@ -38,6 +38,7 @@ export default async function BillingPage() {
   // Brief §20's usage figure: creators monitored right now — what a plan's
   // limit counts (§19), so paused and removed creators don't.
   const trackedCreators = await getCreatorStore().creators.countMonitored(session.workspace.id);
+  const loyalty = subscription && !isCanceled ? loyaltyStatus(subscription, new Date()) : null;
 
   return (
     <div>
@@ -69,9 +70,39 @@ export default async function BillingPage() {
             <div className="flex justify-between gap-3">
               <dt className="text-t2">Plan</dt>
               <dd className="text-tx">
-                {currentPlan.name} · {formatPlanPrice(currentPlan.priceCents)}/mo
+                {currentPlan.name} · {subscription.billingInterval === "ANNUAL" ? "billed yearly" : "billed monthly"}
               </dd>
             </div>
+            {loyalty && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-t2">Your price</dt>
+                <dd className="text-right text-tx">
+                  {formatPlanPrice(
+                    subscription.billingInterval === "ANNUAL"
+                      ? annualPriceCents(currentPlan)
+                      : subscription.status === "TRIALING"
+                        ? currentPlan.priceCents
+                        : monthlyPriceCents(currentPlan, "MONTHLY", loyalty.month),
+                  )}
+                  {subscription.billingInterval === "ANNUAL" ? " a year" : " a month"}
+                  {loyalty.percent > 0 && subscription.status !== "TRIALING" && (
+                    <span className="ml-1.5 rounded-full bg-cleared-bg px-2 py-0.5 text-xs font-medium text-cleared">−{loyalty.percent} %</span>
+                  )}
+                </dd>
+              </div>
+            )}
+            {loyalty && subscription.billingInterval === "MONTHLY" && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-t2">Loyalty discount</dt>
+                <dd className="text-right text-tx">
+                  {subscription.status === "TRIALING"
+                    ? `Starts after the trial: −${LOYALTY.firstStepPercent} % from month ${LOYALTY.firstStepMonth}`
+                    : loyalty.next
+                      ? `−${loyalty.next.percent} % from ${dateFormatter.format(loyalty.next.from)}`
+                      : `Maximum reached (−${LOYALTY.maxPercent} %)`}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between gap-3">
               <dt className="text-t2">Tracked creators</dt>
               <dd className="text-tx">
@@ -130,20 +161,19 @@ export default async function BillingPage() {
       )}
 
       <p className="mt-6 max-w-3xl text-[0.8125rem] leading-normal text-t2">
-        Prices are per month and net of tax. The trial lasts {TRIAL_LENGTH_DAYS} days and needs no card. After it, billing is monthly and renews until you
-        cancel; you can cancel here at any time.
+        Prices are net of tax. The trial lasts {TRIAL_LENGTH_DAYS} days and needs no card. Monthly billing renews every month until you cancel and gets
+        cheaper the longer you stay: −{LOYALTY.firstStepPercent} % from month {LOYALTY.firstStepMonth}, then {LOYALTY.stepPercent} % more each month, up
+        to −{LOYALTY.maxPercent} % from month {monthOfMaxDiscount()}. Cancelling and subscribing again starts at the full price. Yearly billing is −
+        {LOYALTY.annualPercent} % from the start, paid for twelve months ahead, and renews every year until you cancel. You can cancel here at any time.
       </p>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         {PLAN_CATALOG.map((plan) => {
           const isCurrentPlan = !isCanceled && currentPlan?.id === plan.id;
+          const currentInterval = isCurrentPlan ? subscription?.billingInterval : null;
           // Too small for what's monitored now (Brief §19) — pausing or
           // removing creators first makes room.
           const tooSmall = !isCurrentPlan && plan.creatorCap < trackedCreators;
-          const buttonLabel = isCurrentPlan
-            ? "Current plan"
-            : subscription && !isCanceled
-              ? "Switch to this plan"
-              : "Start free trial";
+          const startLabel = subscription && !isCanceled ? "Switch" : "Start free trial";
 
           return (
             <section
@@ -156,6 +186,10 @@ export default async function BillingPage() {
               <p className="mt-2 text-2xl font-semibold tracking-tight">
                 {formatPlanPrice(plan.priceCents)}
                 <span className="text-sm font-normal text-t2"> /mo</span>
+              </p>
+              <p className="mt-1 text-[0.8125rem] text-t2">
+                Down to {formatPlanPrice(monthlyPriceCents(plan, "MONTHLY", monthOfMaxDiscount()))}/mo by month {monthOfMaxDiscount()}, or{" "}
+                {formatPlanPrice(annualPriceCents(plan))} a year (−{LOYALTY.annualPercent} %).
               </p>
               <dl className="mt-4 space-y-2 text-[0.8125rem]">
                 <div className="flex justify-between gap-3">
@@ -174,19 +208,29 @@ export default async function BillingPage() {
                   You monitor {trackedCreators} creators. Pause or remove some to switch to {plan.name}.
                 </p>
               ) : canManage ? (
-                <form action={choosePlanAction} className="mt-5">
+                <form action={choosePlanAction} className="mt-5 grid gap-2">
                   <input type="hidden" name="planTier" value={plan.tier} />
-                  <button
-                    type="submit"
-                    disabled={isCurrentPlan}
-                    className={
-                      isCurrentPlan
-                        ? "w-full rounded-full bg-hover px-4 py-2 text-sm font-medium text-t2"
-                        : "w-full rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
-                    }
-                  >
-                    {buttonLabel}
-                  </button>
+                  {(["MONTHLY", "ANNUAL"] as const).map((interval) => {
+                    const current = currentInterval === interval;
+                    return (
+                      <button
+                        key={interval}
+                        type="submit"
+                        name="billingInterval"
+                        value={interval}
+                        disabled={current}
+                        className={
+                          current
+                            ? "w-full rounded-full bg-hover px-4 py-2 text-sm font-medium text-t2"
+                            : interval === "MONTHLY"
+                              ? "w-full rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
+                              : "w-full rounded-full border border-line px-4 py-2 text-sm font-medium text-tx hover:bg-hover"
+                        }
+                      >
+                        {current ? "Current plan" : `${startLabel}${interval === "MONTHLY" ? ", monthly" : ", yearly −" + LOYALTY.annualPercent + " %"}`}
+                      </button>
+                    );
+                  })}
                 </form>
               ) : (
                 <button

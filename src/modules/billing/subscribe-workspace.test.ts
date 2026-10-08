@@ -229,3 +229,38 @@ describe("subscribeWorkspace", () => {
     assert.notEqual(a.subscription.stripeCustomerId, b.subscription.stripeCustomerId);
   });
 });
+
+describe("subscribeWorkspace: billing interval and loyalty", () => {
+  test("a new subscription starts the loyalty clock at the end of the trial and keeps the chosen interval", async () => {
+    const deps = makeDeps();
+    const r = await subscribeWorkspace({ workspaceId: "w1", planTier: "GROWTH", interval: "ANNUAL", customerEmail: "a@b.c" }, deps);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    assert.equal(r.subscription.billingInterval, "ANNUAL");
+    assert.deepEqual(r.subscription.loyaltyStartedAt, r.subscription.currentPeriodEnd);
+  });
+
+  test("switching interval or plan keeps the loyalty clock; a resubscribe after cancelling restarts it", async () => {
+    const deps = makeDeps();
+    const first = await subscribeWorkspace({ workspaceId: "w2", planTier: "STARTER", customerEmail: "a@b.c" }, deps);
+    assert.ok(first.ok);
+    if (!first.ok) return;
+    const started = first.subscription.loyaltyStartedAt;
+    assert.equal(first.subscription.billingInterval, "MONTHLY");
+
+    const toAnnual = await subscribeWorkspace({ workspaceId: "w2", planTier: "STARTER", interval: "ANNUAL", customerEmail: "a@b.c" }, deps);
+    assert.ok(toAnnual.ok && toAnnual.subscription.billingInterval === "ANNUAL");
+    assert.ok(toAnnual.ok && toAnnual.subscription.loyaltyStartedAt?.getTime() === started?.getTime());
+
+    const same = await subscribeWorkspace({ workspaceId: "w2", planTier: "STARTER", interval: "ANNUAL", customerEmail: "a@b.c" }, deps);
+    assert.ok(same.ok && same.subscription.updatedAt.getTime() === (toAnnual.ok ? toAnnual.subscription.updatedAt.getTime() : 0));
+
+    await cancelSubscription({ workspaceId: "w2" }, deps);
+    await new Promise((r) => setTimeout(r, 5));
+    const again = await subscribeWorkspace({ workspaceId: "w2", planTier: "STARTER", customerEmail: "a@b.c" }, deps);
+    assert.ok(again.ok);
+    if (!again.ok) return;
+    assert.equal(again.subscription.billingInterval, "MONTHLY");
+    assert.ok((again.subscription.loyaltyStartedAt?.getTime() ?? 0) > (started?.getTime() ?? 0));
+  });
+});

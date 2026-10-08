@@ -1,4 +1,5 @@
 import type {
+  BillingInterval,
   PaymentProvider,
   PlanRepository,
   PlanTier,
@@ -9,6 +10,8 @@ import type {
 export interface SubscribeWorkspaceInput {
   workspaceId: string;
   planTier: PlanTier;
+  /** Monthly (loyalty discount grows month by month) or annual (maximum discount from the start). Default monthly. */
+  interval?: BillingInterval;
   /** Used whenever a payment-provider customer has to be created: the first
    *  time a workspace subscribes, or a resubscribe whose stored customer
    *  the current provider can't bill. Ignored otherwise, since the existing
@@ -44,6 +47,7 @@ export async function subscribeWorkspace(
   }
 
   const existing = await deps.subscriptionRepository.findByWorkspaceId(input.workspaceId);
+  const interval: BillingInterval = input.interval ?? "MONTHLY";
 
   // No subscription yet, or a previously canceled one: (re)create it with
   // the payment provider. A canceled subscription's customer id is reused
@@ -64,7 +68,11 @@ export async function subscribeWorkspace(
     const { subscriptionId, currentPeriodEnd } = await deps.paymentProvider.createSubscription({
       customerId,
       planTier: input.planTier,
+      interval,
     });
+    // Loyalty month 1 starts when the free trial ends; a new subscription after
+    // cancelling starts the clock again.
+    const loyaltyStartedAt = currentPeriodEnd;
 
     const subscription = existing
       ? await deps.subscriptionRepository.update(existing.id, {
@@ -73,6 +81,8 @@ export async function subscribeWorkspace(
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           currentPeriodEnd,
+          billingInterval: interval,
+          loyaltyStartedAt,
         })
       : await deps.subscriptionRepository.create({
           workspaceId: input.workspaceId,
@@ -81,6 +91,8 @@ export async function subscribeWorkspace(
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           currentPeriodEnd,
+          billingInterval: interval,
+          loyaltyStartedAt,
         });
 
     return { ok: true, subscription };
@@ -89,7 +101,7 @@ export async function subscribeWorkspace(
   // Already on this exact plan: no-op. The UI disables this case (the
   // current plan's button is disabled), but a hand-crafted request should
   // still get back the current state rather than an error.
-  if (existing.planId === plan.id) {
+  if (existing.planId === plan.id && existing.billingInterval === interval) {
     return { ok: true, subscription: existing };
   }
 
@@ -100,8 +112,10 @@ export async function subscribeWorkspace(
   await deps.paymentProvider.changeSubscriptionPlan({
     subscriptionId: existing.stripeSubscriptionId!,
     planTier: input.planTier,
+    interval,
   });
-  const subscription = await deps.subscriptionRepository.update(existing.id, { planId: plan.id });
+  // A plan or interval change keeps the loyalty clock running.
+  const subscription = await deps.subscriptionRepository.update(existing.id, { planId: plan.id, billingInterval: interval });
 
   return { ok: true, subscription };
 }

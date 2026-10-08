@@ -12,6 +12,10 @@
  * Building either now would be speculative scope, not a real requirement.
  */
 
+import type { BillingInterval } from "./loyalty";
+
+export type { BillingInterval };
+
 export type PlanTier = "STARTER" | "GROWTH" | "AGENCY";
 
 export type SubscriptionStatus = "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
@@ -38,6 +42,9 @@ export interface SubscriptionRecord {
    *  practice has one, since `subscribeWorkspace` creates both together. */
   stripeSubscriptionId: string | null;
   currentPeriodEnd: Date | null;
+  billingInterval: BillingInterval;
+  /** Start of loyalty month 1 (the end of the free trial); see `loyalty.ts`. */
+  loyaltyStartedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +72,8 @@ export interface SubscriptionRepository {
     stripeCustomerId: string;
     stripeSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
+    billingInterval?: BillingInterval;
+    loyaltyStartedAt?: Date | null;
   }): Promise<SubscriptionRecord>;
   /** `stripeCustomerId` is updatable only for one case: a workspace whose
    *  stored customer the current payment provider can't bill (a demo-era
@@ -75,7 +84,7 @@ export interface SubscriptionRepository {
     changes: Partial<
       Pick<
         SubscriptionRecord,
-        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd" | "billingInterval" | "loyaltyStartedAt"
       >
     >,
   ): Promise<SubscriptionRecord>;
@@ -101,10 +110,11 @@ export interface PaymentProvider {
   createSubscription(input: {
     customerId: string;
     planTier: PlanTier;
+    interval?: BillingInterval;
   }): Promise<{ subscriptionId: string; currentPeriodEnd: Date }>;
   /** No return value: this mock doesn't model proration, so a plan change
    *  never alters `currentPeriodEnd` — the caller keeps the existing one. */
-  changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier }): Promise<void>;
+  changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier; interval?: BillingInterval }): Promise<void>;
   cancelSubscription(subscriptionId: string): Promise<void>;
   /**
    * Whether a customer id already stored on a workspace's subscription can

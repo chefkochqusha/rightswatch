@@ -107,6 +107,22 @@ files that get committed, or a chat.
 Vercel only applies changed variables to a new deployment: Deployments →
 latest → Redeploy. From that deployment on, billing runs on Stripe.
 
+### 6. Yearly billing, loyalty discount and partner commissions (added 2026-10-08)
+
+- **Yearly prices:** for each plan, add a second, yearly recurring price at
+  −30 % (12 × the monthly price × 0.7: Starter €831.60, Growth €2,511.60,
+  Agency €8,391.60) and set `STRIPE_PRICE_ID_STARTER_ANNUAL`,
+  `STRIPE_PRICE_ID_GROWTH_ANNUAL`, `STRIPE_PRICE_ID_AGENCY_ANNUAL`. Without them
+  the yearly buttons fail with a clear error in Stripe mode.
+- **Webhook event:** add `invoice.paid` to the webhook destination. Paid invoices
+  of referred workspaces then earn their partner 10 % (net of tax).
+- **Loyalty discount: not yet applied by Stripe.** The app shows and stores the
+  monthly step (−10 % from month 2, +2 %/month, −30 % from month 12), but Stripe
+  still bills the full monthly price. Before going live, build one of: a
+  subscription schedule with one phase per step, or setting the matching
+  coupon on each `invoice.upcoming`. Until then, don't take real monthly
+  payments: what the page promises and what Stripe charges would differ.
+
 ## Checking that it works
 
 1. `/workspace/billing` no longer shows the "Demo billing" notice.

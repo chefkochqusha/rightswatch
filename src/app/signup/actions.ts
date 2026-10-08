@@ -5,6 +5,8 @@ import { signUp } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { sendVerificationLink } from "@/app/_lib/email-verification";
 import { setSessionCookie } from "@/app/_lib/session-cookie";
+import { getReferralStore } from "@/app/_lib/referral-store";
+import { recordReferral } from "@/modules/referrals";
 
 export interface SignUpFormState {
   fieldErrors?: Partial<Record<"workspaceName" | "email" | "password" | "confirmBusiness", string>>;
@@ -56,6 +58,13 @@ export async function signUpAction(
     }
     return { fieldErrors };
   }
+
+  // Signed up through a partner link: link the new workspace to the partner.
+  // Best effort, like the email below: a problem here must not stop the signup.
+  await recordReferral(
+    { code: formData.get("ref"), workspaceId: result.workspace.id, signupUserId: result.user.id },
+    getReferralStore(),
+  ).catch(() => undefined);
 
   await setSessionCookie(result.user.id);
   // Best effort: a mail provider that is down must not stop someone signing up.

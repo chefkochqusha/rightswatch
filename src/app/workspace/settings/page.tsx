@@ -9,6 +9,11 @@ import { canManageWorkspace } from "@/app/_lib/authorize";
 import { buttonStyles } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ROLE_LABELS } from "@/components/team/labels";
+import { getReferralStore } from "@/app/_lib/referral-store";
+import { siteOrigin } from "@/app/_lib/site-origin";
+import { formatPlanPrice } from "@/components/billing/labels";
+import { PARTNER_PROGRAMME, summarizeCommissions } from "@/modules/referrals";
+import { JoinPartnerForm, PartnerLink } from "./partner-section";
 import { DeleteAccountForm } from "./delete-account-form";
 import { DeleteWorkspaceForm } from "./delete-workspace-form";
 import { PasswordForm } from "./password-form";
@@ -47,6 +52,12 @@ export default async function SettingsPage() {
   const payments = getBillingStore().mode;
 
   const isRealData = dataModeFor(session.workspace) === "REAL";
+
+  // Partner programme: link, referrals and commissions of the signed-in person.
+  const referralStore = getReferralStore().referrals;
+  const partner = isDemo ? null : await referralStore.findPartnerByUser(session.user.id);
+  const partnerReferrals = partner ? await referralStore.findReferralsForPartner(partner.id) : [];
+  const partnerMoney = partner ? summarizeCommissions(await referralStore.findCommissionsForPartner(partner.id)) : null;
   const connections: Connection[] = [
     {
       name: "TikTok",
@@ -166,6 +177,34 @@ export default async function SettingsPage() {
                 </a>
               )}
             </div>
+          </div>
+        )}
+
+        {!isDemo && (
+          <div className="mt-6 rounded-lg border border-line bg-surface p-5">
+            <h3 className="text-sm font-semibold">Partner programme</h3>
+            <p className="mt-1 mb-4 max-w-xl text-[0.8125rem] text-t2">
+              Recommend RightsWatch to other labels, publishers or agencies. For every business that signs up through your link you earn{" "}
+              {PARTNER_PROGRAMME.commissionPercent} % of what it pays in its first {PARTNER_PROGRAMME.commissionMonths} months.
+            </p>
+            {partner && partnerMoney ? (
+              <div className="space-y-4">
+                <PartnerLink link={`${siteOrigin()}/signup?ref=${partner.code}`} />
+                <dl className="grid max-w-md grid-cols-[1fr_auto] gap-y-1.5 text-[0.8125rem]">
+                  <dt className="text-t2">Businesses signed up</dt>
+                  <dd className="text-right text-tx">{partnerReferrals.length}</dd>
+                  <dt className="text-t2">Earned</dt>
+                  <dd className="text-right text-tx">{formatPlanPrice(partnerMoney.earnedCents)}</dd>
+                  <dt className="text-t2">Paid out</dt>
+                  <dd className="text-right text-tx">{formatPlanPrice(partnerMoney.paidOutCents)}</dd>
+                  <dt className="text-t2">Open</dt>
+                  <dd className="text-right text-tx">{formatPlanPrice(partnerMoney.openCents)}</dd>
+                </dl>
+                <p className="text-[0.8125rem] text-t2">Label the link as advertising wherever you share it. Payouts are monthly from €50.</p>
+              </div>
+            ) : (
+              <JoinPartnerForm />
+            )}
           </div>
         )}
 

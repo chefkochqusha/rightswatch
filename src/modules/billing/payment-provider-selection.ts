@@ -1,4 +1,4 @@
-import type { PaymentProvider, PlanTier } from "./types";
+import type { BillingInterval, PaymentProvider, PlanTier } from "./types";
 
 /**
  * Deciding *which* `PaymentProvider` the app runs on, and which one a given
@@ -26,6 +26,13 @@ export const STRIPE_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
   STARTER: "STRIPE_PRICE_ID_STARTER",
   GROWTH: "STRIPE_PRICE_ID_GROWTH",
   AGENCY: "STRIPE_PRICE_ID_AGENCY",
+};
+
+/** Annual prices (optional): without them, annual billing is refused in Stripe mode with a clear message. */
+export const STRIPE_ANNUAL_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
+  STARTER: "STRIPE_PRICE_ID_STARTER_ANNUAL",
+  GROWTH: "STRIPE_PRICE_ID_GROWTH_ANNUAL",
+  AGENCY: "STRIPE_PRICE_ID_AGENCY_ANNUAL",
 };
 
 const REQUIRED_STRIPE_ENV_VARS = [
@@ -61,8 +68,10 @@ export function missingStripeEnvVars(env: Env): string[] {
  * rather than guessing.
  */
 export function planTierForPriceId(priceId: string, env: Env): PlanTier | null {
-  for (const [tier, envVar] of Object.entries(STRIPE_PRICE_ID_ENV_VAR) as [PlanTier, string][]) {
-    if (env[envVar]?.trim() === priceId) return tier;
+  for (const map of [STRIPE_PRICE_ID_ENV_VAR, STRIPE_ANNUAL_PRICE_ID_ENV_VAR]) {
+    for (const [tier, envVar] of Object.entries(map) as [PlanTier, string][]) {
+      if (env[envVar]?.trim() === priceId) return tier;
+    }
   }
   return null;
 }
@@ -121,11 +130,12 @@ export class RoutingPaymentProvider implements PaymentProvider {
   createSubscription(input: {
     customerId: string;
     planTier: PlanTier;
+    interval?: BillingInterval;
   }): Promise<{ subscriptionId: string; currentPeriodEnd: Date }> {
     return (isMockCustomerId(input.customerId) ? this.mock : this.real).createSubscription(input);
   }
 
-  changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier }): Promise<void> {
+  changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier; interval?: BillingInterval }): Promise<void> {
     return (isMockSubscriptionId(input.subscriptionId) ? this.mock : this.real).changeSubscriptionPlan(
       input,
     );

@@ -47,6 +47,7 @@ model User {
   authoredCaseNotes CaseNote[]
   assignedCases     Case[]                   @relation("CaseAssignee")
   auditLogEntries   AuditLog[]
+  referralPartner   ReferralPartner?
 
   @@map("users")
 }
@@ -91,6 +92,7 @@ model Workspace {
   connectors    Connector[]
   auditLogs     AuditLog[]
   jobs          Job[]
+  referral      Referral?
 
   @@map("workspaces")
 }
@@ -523,6 +525,11 @@ enum PlanTier {
   AGENCY
 }
 
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
 enum SubscriptionStatus {
   TRIALING
   ACTIVE
@@ -565,6 +572,10 @@ model Subscription {
   stripeCustomerId     String             @unique
   stripeSubscriptionId String?            @unique
   currentPeriodEnd     DateTime?
+  /// Monthly or annual (annual = loyalty maximum from the start, `modules/billing/loyalty.ts`).
+  billingInterval      BillingInterval    @default(MONTHLY)
+  /// When the loyalty discount clock started (end of the free trial). Reset by a new subscription after cancelling.
+  loyaltyStartedAt     DateTime?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -695,4 +706,62 @@ model WebhookEvent {
 
   @@unique([source, externalId])
   @@map("webhook_events")
+}
+
+// ---------------------------------------------------------------------------
+// Partner programme (affiliate stage 1): a partner shares a link, a workspace
+// that signs up through it is a referral, and every paid invoice of that
+// workspace in its first 12 months earns the partner a commission.
+// `modules/referrals`.
+// ---------------------------------------------------------------------------
+
+model ReferralPartner {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  /// The code in the link (`/signup?ref=<code>`). No cookie is set.
+  code            String   @unique
+  termsAcceptedAt DateTime
+  createdAt       DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referrals   Referral[]
+  commissions Commission[]
+
+  @@map("referral_partners")
+}
+
+model Referral {
+  id              String   @id @default(cuid())
+  partnerId       String
+  workspaceId     String   @unique
+  /// Paid invoices up to this moment earn a commission (12 months after signup).
+  commissionUntil DateTime
+  createdAt       DateTime @default(now())
+
+  partner     ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  commissions Commission[]
+
+  @@index([partnerId])
+  @@map("referrals")
+}
+
+model Commission {
+  id           String    @id @default(cuid())
+  partnerId    String
+  /// Kept after the referred workspace is deleted: owed commissions stay owed.
+  referralId   String?
+  /// The paid invoice it comes from (Stripe invoice id); one commission per invoice.
+  sourceId     String    @unique
+  invoiceCents Int
+  amountCents  Int
+  earnedAt     DateTime
+  paidOutAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  partner  ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  referral Referral?       @relation(fields: [referralId], references: [id], onDelete: SetNull)
+
+  @@index([partnerId])
+  @@map("commissions")
 }

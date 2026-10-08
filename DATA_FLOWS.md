@@ -16,6 +16,7 @@ This is an engineering inventory, not legal advice.
 | Posts: date, brand names, label, video link, territory, matched song | Creators (public data) | Postgres | Detections |
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |
 | Request logs (IP address, URL, time) | Visitors, members | Vercel (platform logs) | Operation, abuse defence |
+| Partner code, which workspaces signed up through it, commissions (amount, invoice id, payout date) | Partners (members who joined the programme) | Postgres | Partner programme payouts and bookkeeping |
 
 Not held: card numbers (Stripe), uploaded files (there are no uploads),
 analytics or advertising identifiers (none), keystroke or session recordings

@@ -23,6 +23,10 @@ Last checked: 2026-10-08.
 | **Widerrufsbutton** (withdrawal button, EU 2023/2673) | 19 Jun 2026 | Consumer contracts concluded online need a permanently visible, clearly labelled withdrawal function. I could not confirm the status of the German implementing law | Only if consumers can sign up: keep it B2B-only, or build the button |
 | **AI Act, Art. 50** (say it is an AI) | 2 Aug 2026 | Only if a chatbot or AI feature is added; none exists | Not applicable |
 
+| **Partner programme: advertising labels and liability** (UWG § 5a, § 8 (2)) | — | Partners must label links as advertising ("Werbung"/"Anzeige"); a merchant can be liable for its affiliates' violations within its own programme. The draft terms require the label and forbid spam and fake reviews; breaking them ends the partnership | Built; lawyer to review `/partner-terms` |
+| **Referral tracking without consent banner** (TDDDG § 25) | — | The partner code travels in the address and the signup form only; no cookie or local storage is set | Built (verified: no referral cookie) |
+| **Price display for discounts** (PAngV) | — | The price rules (e.g. the 30-day lowest price for price reductions) protect consumers; RightsWatch sells to businesses only. The loyalty and yearly discounts are stated as fixed terms next to the prices | Lawyer to confirm the B2B exemption and the wording |
+
 ## Coming
 
 | Rule | From | What it means here | To do |

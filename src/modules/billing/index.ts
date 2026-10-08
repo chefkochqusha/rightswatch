@@ -9,6 +9,8 @@ export type {
 } from "./types";
 
 export { PLAN_CATALOG } from "./plan-catalog";
+export { LOYALTY, annualPriceCents, loyaltyMonth, loyaltyPercent, loyaltyStatus, monthOfMaxDiscount, monthlyPriceCents } from "./loyalty";
+export type { BillingInterval } from "./loyalty";
 
 export { InMemoryPlanRepository, InMemorySubscriptionRepository } from "./in-memory-repositories";
 

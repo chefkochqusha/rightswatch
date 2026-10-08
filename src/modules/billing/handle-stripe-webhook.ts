@@ -49,6 +49,12 @@ export interface HandleStripeWebhookDependencies {
    * the route always supplies it.
    */
   retrieveSubscription?: (stripeSubscriptionId: string) => Promise<Stripe.Subscription>;
+  /**
+   * A paid invoice (`invoice.paid`), for the partner programme's commissions.
+   * Gets the workspace the invoice belongs to and the amount before tax.
+   * Optional: without it invoices are only acknowledged.
+   */
+  onInvoicePaid?: (invoice: { workspaceId: string; invoiceId: string; amountCents: number; paidAt: Date }) => Promise<string>;
   now?: () => Date;
 }
 
@@ -129,6 +135,9 @@ export async function handleStripeWebhook(
     }
 
     let outcome = "acknowledged";
+    if (event.type === "invoice.paid" && deps.onInvoicePaid) {
+      outcome = await handleInvoicePaid(event.data.object as Stripe.Invoice, deps, deps.onInvoicePaid);
+    }
     if (snapshot) {
       const current = deps.retrieveSubscription
         ? await currentState(snapshot, deps.retrieveSubscription, log)
@@ -174,4 +183,29 @@ async function currentState(
     }
     throw error;
   }
+}
+
+/** The Stripe subscription id an invoice belongs to (newer and older API shapes). */
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const parent = (invoice as unknown as { parent?: { subscription_details?: { subscription?: string | { id: string } | null } | null } | null }).parent;
+  const fromParent = parent?.subscription_details?.subscription;
+  const legacy = (invoice as unknown as { subscription?: string | { id: string } | null }).subscription;
+  const value = fromParent ?? legacy ?? null;
+  return typeof value === "string" ? value : (value?.id ?? null);
+}
+
+async function handleInvoicePaid(
+  invoice: Stripe.Invoice,
+  deps: HandleStripeWebhookDependencies,
+  onInvoicePaid: NonNullable<HandleStripeWebhookDependencies["onInvoicePaid"]>,
+): Promise<string> {
+  const subscriptionId = invoiceSubscriptionId(invoice);
+  if (!invoice.id || !subscriptionId) return "invoice_without_subscription";
+  const subscription = await deps.subscriptionRepository.findByStripeSubscriptionId(subscriptionId);
+  if (!subscription) return "invoice_unknown_subscription";
+  // Commission is on the net amount: tax is not revenue.
+  const net = (invoice as unknown as { total_excluding_tax?: number | null }).total_excluding_tax;
+  const amountCents = typeof net === "number" ? net : invoice.amount_paid;
+  const paidAtSeconds = invoice.status_transitions?.paid_at ?? invoice.created;
+  return onInvoicePaid({ workspaceId: subscription.workspaceId, invoiceId: invoice.id, amountCents, paidAt: new Date(paidAtSeconds * 1000) });
 }

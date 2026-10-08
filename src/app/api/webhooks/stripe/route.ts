@@ -2,6 +2,8 @@ import Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe-client";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { getWebhookStore } from "@/app/_lib/webhook-store";
+import { getReferralStore } from "@/app/_lib/referral-store";
+import { recordCommission } from "@/modules/referrals";
 import { handleStripeWebhook, isStripeConfigured, planTierForPriceId } from "@/modules/billing";
 
 /**
@@ -37,6 +39,12 @@ export async function POST(request: Request): Promise<Response> {
       // Current state, not the event's copy — Stripe doesn't guarantee
       // delivery order (see the dependency's doc comment).
       retrieveSubscription: (id) => getStripeClient().subscriptions.retrieve(id),
+      // Partner programme: a paid invoice of a referred workspace earns its partner a commission.
+      onInvoicePaid: async (invoice) =>
+        `commission_${await recordCommission(
+          { workspaceId: invoice.workspaceId, invoiceId: invoice.invoiceId, invoiceCents: invoice.amountCents, paidAt: invoice.paidAt },
+          getReferralStore(),
+        )}`,
     },
   );
 

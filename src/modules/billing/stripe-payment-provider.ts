@@ -1,7 +1,7 @@
 import { getStripeClient, subscriptionItemPeriodEnd } from "@/lib/stripe-client";
 import { TRIAL_LENGTH_DAYS } from "./mock-payment-provider";
-import { STRIPE_PRICE_ID_ENV_VAR, isMockCustomerId } from "./payment-provider-selection";
-import type { PaymentProvider, PlanTier } from "./types";
+import { STRIPE_ANNUAL_PRICE_ID_ENV_VAR, STRIPE_PRICE_ID_ENV_VAR, isMockCustomerId } from "./payment-provider-selection";
+import type { BillingInterval, PaymentProvider, PlanTier } from "./types";
 
 /**
  * The real `PaymentProvider` (Stripe test mode — Brief §18–20). Same role
@@ -39,8 +39,8 @@ import type { PaymentProvider, PlanTier } from "./types";
  * than three env vars for the same fact — consistent with how
  * `TIKTOK_CLIENT_KEY`/`_SECRET` are configured.
  */
-function getPriceId(tier: PlanTier): string {
-  const envVar = STRIPE_PRICE_ID_ENV_VAR[tier];
+function getPriceId(tier: PlanTier, interval: BillingInterval = "MONTHLY"): string {
+  const envVar = interval === "ANNUAL" ? STRIPE_ANNUAL_PRICE_ID_ENV_VAR[tier] : STRIPE_PRICE_ID_ENV_VAR[tier];
   const priceId = process.env[envVar];
   if (!priceId) {
     throw new Error(
@@ -65,10 +65,11 @@ export class StripePaymentProvider implements PaymentProvider {
   async createSubscription(input: {
     customerId: string;
     planTier: PlanTier;
+    interval?: BillingInterval;
   }): Promise<{ subscriptionId: string; currentPeriodEnd: Date }> {
     const subscription = await getStripeClient().subscriptions.create({
       customer: input.customerId,
-      items: [{ price: getPriceId(input.planTier) }],
+      items: [{ price: getPriceId(input.planTier, input.interval) }],
       trial_period_days: TRIAL_LENGTH_DAYS,
       // The trial starts without a card (same as the mock). Stripe's default
       // for a trial that ends with no payment method on file is to invoice
@@ -86,7 +87,7 @@ export class StripePaymentProvider implements PaymentProvider {
     };
   }
 
-  async changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier }): Promise<void> {
+  async changeSubscriptionPlan(input: { subscriptionId: string; planTier: PlanTier; interval?: BillingInterval }): Promise<void> {
     const stripe = getStripeClient();
     // Need the existing subscription item's id to *replace* its price
     // in-place, rather than adding a second item alongside it.
@@ -106,7 +107,7 @@ export class StripePaymentProvider implements PaymentProvider {
     // from Stripe regardless, so the stored value can't drift even if that
     // assumption ever stops holding.
     await stripe.subscriptions.update(input.subscriptionId, {
-      items: [{ id: itemId, price: getPriceId(input.planTier) }],
+      items: [{ id: itemId, price: getPriceId(input.planTier, input.interval) }],
     });
   }
 

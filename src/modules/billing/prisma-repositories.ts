@@ -96,6 +96,8 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
     stripeCustomerId: string;
     stripeSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
+    billingInterval?: SubscriptionRecord["billingInterval"];
+    loyaltyStartedAt?: Date | null;
   }): Promise<SubscriptionRecord> {
     // `Subscription.workspaceId` is `@unique` in the schema — a duplicate
     // create surfaces as Prisma's own P2002 constraint-violation error
@@ -110,6 +112,8 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
         stripeCustomerId: input.stripeCustomerId,
         stripeSubscriptionId: input.stripeSubscriptionId,
         currentPeriodEnd: input.currentPeriodEnd,
+        billingInterval: input.billingInterval ?? "MONTHLY",
+        loyaltyStartedAt: input.loyaltyStartedAt ?? null,
       },
     });
     return mapSubscription(row);
@@ -120,7 +124,7 @@ export class PrismaSubscriptionRepository implements SubscriptionRepository {
     changes: Partial<
       Pick<
         SubscriptionRecord,
-        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd" | "billingInterval" | "loyaltyStartedAt"
       >
     >,
   ): Promise<SubscriptionRecord> {
@@ -161,6 +165,8 @@ function mapSubscription(row: {
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   currentPeriodEnd: Date | null;
+  billingInterval: string;
+  loyaltyStartedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }): SubscriptionRecord {
@@ -172,6 +178,8 @@ function mapSubscription(row: {
     stripeCustomerId: row.stripeCustomerId,
     stripeSubscriptionId: row.stripeSubscriptionId,
     currentPeriodEnd: row.currentPeriodEnd,
+    billingInterval: row.billingInterval === "ANNUAL" ? "ANNUAL" : "MONTHLY",
+    loyaltyStartedAt: row.loyaltyStartedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

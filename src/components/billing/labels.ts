@@ -12,15 +12,12 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
   CANCELED: "Canceled",
 };
 
-const priceFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-});
+const wholeEuros = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const withCents = new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** `priceCents` -> "€99" — whole-euro plans, so no decimals are shown. */
+/** `priceCents` -> "€99", or "€209.30" when there are cents (discounted prices, commissions). */
 export function formatPlanPrice(priceCents: number): string {
-  return priceFormatter.format(priceCents / 100);
+  return (priceCents % 100 === 0 ? wholeEuros : withCents).format(priceCents / 100);
 }
 
 /** Covers the exact example values named in `Plan.scanCadence`'s schema

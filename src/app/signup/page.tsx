@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { AuthShell } from "@/components/layout/auth-shell";
+import { normalizePartnerCode } from "@/modules/referrals";
 import { SignUpForm } from "./signup-form";
 
 export const metadata = {
   title: "Sign up — RightsWatch",
 };
 
-export default function SignUpPage() {
+export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
+  // A partner link (`?ref=<code>`) is carried in the form itself: no cookie, nothing stored on the device.
+  const partnerCode = normalizePartnerCode((await searchParams).ref);
   return (
     <AuthShell
       title="Create your workspace"
@@ -20,7 +23,7 @@ export default function SignUpPage() {
         </>
       }
     >
-      <SignUpForm />
+      <SignUpForm partnerCode={partnerCode} />
     </AuthShell>
   );
 }

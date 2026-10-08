@@ -11,6 +11,7 @@ import { VideoPoster } from "@/components/feed/video-poster";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SearchIcon } from "@/components/ui/icons";
 import { PLAN_CATALOG } from "@/modules/billing/plan-catalog";
+import { LOYALTY, monthOfMaxDiscount, monthlyPriceCents } from "@/modules/billing/loyalty";
 
 // The "Try the demo" button runs a Server Action that fills the demo workspace on the
 // first visit after a fresh database, which takes longer than the default limit.
@@ -76,6 +77,7 @@ const FAQ = [
 ] as const;
 
 const euros = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const eurosWithCents = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", minimumFractionDigits: 2 });
 const CADENCE: Record<string, string> = {
   daily: "Scans every day",
   every_6h: "Scans every 6 hours",
@@ -250,6 +252,9 @@ export default function LandingPage() {
                   {euros.format(plan.priceCents / 100)}
                   <span className="ml-1.5 font-sans text-base font-normal tracking-normal text-t2">a month</span>
                 </p>
+                <p className="mt-2 text-[0.875rem] text-t2">
+                  {eurosWithCents.format(monthlyPriceCents(plan, "MONTHLY", monthOfMaxDiscount()) / 100)} a month from month {monthOfMaxDiscount()}
+                </p>
                 <ul className="mt-7 space-y-2 text-[0.9375rem]">
                   <li>Up to {plan.creatorCap.toLocaleString("en-US")} creators</li>
                   <li>{CADENCE[plan.scanCadence]}</li>
@@ -261,8 +266,10 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="mt-6 max-w-3xl text-[0.9375rem] leading-relaxed text-t2">
-            For businesses. Prices are per month and net of tax. The trial lasts 14 days and needs no card. After it, billing is monthly and renews until
-            you cancel; you can cancel in the app at any time.
+            For businesses. Prices are per month and net of tax. The trial lasts 14 days and needs no card. Monthly billing renews until you cancel and
+            gets cheaper the longer you stay: −{LOYALTY.firstStepPercent} % from month {LOYALTY.firstStepMonth}, then {LOYALTY.stepPercent} % more each
+            month, up to −{LOYALTY.maxPercent} % from month {monthOfMaxDiscount()}. Yearly billing is −{LOYALTY.annualPercent} % from the start. You can
+            cancel in the app at any time.
           </p>
         </div>
       </section>

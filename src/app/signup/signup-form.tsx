@@ -6,11 +6,12 @@ import { signUpAction, type SignUpFormState } from "./actions";
 
 const initialState: SignUpFormState = {};
 
-export function SignUpForm() {
+export function SignUpForm({ partnerCode }: { partnerCode?: string | null }) {
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
+      {partnerCode && <input type="hidden" name="ref" value={partnerCode} />}
       <FormField
         label="Workspace name"
         name="workspaceName"

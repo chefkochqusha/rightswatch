@@ -30,6 +30,7 @@ export async function choosePlanAction(formData: FormData) {
   if (!PLAN_TIERS.includes(rawTier as PlanTier)) {
     throw new Error(`Unrecognized plan tier: ${rawTier}`);
   }
+  const interval = formData.get("billingInterval") === "ANNUAL" ? "ANNUAL" : "MONTHLY";
   const session = await requireWorkspaceManager();
   const store = getBillingStore();
 
@@ -46,6 +47,7 @@ export async function choosePlanAction(formData: FormData) {
     {
       workspaceId: session.workspace.id,
       planTier: rawTier as PlanTier,
+      interval,
       customerEmail: session.user.email,
     },
     {
@@ -54,7 +56,7 @@ export async function choosePlanAction(formData: FormData) {
       paymentProvider: store.paymentProvider,
     },
   );
-  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "billing.plan_chosen", targetType: "plan", targetId: rawTier });
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "billing.plan_chosen", targetType: "plan", targetId: rawTier, metadata: { interval } });
   revalidatePath("/workspace", "layout");
 }
 

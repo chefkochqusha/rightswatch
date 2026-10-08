@@ -36,6 +36,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "billing.canceled": "Cancelled the subscription",
   "data.exported": "Downloaded workspace data",
   "account.deleted": "A member deleted their account",
+  "partner.joined": "Joined the partner programme",
   "account.logged_in": "Logged in",
   "account.login_failed": "Login attempt with a wrong password",
 };

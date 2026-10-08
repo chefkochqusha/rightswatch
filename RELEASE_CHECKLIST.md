@@ -104,6 +104,15 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   the provider, domain, an age key pair for backups; then SSH access for the
   first deploy and the move from Neon.
 
+- [ ] **Loyalty pricing and partner programme** (built 2026-10-08). Owner: confirm
+  the numbers (monthly −10 % from month 2, +2 %/month, −30 % from month 12;
+  yearly −30 %; partners 10 % for 12 months), have the lawyer review the
+  pricing text and `/partner-terms` (draft), ask the tax advisor how partner
+  commissions are invoiced (credit notes, VAT). **Before taking real monthly
+  payments in Stripe, the loyalty discount must be applied by Stripe**
+  (`STRIPE_INTEGRATION.md`, step 6). Payout of commissions is manual for now:
+  monthly bank transfer from €50.
+
 ## Services & credentials
 
 - [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is

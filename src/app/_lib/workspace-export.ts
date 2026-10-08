@@ -6,6 +6,7 @@ import type { CurrentSession } from "./current-user";
 import { getCreatorStore } from "./creator-store";
 import { getLibraryStore } from "./library-store";
 import { loadReportData } from "./report-data";
+import { getReferralStore } from "./referral-store";
 import { EXPORT_VERSION, exportNotes, rowsToRecords, type DataExport, type ExportScope } from "@/modules/reports";
 
 /**
@@ -29,7 +30,19 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
   const allNotes = notesByCase.flatMap((entry) => entry.notes);
 
   if (scope === "account") {
+    const referrals = getReferralStore().referrals;
+    const partner = await referrals.findPartnerByUser(session.user.id);
     return {
+      partnerProgramme: partner
+        ? {
+            code: partner.code,
+            termsAcceptedAt: partner.termsAcceptedAt,
+            workspacesReferred: (await referrals.findReferralsForPartner(partner.id)).length,
+            commissions: (await referrals.findCommissionsForPartner(partner.id)).map((c) => ({
+              invoice: c.sourceId, invoiceCents: c.invoiceCents, amountCents: c.amountCents, earnedAt: c.earnedAt, paidOutAt: c.paidOutAt,
+            })),
+          }
+        : null,
       ...base,
       workspace: { name: session.workspace.name, slug: session.workspace.slug },
       user: { id: session.user.id, email: session.user.email, name: session.user.name, emailConfirmed: session.user.emailVerified },

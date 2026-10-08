@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PaymentProvider, PlanTier } from "./types";
+import type { BillingInterval, PaymentProvider, PlanTier } from "./types";
 
 /**
  * 14-day trial length is a reasonable default (a common SaaS norm), not a
@@ -30,12 +30,13 @@ export class MockPaymentProvider implements PaymentProvider {
   async createSubscription(_input: {
     customerId: string;
     planTier: PlanTier;
+    interval?: BillingInterval;
   }): Promise<{ subscriptionId: string; currentPeriodEnd: Date }> {
     const currentPeriodEnd = new Date(Date.now() + TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000);
     return { subscriptionId: `sub_mock_${randomUUID()}`, currentPeriodEnd };
   }
 
-  async changeSubscriptionPlan(_input: { subscriptionId: string; planTier: PlanTier }): Promise<void> {
+  async changeSubscriptionPlan(_input: { subscriptionId: string; planTier: PlanTier; interval?: BillingInterval }): Promise<void> {
     // No-op: nothing to simulate beyond "the call succeeded." Real Stripe
     // would prorate and return the updated Subscription object, but this
     // mock deliberately doesn't model proration (see PaymentProvider's

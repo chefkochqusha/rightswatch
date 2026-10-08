@@ -425,3 +425,35 @@ describe("handleStripeWebhook — failure and retry", () => {
     assert.equal((await inner.findByWorkspaceId("workspace-1"))?.status, "ACTIVE");
   });
 });
+
+describe("handleStripeWebhook: invoice.paid (partner commissions)", () => {
+  function invoiceEvent(id: string, invoice: Record<string, unknown>) {
+    return {
+      id, object: "event", type: "invoice.paid", api_version: "2025-03-31.basil", created: 1_790_000_000,
+      livemode: false, pending_webhooks: 1, request: { id: null, idempotency_key: null },
+      data: { object: { object: "invoice", created: 1_790_000_000, amount_paid: 35_581, ...invoice } },
+    };
+  }
+
+  test("a paid invoice of a known subscription reaches onInvoicePaid with the workspace and the net amount", async () => {
+    const calls: unknown[] = [];
+    const { deps } = await setup({ onInvoicePaid: async (i) => { calls.push(i); return "commission_created"; } });
+    const result = await handleStripeWebhook(
+      signed(invoiceEvent("evt_inv_1", { id: "in_1", total_excluding_tax: 29_900, status_transitions: { paid_at: 1_790_000_100 }, parent: { subscription_details: { subscription: "sub_1" } } })),
+      deps,
+    );
+    assert.equal(result.status, 200);
+    assert.equal(result.log.outcome, "commission_created");
+    assert.deepEqual(calls, [{ workspaceId: "workspace-1", invoiceId: "in_1", amountCents: 29_900, paidAt: new Date(1_790_000_100 * 1000) }]);
+  });
+
+  test("an invoice for an unknown or missing subscription is acknowledged without a commission", async () => {
+    let called = false;
+    const { deps } = await setup({ onInvoicePaid: async () => { called = true; return "x"; } });
+    const unknown = await handleStripeWebhook(signed(invoiceEvent("evt_inv_2", { id: "in_2", subscription: "sub_other" })), deps);
+    const none = await handleStripeWebhook(signed(invoiceEvent("evt_inv_3", { id: "in_3" })), deps);
+    assert.equal(unknown.log.outcome, "invoice_unknown_subscription");
+    assert.equal(none.log.outcome, "invoice_without_subscription");
+    assert.equal(called, false);
+  });
+});

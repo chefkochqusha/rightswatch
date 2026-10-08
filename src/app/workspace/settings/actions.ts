@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { changePassword, deleteOwnAccount, deleteWorkspace, InMemoryRateLimiter, MIN_PASSWORD_LENGTH } from "@/modules/auth";
 import { cancelSubscription } from "@/modules/billing";
 import { recordAudit } from "@/app/_lib/audit-event";
+import { getReferralStore } from "@/app/_lib/referral-store";
+import { joinPartnerProgramme } from "@/modules/referrals";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
@@ -151,4 +153,19 @@ export async function deleteAccountAction(_prev: DeleteAccountFormState, formDat
 
   await clearSessionCookie();
   redirect("/login?accountDeleted=1");
+}
+
+export interface JoinPartnerFormState {
+  formError?: string;
+}
+
+/** Joins the partner programme after the person accepted its terms. */
+export async function joinPartnerAction(_prev: JoinPartnerFormState, formData: FormData): Promise<JoinPartnerFormState> {
+  const session = await requireSession();
+  if (session.workspace.slug === DEMO_WORKSPACE_SLUG) return { formError: "The public demo is view only." };
+  const result = await joinPartnerProgramme({ userId: session.user.id, acceptedTerms: formData.get("acceptTerms") === "on" }, getReferralStore());
+  if (!result.ok) return { formError: "Please accept the partner terms first." };
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "partner.joined", targetType: "user", targetId: session.user.id });
+  revalidatePath("/workspace/settings");
+  return {};
 }

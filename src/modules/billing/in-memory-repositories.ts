@@ -53,6 +53,8 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
     stripeCustomerId: string;
     stripeSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
+    billingInterval?: SubscriptionRecord["billingInterval"];
+    loyaltyStartedAt?: Date | null;
   }): Promise<SubscriptionRecord> {
     if (this.idByWorkspaceId.has(input.workspaceId)) {
       // Subscription.workspaceId is @unique in the schema — mirror that
@@ -69,6 +71,8 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
       stripeCustomerId: input.stripeCustomerId,
       stripeSubscriptionId: input.stripeSubscriptionId,
       currentPeriodEnd: input.currentPeriodEnd,
+      billingInterval: input.billingInterval ?? "MONTHLY",
+      loyaltyStartedAt: input.loyaltyStartedAt ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -82,7 +86,7 @@ export class InMemorySubscriptionRepository implements SubscriptionRepository {
     changes: Partial<
       Pick<
         SubscriptionRecord,
-        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd"
+        "planId" | "status" | "stripeCustomerId" | "stripeSubscriptionId" | "currentPeriodEnd" | "billingInterval" | "loyaltyStartedAt"
       >
     >,
   ): Promise<SubscriptionRecord> {
