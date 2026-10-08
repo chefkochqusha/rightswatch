@@ -223,3 +223,10 @@ body {
     -webkit-text-stroke: 2px #fff;
   }
 }
+
+/* Gentle drift for the floating cards on the landing page (Watermelon UI feature-5).
+   `motion-safe:` on the element keeps it off for people who reduce motion. */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
