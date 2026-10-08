@@ -92,6 +92,12 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   the pricing text and the terms, and a lawyer's look (cancelling must stay as
   easy as signing up). Nothing is built.
 
+- [ ] **`LEGAL_DE.md` re-check** (German/EU rules register, 2026-10-08): Data Act
+  switching clauses in the terms and no switching fees from 12 Jan 2027;
+  e-invoices (ZUGFeRD/XRechnung) for German business customers from 2027/2028;
+  imprint under § 5 DDG with no OS-platform link; B2B-only made factual (VAT ID
+  at checkout) so the BFSG and the withdrawal button stay out of scope.
+
 ## Services & credentials
 
 - [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is
