@@ -145,6 +145,12 @@ export class PrismaAccountRepository implements AccountRepository {
       });
     });
   }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Memberships and sessions cascade; case notes, assignments and activity-log
+    // entries are kept without the person (schema: onDelete SetNull).
+    await getPrisma().user.delete({ where: { id: userId } });
+  }
 }
 
 export class PrismaSessionRepository implements SessionRepository {

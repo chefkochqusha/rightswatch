@@ -81,6 +81,14 @@ export interface AccountRepository {
    * another workspace too are kept.
    */
   deleteWorkspace(workspaceId: string): Promise<void>;
+
+  /**
+   * Erases one person's account: the user, their memberships and sessions.
+   * What they did in a workspace stays with the workspace without their name
+   * (their case notes and activity-log entries lose the author, cases
+   * assigned to them become unassigned).
+   */
+  deleteUser(userId: string): Promise<void>;
 }
 
 /** Mirrors the `Session` model in `prisma/schema.prisma`. `id` is the SHA-256

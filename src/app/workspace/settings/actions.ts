@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { changePassword, deleteWorkspace, InMemoryRateLimiter, MIN_PASSWORD_LENGTH } from "@/modules/auth";
+import { changePassword, deleteOwnAccount, deleteWorkspace, InMemoryRateLimiter, MIN_PASSWORD_LENGTH } from "@/modules/auth";
 import { cancelSubscription } from "@/modules/billing";
 import { recordAudit } from "@/app/_lib/audit-event";
 import { getAuthStore } from "@/app/_lib/auth-store";
@@ -112,4 +112,43 @@ export async function deleteWorkspaceAction(_prev: DeleteWorkspaceFormState, for
 
   await clearSessionCookie();
   redirect("/login?deleted=1");
+}
+
+export interface DeleteAccountFormState {
+  formError?: string;
+}
+
+/**
+ * A member (not the owner) deletes their own account for good. The workspace
+ * keeps their case notes and activity without their name; the activity log
+ * gets one line that a member left, with no name in it.
+ */
+export async function deleteAccountAction(_prev: DeleteAccountFormState, formData: FormData): Promise<DeleteAccountFormState> {
+  const session = await requireSession();
+  if (session.workspace.slug === DEMO_WORKSPACE_SLUG) return { formError: "The public demo is view only." };
+
+  const auth = getAuthStore();
+  const result = await deleteOwnAccount(
+    { userId: session.user.id, password: String(formData.get("password") ?? "") },
+    {
+      userRepository: auth.users,
+      membershipRepository: auth.memberships,
+      accountRepository: auth.accounts,
+      rateLimiter: deleteLimiter(),
+      beforeDelete: () =>
+        recordAudit({ workspaceId: session.workspace.id, actorId: null, action: "account.deleted", targetType: "user", targetId: "deleted" }),
+    },
+  );
+  if (!result.ok) {
+    const messages = {
+      OWNER: "As the owner, delete the workspace instead (below), or ask for ownership to be moved first.",
+      WRONG_PASSWORD: "That isn't your password.",
+      RATE_LIMITED: "Too many wrong attempts. Try again in a few minutes.",
+      NO_SUCH_USER: "Your account couldn't be found.",
+    } as const;
+    return { formError: messages[result.error] };
+  }
+
+  await clearSessionCookie();
+  redirect("/login?accountDeleted=1");
 }

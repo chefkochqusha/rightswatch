@@ -444,7 +444,7 @@ model Case {
 
   workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   rightsAssessment RightsAssessment @relation(fields: [rightsAssessmentId], references: [id], onDelete: Cascade)
-  assignedTo       User?            @relation("CaseAssignee", fields: [assignedToId], references: [id])
+  assignedTo       User?            @relation("CaseAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   notes            CaseNote[]
   evidence         CaseEvidence[]
 
@@ -456,12 +456,13 @@ model Case {
 model CaseNote {
   id        String   @id @default(cuid())
   caseId    String
-  authorId  String
+  /// Null once the author deleted their own account: the note stays with the case.
+  authorId  String?
   body      String
   createdAt DateTime @default(now())
 
-  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id])
+  case   Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([caseId])
   @@map("case_notes")
@@ -642,7 +643,7 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  actor     User?     @relation(fields: [actorId], references: [id])
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, createdAt])
   @@map("audit_logs")

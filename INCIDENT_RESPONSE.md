@@ -75,5 +75,5 @@ What changes so it cannot repeat:
 
 - Secrets: Vercel → Settings → Environment Variables (mark new values *Sensitive*).
 - Sessions: `sessions` table; `SESSION_SECRET`.
-- Who did what: `/workspace/audit` (case, watchlist, song and rights changes, password changes, invites, plan changes, data downloads). Logins are **not** in it yet.
+- Who did what: `/workspace/audit` (case, watchlist, song and rights changes, password changes, invites, plan changes, data downloads, logins and wrong-password attempts).
 - Restore: `BACKUP_RESTORE.md`.

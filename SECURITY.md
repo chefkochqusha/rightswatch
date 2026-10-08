@@ -34,9 +34,9 @@ penetration test and not legal advice. Companion files: `DATA_FLOWS.md`,
 | Unused dependencies | None found (`depcheck`). |
 | Prompt injection / AI data leaks | No AI or language-model feature exists, so nothing reads TikTok, AudD or customer text with a model. Rules for the day one is added are in `DATA_FLOWS.md`. |
 | Malware / file uploads | No upload exists (`CaseEvidence` is in the schema but unbuilt, the `STORAGE_*` variables are blank). Before building it: size and type limits, a virus scan, private storage with short-lived links, never serve user files inline from this origin. |
-| Audit log | Case, watchlist, song and rights changes, report and data downloads, **new 2026-10-05:** password changes, invites, plan choice and cancellation. Not yet in it: logins and logouts, failed logins (rate-limited but not recorded), member removal (no such feature yet). |
+| Audit log | Case, watchlist, song and rights changes, report and data downloads, password changes, invites, plan choice and cancellation, **new 2026-10-08:** logins, login attempts with a wrong password for a real account (no address or password stored; unknown emails leave no trace), and a nameless line when a member deletes their account. Not yet in it: member removal by an admin (no such feature yet). |
 | PII in logs | Reviewed every `console.*`: the Stripe webhook logs event ids and outcomes only; the rehash and scheduled-scan lines log internal ids; the audit-write failure logs the action name only; error boundaries log to the browser console. No email, password, token or reset link is written to a log. Vercel's own request logs hold IP addresses and URLs (said in `DATA_FLOWS.md`). |
-| Data deletion and export | Owner deletes a workspace (password + name typed, subscription ended first). **New:** Settings → "Download your data": a JSON file of the workspace (owners and admins) or of one's own account (every member), without password hashes, sessions or Stripe ids; audited, rate-limited, not available in the demo. A member cannot yet delete only their own account (handled by hand, see `DATA_FLOWS.md`). |
+| Data deletion and export | Owner deletes a workspace (password + name typed, subscription ended first). **New 2026-10-08:** every other member can delete their own account (password, rate-limited); their case notes and activity stay with the workspace without their name (`onDelete: SetNull`), cases assigned to them become unassigned, their sessions end. Settings → "Download your data": JSON of the workspace (owners and admins) or of one's own account; audited, rate-limited, not in the demo. |
 | Dependency pinning | **New:** every version in `package.json` is exact (`save-exact=true` in `.npmrc`) and `package-lock.json` is committed, so a build installs exactly what was tested. Dependabot opens one weekly pull request for minor and patch updates (`.github/dependabot.yml`). Install scripts run only for `prisma`, `@prisma/engines`, `esbuild`, `unrs-resolver` (and the optional `fsevents`). |
 | Dependency advisories | See open item 1. |
 | Cost safety | AudD: at most 200 posts per scan (`AUDD_MAX_POSTS_PER_SCAN`), https links only, two links per post; scans are bounded by plan cadence and a time budget and are plain loops (no function retries itself). Request limits above. A Vercel spend limit still has to be set by the owner (open item 6). |
@@ -86,9 +86,7 @@ Local development already uses its own database (`npm run db:local`) and
    attack-challenge mode if a flood starts (the owner's Vercel dashboard). Usage on Vercel is billed, so even cheap
    pages cost money under a flood; the owner should read the plan's terms on
    what happens at the limit.
-7. **Logins are not in the audit log**, and failed logins are only rate-limited.
-8. **A member cannot delete only their own account** (see `DATA_FLOWS.md`).
-9. **Restore drill not yet run** (`BACKUP_RESTORE.md`).
+7. **Restore drill not yet run** (`BACKUP_RESTORE.md`).
 
 ## After a change
 

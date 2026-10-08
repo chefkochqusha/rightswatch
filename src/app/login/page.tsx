@@ -14,9 +14,9 @@ export const metadata = {
 export default async function LogInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ expired?: string; reset?: string; deleted?: string }>;
+  searchParams: Promise<{ expired?: string; reset?: string; deleted?: string; accountDeleted?: string }>;
 }) {
-  const { expired, reset, deleted } = await searchParams;
+  const { expired, reset, deleted, accountDeleted } = await searchParams;
 
   return (
     <AuthShell
@@ -24,6 +24,8 @@ export default async function LogInPage({
       subtitle={
         deleted
           ? "Your workspace and everything in it was deleted."
+          : accountDeleted
+          ? "Your account was deleted."
           : reset
           ? "Your password is updated. Log in with the new one."
           : expired

@@ -176,7 +176,7 @@ export async function CasePanel({
               <li key={note.id} className="rounded-md bg-surface-2 p-3">
                 <p className="text-sm whitespace-pre-wrap text-tx">{note.body}</p>
                 <p className="mt-1.5 text-[0.75rem] text-t2">
-                  {note.authorId === currentUserId ? currentUserName : (nameOf.get(note.authorId) ?? "A former member")} ·{" "}
+                  {note.authorId === currentUserId ? currentUserName : ((note.authorId && nameOf.get(note.authorId)) || "A former member")} ·{" "}
                   {dateTimeFormatter.format(note.createdAt)}
                 </p>
               </li>

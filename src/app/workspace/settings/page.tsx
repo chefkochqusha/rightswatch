@@ -9,6 +9,7 @@ import { canManageWorkspace } from "@/app/_lib/authorize";
 import { buttonStyles } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ROLE_LABELS } from "@/components/team/labels";
+import { DeleteAccountForm } from "./delete-account-form";
 import { DeleteWorkspaceForm } from "./delete-workspace-form";
 import { PasswordForm } from "./password-form";
 
@@ -165,6 +166,17 @@ export default async function SettingsPage() {
                 </a>
               )}
             </div>
+          </div>
+        )}
+
+        {!isDemo && session.role !== "OWNER" && (
+          <div className="mt-6 rounded-lg border border-mismatch/40 bg-surface p-5">
+            <h3 className="text-sm font-semibold">Delete my account</h3>
+            <p className="mt-1 mb-4 max-w-xl text-[0.8125rem] text-t2">
+              Deletes your account and your access to {session.workspace.name} for good. Your case notes and past activity stay with the workspace,
+              without your name. This can&apos;t be undone.
+            </p>
+            <DeleteAccountForm />
           </div>
         )}
 

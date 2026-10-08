@@ -141,7 +141,7 @@ function mapCase(row: {
 function mapCaseNote(row: {
   id: string;
   caseId: string;
-  authorId: string;
+  authorId: string | null;
   body: string;
   createdAt: Date;
 }): CaseNoteRecord {

@@ -46,7 +46,8 @@ export interface CaseRecord {
 export interface CaseNoteRecord {
   id: string;
   caseId: string;
-  authorId: string;
+  /** Null once the author deleted their own account. */
+  authorId: string | null;
   body: string;
   createdAt: Date;
 }

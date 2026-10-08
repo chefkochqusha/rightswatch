@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { logIn } from "@/modules/auth";
+import { recordAudit } from "@/app/_lib/audit-event";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { setSessionCookie } from "@/app/_lib/session-cookie";
 
@@ -34,6 +35,12 @@ export async function logInAction(
   );
 
   if (!result.ok) {
+    // A wrong password for a real account goes into that account's workspace log
+    // (no address, no password); unknown emails leave no trace anywhere.
+    if (result.error === "INVALID_CREDENTIALS") {
+      const user = await store.users.findByEmail(email.trim().toLowerCase());
+      if (user) await logToWorkspaces(user.id, user.id, "account.login_failed");
+    }
     if (result.error === "RATE_LIMITED") {
       const minutes = Math.ceil(result.retryAfterMs / 60_000);
       return {
@@ -44,5 +51,13 @@ export async function logInAction(
   }
 
   await setSessionCookie(result.user.id);
+  await logToWorkspaces(result.user.id, result.user.id, "account.logged_in");
   redirect("/workspace");
+}
+
+async function logToWorkspaces(userId: string, actorId: string | null, action: string): Promise<void> {
+  const memberships = await getAuthStore().memberships.findForUser(userId);
+  for (const m of memberships) {
+    await recordAudit({ workspaceId: m.workspaceId, actorId, action, targetType: "user", targetId: userId });
+  }
 }

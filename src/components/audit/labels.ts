@@ -35,6 +35,9 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "billing.plan_chosen": "Chose a plan",
   "billing.canceled": "Cancelled the subscription",
   "data.exported": "Downloaded workspace data",
+  "account.deleted": "A member deleted their account",
+  "account.logged_in": "Logged in",
+  "account.login_failed": "Login attempt with a wrong password",
 };
 
 /** The same actions, naming the creator — when the entry recorded who. */

@@ -125,6 +125,12 @@ export class InMemoryMembershipRepository implements MembershipRepository {
     }
   }
 
+  async deleteForUser(userId: string): Promise<void> {
+    for (const [id, membership] of this.byId) {
+      if (membership.userId === userId) this.byId.delete(id);
+    }
+  }
+
   async create(input: {
     userId: string;
     workspaceId: string;
@@ -217,6 +223,11 @@ export class InMemoryAccountRepository implements AccountRepository {
     for (const { userId } of members) {
       if ((await this.memberships.findForUser(userId)).length === 0) await this.users.delete(userId);
     }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.memberships.deleteForUser(userId);
+    await this.users.delete(userId);
   }
 }
 
