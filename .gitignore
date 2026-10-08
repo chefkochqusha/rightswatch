@@ -47,3 +47,6 @@ next-env.d.ts
 # generated, untracked marketing output (e.g. the brag-slim skill's launch
 # video build) — never part of the app itself
 /brag-output/
+
+# self-hosting backups
+deploy/backups/

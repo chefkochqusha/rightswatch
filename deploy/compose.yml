@@ -1,0 +1,85 @@
+# RightsWatch on one EU server. Start: `docker compose -f deploy/compose.yml up -d --build`
+# Secrets live in deploy/.env (never in git; template: deploy/env.example).
+name: rightswatch
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rightswatch
+      POSTGRES_USER: rightswatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rightswatch -d rightswatch"]
+      interval: 10s
+      retries: 10
+    # Not published to the internet: only the other containers reach it.
+
+  migrate:
+    # One-shot on every deploy: sync the schema (refuses data-losing changes) and seed the plan catalog.
+    build: { context: .., target: builder }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://rightswatch:${POSTGRES_PASSWORD}@db:5432/rightswatch
+    command: ["sh", "-c", "npx prisma db push && npx prisma db seed"]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  app:
+    build: { context: .., target: runner }
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://rightswatch:${POSTGRES_PASSWORD}@db:5432/rightswatch
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    # Reached only through Caddy.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+  cron:
+    # Replaces Vercel Cron: calls the scheduled-scan endpoint once a day at 04:30 UTC.
+    image: alpine:3
+    restart: unless-stopped
+    env_file: .env
+    command:
+      - sh
+      - -c
+      - |
+        echo '30 4 * * * wget -qO- --header "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/scans >/proc/1/fd/1 2>&1' > /etc/crontabs/root
+        crond -f -l 8
+    depends_on: [app]
+
+  backup:
+    # Nightly database dump, encrypted with the age public key, kept 14 days.
+    # Copy deploy/backups off the server regularly (see SELF_HOSTING.md).
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "-c", "apk add --no-cache age >/dev/null && echo '15 3 * * * sh /backup.sh >/proc/1/fd/1 2>&1' > /etc/crontabs/root && crond -f -l 8"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

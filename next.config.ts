@@ -14,6 +14,9 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Our own server (deploy/, SELF_HOSTING.md) runs the minimal standalone build;
+  // Vercel builds without it.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },

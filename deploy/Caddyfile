@@ -1,0 +1,14 @@
+# HTTPS certificates are fetched and renewed automatically (Let's Encrypt).
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	# Caddy replaces any X-Forwarded-For a client sends with the real address,
+	# which the app's rate limits rely on.
+	reverse_proxy app:3000
+	request_body {
+		max_size 10MB
+	}
+	log {
+		output stdout
+		format json
+	}
+}

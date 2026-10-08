@@ -98,6 +98,12 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   imprint under § 5 DDG with no OS-platform link; B2B-only made factual (VAT ID
   at checkout) so the BFSG and the withdrawal button stay out of scope.
 
+- [ ] **Hosting decision: own EU server (prepared) or Vercel Pro.** `SELF_HOSTING.md`
+  and `deploy/` hold a ready Docker setup (app, Postgres, HTTPS, daily scan,
+  encrypted backups). Owner: EU server account (about 10–40 €/month), DPA with
+  the provider, domain, an age key pair for backups; then SSH access for the
+  first deploy and the move from Neon.
+
 ## Services & credentials
 
 - [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is
