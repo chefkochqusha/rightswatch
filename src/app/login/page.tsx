@@ -3,7 +3,7 @@ import { AuthShell } from "@/components/layout/auth-shell";
 import { LogInForm } from "./login-form";
 
 export const metadata = {
-  title: "Log in — RightsWatch",
+  title: "Log in — Bekvor",
 };
 
 /**
@@ -30,7 +30,7 @@ export default async function LogInPage({
           ? "Your password is updated. Log in with the new one."
           : expired
             ? "Your session has ended. Log in again to continue."
-            : "Welcome back to your RightsWatch workspace."
+            : "Welcome back to your Bekvor workspace."
       }
       footer={
         <>

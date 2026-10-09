@@ -4,7 +4,7 @@ import { verifyPasswordResetToken } from "@/modules/auth/password-reset-token";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 import { ResetPasswordForm } from "./reset-password-form";
 
-export const metadata = { title: "Set a new password — RightsWatch", robots: { index: false } };
+export const metadata = { title: "Set a new password — Bekvor", robots: { index: false } };
 
 export default async function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
   const { token } = await searchParams;

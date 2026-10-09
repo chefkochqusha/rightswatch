@@ -1,4 +1,4 @@
-# RightsWatch — Architecture
+# Bekvor — Architecture
 
 ## What this document is
 
@@ -22,9 +22,9 @@ Read this alongside `DESIGN_SYSTEM.md` (UI/visual conventions) and
 truth — this document describes its shape and status, and deliberately never
 restates a full field list that could drift out of sync with it.
 
-## What RightsWatch is
+## What Bekvor is
 
-(Brief §1) RightsWatch is a B2B SaaS product for music publishers and labels
+(Brief §1) Bekvor is a B2B SaaS product for music publishers and labels
 that detects unlicensed commercial (paid-partnership / "#ad") use of their
 catalog by TikTok creators. A publisher's workspace scans commercial content
 set to licensed music, checks it against the rights the publisher actually
@@ -716,7 +716,7 @@ one-off re-assessment script or API route.
 
 (Brief §8, §19)
 
-The watchlist is the workspace's list of creators RightsWatch checks —
+The watchlist is the workspace's list of creators Bekvor checks —
 `modules/creators`, `/workspace/creators` and a page per creator. A member
 of the ANALYST tier or up (the schema's role comment: "monitoring + cases +
 rights") can add, pause, resume, remove and edit; every change is
@@ -999,14 +999,14 @@ UI server-side, so `curl` alone can show the wrong thing (Next's own
 `__next_error__` shell) even when the boundary is working correctly.
 
 `workspace/items/[contentId]/page.tsx` also has a `generateMetadata`
-giving the browser tab a per-item title (`"@handle — RightsWatch"`)
+giving the browser tab a per-item title (`"@handle — Bekvor"`)
 instead of sharing one generic title across every open tab. Their
 not-found branch sets the title explicitly (`"Page not found —
-RightsWatch"`, matching `not-found.tsx`) rather than returning `{}`:
+Bekvor"`, matching `not-found.tsx`) rather than returning `{}`:
 verified live that an empty object does *not* fall through to the
 `not-found.tsx` boundary's own title once a page with its own
 `generateMetadata` calls `notFound()` — it resolves to the root layout's
-plain "RightsWatch" instead.
+plain "Bekvor" instead.
 
 ## Phases referenced in this codebase
 

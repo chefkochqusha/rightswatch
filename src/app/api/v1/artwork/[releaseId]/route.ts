@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/v1/artwo
   let upstream: Response;
   try {
     upstream = await fetch(`https://coverartarchive.org/release/${releaseId}/front-250`, {
-      headers: { "User-Agent": "RightsWatch/0.1 ( https://rightswatch.vercel.app )" },
+      headers: { "User-Agent": "Bekvor/0.1 ( https://rightswatch.vercel.app )" },
       signal: AbortSignal.timeout(8_000),
     });
   } catch {

@@ -15,7 +15,7 @@ import type { SongSearchProvider, SongSearchResponse, SongSearchResult } from ".
  */
 
 const ENDPOINT = "https://musicbrainz.org/ws/2/recording";
-const USER_AGENT = "RightsWatch/0.1 ( https://rightswatch.vercel.app )";
+const USER_AGENT = "Bekvor/0.1 ( https://rightswatch.vercel.app )";
 const TIMEOUT_MS = 6_000;
 
 // The JSON shape of a recording search result — only what's read here.

@@ -16,7 +16,7 @@ describe("email senders", () => {
     let seen: { url: string; init: RequestInit } | null = null;
     const sender = new ResendEmailSender({
       apiKey: "re_test",
-      from: "RightsWatch <no-reply@example.test>",
+      from: "Bekvor <no-reply@example.test>",
       fetchImpl: (async (url: string, init: RequestInit) => {
         seen = { url, init };
         return new Response('{"id":"1"}', { status: 200 });
@@ -27,7 +27,7 @@ describe("email senders", () => {
     const { url, init } = seen as { url: string; init: RequestInit };
     assert.equal(url, "https://api.resend.com/emails");
     assert.equal((init.headers as Record<string, string>).Authorization, "Bearer re_test");
-    assert.deepEqual(JSON.parse(String(init.body)), { from: "RightsWatch <no-reply@example.test>", to: ["nina@northstar.test"], subject: "Hello", text: "Body" });
+    assert.deepEqual(JSON.parse(String(init.body)), { from: "Bekvor <no-reply@example.test>", to: ["nina@northstar.test"], subject: "Hello", text: "Body" });
   });
 
   test("a refusal throws without echoing the key", async () => {

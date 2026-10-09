@@ -13,6 +13,14 @@ or a business decision at release time, it gets a line here.
 
 - [ ] **Business registration and tax status** (e.g. small-business VAT
   exemption or not). Decides what goes into the imprint, Stripe and invoices.
+- [ ] **Name "Bekvor" (domain bekvor.com bought 2026-10-09)**: a web search found
+  no brand or company of that name, but that is not a register search. Search
+  TMview (EU, DE, US), DPMAregister and the Handelsregister, classes 9, 35 and 42,
+  including similar-sounding names (e.g. Beko, an appliance brand). Then decide
+  on a trademark application (DPMA from about 290 EUR, EU mark about 850 EUR).
+  Also: point bekvor.com at the Vercel project, set the production URL and the
+  e-mail sender domain (SPF, DKIM, DMARC), and update the User-Agent in
+  `musicbrainz.ts` and the artwork route to the new URL.
 - [ ] **Imprint (Impressum) and privacy policy (Datenschutzerklärung)** with
   real details, legally reviewed. The pages exist with placeholders.
 - [ ] **Terms of service** for paying customers (Stripe asks for a terms URL).
@@ -50,7 +58,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Chargebacks**: watch the dispute rate in Stripe (a few percent starts
   trouble with the card networks); answer every dispute in time; keep the
   invoice and the audit log as evidence.
-- [ ] **Trademark check for "RightsWatch"** before the launch video and any ads.
+- [ ] **Trademark check for "Bekvor"** before the launch video and any ads.
   A first web search found no obvious conflict, which proves nothing. Search
   DPMAregister, EUIPO TMview and WIPO Global Brand Database in the music and
   software classes (9, 35, 41, 42), plus the domain and app names; a trademark
@@ -58,7 +66,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Terms (AGB) with a lawyer**: liability limits that German law allows
   (intent and gross negligence cannot be excluded), a place of jurisdiction, and
   a **data processing agreement (AVV)** to sign with each customer, because
-  RightsWatch processes their creators' data. The reels' US-style class-action
+  Bekvor processes their creators' data. The reels' US-style class-action
   waiver and arbitration clause do not carry over; a lawyer decides what does.
 - [ ] **Privacy policy lists every service in `DATA_FLOWS.md`** (Vercel, Neon,
   Stripe, Resend, TikTok, AudD, MusicBrainz, Cover Art Archive), the 7-day (or
@@ -155,7 +163,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Transactional email (Resend)** — password reset and email
   confirmation work today; they only need the account. Create a Resend account, verify your sending domain
   (SPF/DKIM records), then set `RESEND_API_KEY`, `EMAIL_FROM` (e.g.
-  `RightsWatch <no-reply@yourdomain>`) and `APP_URL` (the public https
+  `Bekvor <no-reply@yourdomain>`) and `APP_URL` (the public https
   address) in Vercel. Until then production says email isn't set up and sends
   nothing; locally the reset link is shown on the page. The Resend request is
   tested with a stubbed `fetch`, not yet against the live service — try one

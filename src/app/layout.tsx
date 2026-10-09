@@ -5,10 +5,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "RightsWatch",
+  title: "Bekvor",
   description:
     "Detect unlicensed commercial use of your music catalogue on TikTok.",
-  openGraph: { siteName: "RightsWatch", type: "website" },
+  openGraph: { siteName: "Bekvor", type: "website" },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

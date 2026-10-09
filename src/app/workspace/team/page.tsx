@@ -6,7 +6,7 @@ import type { MembershipRecord, UserRecord } from "@/modules/auth";
 import { InviteForm } from "./invite-form";
 
 export const metadata = {
-  title: "Team — RightsWatch",
+  title: "Team — Bekvor",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
@@ -52,7 +52,7 @@ export default async function TeamPage() {
           <h2 className="text-sm font-semibold">Invite a teammate</h2>
           <p className="mt-1 text-[0.8125rem] text-t2">
             They&apos;ll create their own login and join this workspace directly. An invite
-            can&apos;t be used to join if the email already has a RightsWatch account.
+            can&apos;t be used to join if the email already has a Bekvor account.
           </p>
           <div className="mt-4">
             <InviteForm />

@@ -30,7 +30,7 @@ export async function signUpAction(
   const name = String(formData.get("name") ?? "");
   const workspaceName = String(formData.get("workspaceName") ?? "");
 
-  // RightsWatch is sold to businesses (publishers, labels, agencies), not to consumers or children.
+  // Bekvor is sold to businesses (publishers, labels, agencies), not to consumers or children.
   if (formData.get("confirmBusiness") !== "on") {
     return { fieldErrors: { confirmBusiness: "Please confirm this is for business use and that you are at least 18." } };
   }

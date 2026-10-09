@@ -75,7 +75,7 @@ describe("MusicBrainz results", () => {
     assert.equal(response.error, null);
     assert.equal(response.results.length, 2);
     assert.match(calls[0].url, /query=isrc%3AUSUG11904206/);
-    assert.match(calls[0].userAgent ?? "", /^RightsWatch\/[\d.]+ \( https:\/\//);
+    assert.match(calls[0].userAgent ?? "", /^Bekvor\/[\d.]+ \( https:\/\//);
 
     const busy = new MusicBrainzSongSearch({ fetch: async () => new Response("", { status: 503 }) });
     const busyResponse = await busy.search("blinding lights");

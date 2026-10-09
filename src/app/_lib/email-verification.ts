@@ -25,8 +25,8 @@ export async function sendVerificationLink(userId: string): Promise<"SENT" | "AL
     sendLink: (to, link) =>
       sender.send({
         to,
-        subject: "Confirm your email for RightsWatch",
-        text: `Confirm that this is your email address for RightsWatch:\n${link}\n\nThe link works for three days. If you didn't create a RightsWatch account, you can ignore this email.`,
+        subject: "Confirm your email for Bekvor",
+        text: `Confirm that this is your email address for Bekvor:\n${link}\n\nThe link works for three days. If you didn't create a Bekvor account, you can ignore this email.`,
       }),
   });
   if (result.ok) return "SENT";

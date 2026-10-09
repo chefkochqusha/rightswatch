@@ -31,12 +31,12 @@ export async function generateMetadata({ params }: PageProps<"/workspace/creator
   const session = await getCurrentSession();
   if (!session) return {};
   const creator = await getCreatorStore().creators.findById(session.workspace.id, creatorId);
-  return { title: creator ? `@${creator.handle} — RightsWatch` : "Page not found — RightsWatch" };
+  return { title: creator ? `@${creator.handle} — Bekvor` : "Page not found — Bekvor" };
 }
 
 /**
  * One creator (Brief §8's creator detail page): who they are, how
- * monitoring is going, and what RightsWatch found — music matches, recent
+ * monitoring is going, and what Bekvor found — music matches, recent
  * videos, cases, campaigns and monitoring history. A removed creator's
  * page stays reachable (from the audit log, from its cases) and says so.
  */

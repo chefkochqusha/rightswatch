@@ -9,7 +9,7 @@ import { CASE_STATUS_LABELS } from "@/components/cases/labels";
 import { summarize } from "@/modules/reports";
 import type { CaseStatus } from "@/modules/cases";
 
-export const metadata = { title: "Reports — RightsWatch" };
+export const metadata = { title: "Reports — Bekvor" };
 
 const VERDICT_ORDER = ["POTENTIAL_MISMATCH", "REVIEW", "UNKNOWN", "CLEARED"] as const;
 const VERDICT_BAR: Record<(typeof VERDICT_ORDER)[number], string> = {

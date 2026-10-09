@@ -5,7 +5,7 @@ privacy policy and the contracts. Written 2026-10-05 from the code, not from the
 providers' contracts: the "to check" column is for the lawyer and the owner.
 This is an engineering inventory, not legal advice.
 
-## What RightsWatch holds
+## What Bekvor holds
 
 | Data | Whose | Where | Why |
 |---|---|---|---|
@@ -77,7 +77,7 @@ are needed. As far as checked on 2026-10-06:
 
 ## Roles under GDPR (to confirm with the lawyer)
 
-- For its customers' workspaces (creators, posts, cases) RightsWatch most likely
+- For its customers' workspaces (creators, posts, cases) Bekvor most likely
   acts as a **processor**: it needs a data processing agreement (AVV, Art. 28)
   with every customer, and the list above is its sub-processor list.
 - For accounts, billing and its own website it is the **controller**.

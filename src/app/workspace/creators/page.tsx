@@ -19,13 +19,13 @@ import { MonitoringToggle } from "./monitoring-toggle";
 import { addDemoCreatorsAction } from "./actions";
 
 export const metadata = {
-  title: "Creators — RightsWatch",
+  title: "Creators — Bekvor",
 };
 
 const STATUS_FILTERS: CreatorStatus[] = ["ACTIVE", "PENDING", "PAUSED", "ERROR"];
 
 /**
- * The watchlist (Brief §8): who RightsWatch monitors for commercial posts,
+ * The watchlist (Brief §8): who Bekvor monitors for commercial posts,
  * with add, pause, resume, search and filter. The plan's limit (§19) is
  * shown where it applies — next to adding.
  */
@@ -62,7 +62,7 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
     <div className="space-y-8">
       <PageHeader
         title="Creators"
-        description="The TikTok creators RightsWatch checks for commercial posts. Each scan looks at what they've published since the last one."
+        description="The TikTok creators Bekvor checks for commercial posts. Each scan looks at what they've published since the last one."
       />
 
       <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
@@ -106,7 +106,7 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
         {creators.length === 0 ? (
           <EmptyState
             title="No creators are being monitored yet."
-            description="Add the TikTok creators who might use your music in paid posts. RightsWatch checks their commercial content on every scan."
+            description="Add the TikTok creators who might use your music in paid posts. Bekvor checks their commercial content on every scan."
           />
         ) : (
           <>

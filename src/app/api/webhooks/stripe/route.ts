@@ -17,7 +17,7 @@ import { handleStripeWebhook, isStripeConfigured, planTierForPriceId } from "@/m
  * 503 until every Stripe variable is set (the same all-or-nothing check
  * that picks the payment provider). An endpoint registered in the dashboard
  * before the keys land in Vercel misses nothing that matters: until then
- * the app is on demo billing, so no RightsWatch subscription exists on
+ * the app is on demo billing, so no Bekvor subscription exists on
  * Stripe's side to produce events. Setup steps: STRIPE_INTEGRATION.md.
  */
 export async function POST(request: Request): Promise<Response> {

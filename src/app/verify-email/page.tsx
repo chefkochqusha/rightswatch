@@ -4,7 +4,7 @@ import { verifyEmail } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 
-export const metadata = { title: "Confirm your email — RightsWatch", robots: { index: false } };
+export const metadata = { title: "Confirm your email — Bekvor", robots: { index: false } };
 
 /**
  * The page an emailed confirmation link opens. Opening it confirms the
@@ -26,7 +26,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
       }
       footer={
         <Link href="/workspace" className="font-medium text-accent hover:underline">
-          Go to RightsWatch
+          Go to Bekvor
         </Link>
       }
     >

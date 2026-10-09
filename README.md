@@ -1,6 +1,6 @@
-# RightsWatch
+# Bekvor
 
-RightsWatch is a B2B SaaS product for music publishers and labels that
+Bekvor is a B2B SaaS product for music publishers and labels that
 detects unlicensed commercial (paid-partnership / "#ad") use of their
 catalog by TikTok creators. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for
 the full system design and [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) for UI

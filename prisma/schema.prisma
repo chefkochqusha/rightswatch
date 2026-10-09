@@ -1,4 +1,4 @@
-// RightsWatch — database schema
+// Bekvor — database schema
 //
 // Source of truth for entities: ARCHITECTURE.md (Master Brief §43 "Database
 // entities"). Every model below exists there; nothing here is invented scope.

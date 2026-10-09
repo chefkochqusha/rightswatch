@@ -15,7 +15,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-[80rem] items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">RW</span>
-          <span className="text-[0.9375rem] font-semibold">RightsWatch</span>
+          <span className="text-[0.9375rem] font-semibold">Bekvor</span>
         </Link>
         <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">
           {LINKS.map((link) => (

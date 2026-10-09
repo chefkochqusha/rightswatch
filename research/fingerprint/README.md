@@ -1,6 +1,6 @@
 # Own song recognition: feasibility test (round 1)
 
-Question: can RightsWatch identify its customers' songs in TikTok audio itself,
+Question: can Bekvor identify its customers' songs in TikTok audio itself,
 without a paid recognition service (AudD)? Date: 2026-10-08. Prototype only;
 nothing here runs in the product.
 

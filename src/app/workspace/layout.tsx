@@ -74,7 +74,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
             >
               RW
             </span>
-            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">RightsWatch</span>
+            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">Bekvor</span>
           </Link>
           <WorkspaceNav primary={primary} secondary={secondary} />
         </aside>

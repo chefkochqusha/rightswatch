@@ -40,8 +40,8 @@ export async function forgotPasswordAction(_prev: ForgotPasswordState, formData:
       sendResetLink: (to, link) =>
         sender.send({
           to,
-          subject: "Reset your RightsWatch password",
-          text: `Someone asked to reset the password for your RightsWatch account.\n\nSet a new password here (the link works for one hour):\n${link}\n\nIf this wasn't you, you can ignore this email. Your password stays as it is.`,
+          subject: "Reset your Bekvor password",
+          text: `Someone asked to reset the password for your Bekvor account.\n\nSet a new password here (the link works for one hour):\n${link}\n\nIf this wasn't you, you can ignore this email. Your password stays as it is.`,
         }),
     },
   );

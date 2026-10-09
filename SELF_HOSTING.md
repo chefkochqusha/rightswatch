@@ -1,4 +1,4 @@
-# Running RightsWatch on our own server
+# Running Bekvor on our own server
 
 The way off Vercel: one server in the EU running the app, Postgres, HTTPS,
 the daily scan and encrypted nightly backups in Docker. Prepared 2026-10-08.

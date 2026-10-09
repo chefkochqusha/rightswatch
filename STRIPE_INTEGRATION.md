@@ -1,11 +1,11 @@
 # Stripe integration (test mode)
 
-How RightsWatch bills through Stripe, how to switch it on, and how to check
+How Bekvor bills through Stripe, how to switch it on, and how to check
 that it works. Master Brief §18–20 (billing), §22 (webhook idempotency).
 
 ## What it does
 
-RightsWatch has two payment backends behind one interface
+Bekvor has two payment backends behind one interface
 (`PaymentProvider`, `src/modules/billing/types.ts`):
 
 - **Demo billing** (`MockPaymentProvider`) — plans, trials, switching and
@@ -29,7 +29,7 @@ The lifecycle on Stripe:
    is charged; without one it simply ends (`trial_settings.end_behavior:
    cancel`) — no failed-payment emails for a card nobody gave.
 4. **Anything Stripe changes on its own** (trial ending, payment failing,
-   a cancel in the portal) reaches RightsWatch through the webhook, which
+   a cancel in the portal) reaches Bekvor through the webhook, which
    updates the workspace's `Subscription` row.
 
 Workspaces that subscribed under demo billing keep that demo subscription
@@ -60,7 +60,7 @@ Settings → Billing → Customer portal
 (`https://dashboard.stripe.com/settings/billing/portal`, while in the sandbox):
 
 - **On:** update payment methods, invoice history, cancel subscriptions.
-- **Off:** switching plans. RightsWatch's own billing page does that, and
+- **Off:** switching plans. Bekvor's own billing page does that, and
   a plan switch made in the portal during a trial ends the trial on the
   spot (Stripe's behavior) — a surprise charge the app's own switch never
   causes. The webhook does follow a portal switch correctly if you ever
@@ -73,7 +73,7 @@ Settings → Billing → Customer portal
 Workbench → Webhooks (`https://dashboard.stripe.com/webhooks`) →
 **Create new destination**:
 
-- API version: the default (latest). RightsWatch re-reads each subscription
+- API version: the default (latest). Bekvor re-reads each subscription
   from the API rather than trusting the event's copy, so the version
   chosen here doesn't matter.
 - **Events on your account**, with these event types:
@@ -148,7 +148,7 @@ latest → Redeploy. From that deployment on, billing runs on Stripe.
 | Database or Stripe API briefly unavailable | `500`; Stripe retries (for days in live mode, a few times over a few hours in a sandbox — redeliver by hand from Event deliveries after that). The delivery stays unprocessed, so the retry is handled normally |
 | Same event delivered twice | Recorded once in `WebhookEvent`, processed once (Brief §22) |
 | Events arriving out of order | Harmless: each one syncs from the subscription's current state in Stripe, never from the event's own, possibly older, copy |
-| Event about a subscription RightsWatch didn't create | Recorded and acknowledged; no workspace changes |
+| Event about a subscription Bekvor didn't create | Recorded and acknowledged; no workspace changes |
 | Subscription deleted from Stripe entirely (e.g. "Delete all test data") | Falls back to the event's own copy instead of failing for days |
 
 ## Code map

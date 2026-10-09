@@ -19,7 +19,7 @@ import { DeleteWorkspaceForm } from "./delete-workspace-form";
 import { PasswordForm } from "./password-form";
 
 export const metadata = {
-  title: "Settings — RightsWatch",
+  title: "Settings — Bekvor",
 };
 
 type Tone = "ok" | "demo" | "off";
@@ -184,7 +184,7 @@ export default async function SettingsPage() {
           <div className="mt-6 rounded-lg border border-line bg-surface p-5">
             <h3 className="text-sm font-semibold">Partner programme</h3>
             <p className="mt-1 mb-4 max-w-xl text-[0.8125rem] text-t2">
-              Recommend RightsWatch to other labels, publishers or agencies. For every business that signs up through your link you earn{" "}
+              Recommend Bekvor to other labels, publishers or agencies. For every business that signs up through your link you earn{" "}
               {PARTNER_PROGRAMME.commissionPercent} % of what it pays in its first {PARTNER_PROGRAMME.commissionMonths} months.
             </p>
             {partner && partnerMoney ? (

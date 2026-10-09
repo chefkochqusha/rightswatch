@@ -16,7 +16,7 @@ import { formatRelativeTime } from "@/components/ui/time";
 import { buttonStyles } from "@/components/ui/button";
 import { sortCasesByUrgency, statusInGroup, type CaseGroup } from "@/modules/cases";
 
-export const metadata = { title: "Cases — RightsWatch" };
+export const metadata = { title: "Cases — Bekvor" };
 
 const PAGE_SIZE = 25;
 const GROUPS: { key: CaseGroup; label: string }[] = [
@@ -127,7 +127,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/workspace/
             title={cases.length === 0 ? "No cases yet." : "No cases match."}
             description={
               cases.length === 0
-                ? "When a scan finds a post the rights check can't clear, RightsWatch opens a case for it here."
+                ? "When a scan finds a post the rights check can't clear, Bekvor opens a case for it here."
                 : "Try another group, or clear the search."
             }
           >

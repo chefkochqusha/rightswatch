@@ -5,7 +5,7 @@ Neon plan, so confirm the plan of the real project before relying on them.
 
 ## What is backed up, and for how long
 
-RightsWatch keeps no backups of its own. Neon (the Postgres host) records every
+Bekvor keeps no backups of its own. Neon (the Postgres host) records every
 change and can restore the database to any moment inside its **history window**
 (point-in-time restore):
 

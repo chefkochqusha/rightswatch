@@ -20,7 +20,7 @@ export interface DetectionSong {
 
 /**
  * One commercial post in a feed (Brief §7 "Recent detections", as cards):
- * the post, who published it for which brand, the song RightsWatch heard
+ * the post, who published it for which brand, the song Bekvor heard
  * in it, and what the rights check says — the verdict first, in the
  * engine's own words. The whole card opens the post's page; the TikTok
  * link opens the post itself.

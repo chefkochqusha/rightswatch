@@ -17,7 +17,7 @@ import type { StoredScanItem } from "@/modules/scan-results";
 import { RunScanButton } from "@/components/scans/run-scan-button";
 
 export const metadata = {
-  title: "Overview — RightsWatch",
+  title: "Overview — Bekvor",
 };
 
 const PAGE_SIZE = 12;
@@ -129,7 +129,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
         description={
           monitored.length === 0
             ? `${session.workspace.name} isn't monitoring anyone yet.`
-            : `What RightsWatch found across the ${monitored.length === 1 ? "creator" : `${monitored.length} creators`} ${session.workspace.name} monitors.`
+            : `What Bekvor found across the ${monitored.length === 1 ? "creator" : `${monitored.length} creators`} ${session.workspace.name} monitors.`
         }
         actions={canManage && allowance.cap > 0 && monitored.length > 0 ? <RunScanButton creatorCount={Math.min(monitored.length, allowance.cap)} /> : undefined}
       />

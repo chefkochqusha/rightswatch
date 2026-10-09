@@ -1,6 +1,6 @@
 # German and EU rules for the website and the service
 
-A living register of the rules that apply to RightsWatch as a website and B2B
+A living register of the rules that apply to Bekvor as a website and B2B
 SaaS operated from Germany: what applies, from when, what the product does about
 it, and what the owner or the lawyer still has to do. **Re-check it before every
 release and whenever a feature touches signup, checkout, pricing, invoices,
@@ -8,7 +8,7 @@ legal pages, cookies, emails, AI or uploads**, and add new rules here first.
 Engineering notes, not legal advice: the lawyer and the tax advisor have the
 last word.
 
-Last checked: 2026-10-08.
+Last checked: 2026-10-09 (product name changed to Bekvor; trademark and company search still open, see RELEASE_CHECKLIST.md).
 
 ## Applies now
 
@@ -25,7 +25,7 @@ Last checked: 2026-10-08.
 
 | **Partner programme: advertising labels and liability** (UWG § 5a, § 8 (2)) | — | Partners must label links as advertising ("Werbung"/"Anzeige"); a merchant can be liable for its affiliates' violations within its own programme. The draft terms require the label and forbid spam and fake reviews; breaking them ends the partnership | Built; lawyer to review `/partner-terms` |
 | **Referral tracking without consent banner** (TDDDG § 25) | — | The partner code travels in the address and the signup form only; no cookie or local storage is set | Built (verified: no referral cookie) |
-| **Price display for discounts** (PAngV) | — | The price rules (e.g. the 30-day lowest price for price reductions) protect consumers; RightsWatch sells to businesses only. The loyalty and yearly discounts are stated as fixed terms next to the prices | Lawyer to confirm the B2B exemption and the wording |
+| **Price display for discounts** (PAngV) | — | The price rules (e.g. the 30-day lowest price for price reductions) protect consumers; Bekvor sells to businesses only. The loyalty and yearly discounts are stated as fixed terms next to the prices | Lawyer to confirm the B2B exemption and the wording |
 
 ## Coming
 

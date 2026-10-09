@@ -4,7 +4,7 @@ import { normalizePartnerCode } from "@/modules/referrals";
 import { SignUpForm } from "./signup-form";
 
 export const metadata = {
-  title: "Sign up — RightsWatch",
+  title: "Sign up — Bekvor",
 };
 
 export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {

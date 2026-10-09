@@ -10,7 +10,7 @@ import { formatRelativeTime } from "@/components/ui/time";
 import { summarizeSongMatches } from "@/modules/scan-results";
 
 export const metadata = {
-  title: "Music Matches — RightsWatch",
+  title: "Music Matches — Bekvor",
 };
 
 const SCOPES = [

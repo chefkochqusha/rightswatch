@@ -4,7 +4,7 @@ import { NotificationRow } from "@/components/notifications/notification-row";
 import { markAllNotificationsReadAction } from "./actions";
 
 export const metadata = {
-  title: "Notifications — RightsWatch",
+  title: "Notifications — Bekvor",
 };
 
 /**

@@ -9,7 +9,7 @@ import { LOYALTY, PLAN_CATALOG, TRIAL_LENGTH_DAYS, annualPriceCents, isMockCusto
 import { choosePlanAction, cancelSubscriptionAction, openBillingPortalAction } from "./actions";
 
 export const metadata = {
-  title: "Billing — RightsWatch",
+  title: "Billing — Bekvor",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });

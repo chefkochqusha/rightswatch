@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   return new Response(toCsv(rows), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="rightswatch-detections-${period}-${today}.csv"`,
+      "Content-Disposition": `attachment; filename="bekvor-detections-${period}-${today}.csv"`,
       "Cache-Control": "private, no-store",
     },
   });

@@ -1,4 +1,4 @@
-# RightsWatch — Design System
+# Bekvor — Design System
 
 ## What this document is
 
@@ -103,7 +103,7 @@ page inventing its own sizes:
 | Small label | `text-[0.8125rem] font-medium text-tx` | Form field labels |
 | Badge / pill text | `text-xs font-medium` | `StatusBadge`, `CaseStatusBadge` |
 | Numeric stat | `text-2xl font-semibold tabular-nums` | Dashboard `StatCard` counts |
-| Wordmark | `text-[0.9375rem] font-semibold` | "RightsWatch" in both headers |
+| Wordmark | `text-[0.9375rem] font-semibold` | "Bekvor" in both headers |
 
 The prototype uses its own, more editorial fluid scale for a marketing-style
 hero heading (`clamp(2rem, 4vw, 3rem)`, weight 650) and a denser numeric
@@ -118,7 +118,7 @@ prototype's `h1` rule is the reference to match, not a size to invent fresh.
 `components/layout/workspace-nav.tsx`) — the authenticated app's chrome,
 the prototype's layout carried over: a `15.5rem` sidebar on `bg-surface-2`
 (sticky, full height) beside the content column. The RW mark and the
-"RightsWatch" wordmark (sentence case, not tracked capitals) sit at the
+"Bekvor" wordmark (sentence case, not tracked capitals) sit at the
 top; below them the sections in Brief
 §6's order (Overview, Creators, Music Matches, Cases, Rights Library,
 Reports, Team, Billing, Settings), then a second group (Notifications with
@@ -277,7 +277,7 @@ real app's copy inherits directly:
 - *"Risk is a workflow signal, not a legal judgement."*
 - *"A potential rights mismatch is not a finding of infringement; have
   counsel review before acting on any case."*
-- *"RightsWatch is an independent product and is not affiliated with
+- *"Bekvor is an independent product and is not affiliated with
   TikTok."*
 - *"Match confidence is confidence in the music identification, not
   confidence that a legal infringement occurred."*

@@ -26,9 +26,9 @@ describe("rowsToRecords", () => {
 
 describe("exportFileName", () => {
   test("names the scope, workspace and day, and keeps odd characters out of the file name", () => {
-    assert.equal(exportFileName("workspace", "northstar-music", new Date("2026-10-05T20:00:00Z")), "rightswatch-workspace-data-northstar-music-2026-10-05.json");
-    assert.equal(exportFileName("account", '../"evil"', new Date("2026-10-05T00:00:00Z")), "rightswatch-account-data-evil-2026-10-05.json");
-    assert.equal(exportFileName("account", "///", new Date("2026-10-05T00:00:00Z")), "rightswatch-account-data-workspace-2026-10-05.json");
+    assert.equal(exportFileName("workspace", "northstar-music", new Date("2026-10-05T20:00:00Z")), "bekvor-workspace-data-northstar-music-2026-10-05.json");
+    assert.equal(exportFileName("account", '../"evil"', new Date("2026-10-05T00:00:00Z")), "bekvor-account-data-evil-2026-10-05.json");
+    assert.equal(exportFileName("account", "///", new Date("2026-10-05T00:00:00Z")), "bekvor-account-data-workspace-2026-10-05.json");
   });
 });
 

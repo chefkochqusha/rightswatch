@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Page not found — RightsWatch",
+  title: "Page not found — Bekvor",
 };
 
 /**

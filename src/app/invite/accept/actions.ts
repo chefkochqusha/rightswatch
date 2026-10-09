@@ -49,7 +49,7 @@ export async function acceptInviteAction(
       // had an account before it was invited — see `acceptInvite`'s comment.
       return {
         formError:
-          "This email already has a RightsWatch account — log in with it. An existing account can't join a second workspace yet; ask for an invite to a different email.",
+          "This email already has a Bekvor account — log in with it. An existing account can't join a second workspace yet; ask for an invite to a different email.",
       };
     }
     return {

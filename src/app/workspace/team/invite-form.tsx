@@ -40,7 +40,7 @@ function CopyLinkButton({ link }: { link: string }) {
  * session (see `page.tsx`), but `actions.ts`'s `requireAdmin` is the real
  * guard — this component doesn't re-check the role itself.
  *
- * RightsWatch doesn't send invite emails yet (Master Brief scope; see
+ * Bekvor doesn't send invite emails yet (Master Brief scope; see
  * `modules/auth/invite-token.ts`), so on success this shows the raw link to
  * copy and send by hand instead — a stopgap that's honest about what's
  * actually wired up, the same call already made for the payment provider.

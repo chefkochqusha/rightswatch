@@ -24,7 +24,7 @@ export function AuthShell({
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">
             RW
           </span>
-          <span className="text-[0.9375rem] font-semibold text-tx">RightsWatch</span>
+          <span className="text-[0.9375rem] font-semibold text-tx">Bekvor</span>
         </Link>
 
         <div className="rounded-lg border border-line bg-surface p-6">

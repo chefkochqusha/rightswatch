@@ -18,9 +18,9 @@ import { LOYALTY, monthOfMaxDiscount } from "@/modules/billing/loyalty";
 export const maxDuration = 120;
 
 export const metadata: Metadata = {
-  title: "RightsWatch: know where your music appears commercially",
+  title: "Bekvor: know where your music appears commercially",
   description:
-    "RightsWatch watches the paid posts of the TikTok creators you follow, finds your songs in them and checks each one against your licences.",
+    "Bekvor watches the paid posts of the TikTok creators you follow, finds your songs in them and checks each one against your licences.",
 };
 
 const WHO = ["Publishers", "Labels", "Licensing teams", "Sync agencies"] as const;
@@ -55,7 +55,7 @@ const VERDICTS = [
 
 const FAQ = [
   {
-    q: "Does RightsWatch say a post breaks the rules?",
+    q: "Does Bekvor say a post breaks the rules?",
     a: "No. It tells you a post is a potential rights mismatch against the records you entered, and it says why. Whether that is a problem, and what to do about it, is for you and your counsel to decide.",
   },
   {
@@ -64,7 +64,7 @@ const FAQ = [
   },
   {
     q: "Where does the data come from?",
-    a: "From TikTok's official Commercial Content API. That API lists a post and its brand, not the music in it, so RightsWatch identifies the song separately. Until your workspace is connected, it runs on clearly labelled demo data.",
+    a: "From TikTok's official Commercial Content API. That API lists a post and its brand, not the music in it, so Bekvor identifies the song separately. Until your workspace is connected, it runs on clearly labelled demo data.",
   },
   {
     q: "How does it know which songs are mine?",

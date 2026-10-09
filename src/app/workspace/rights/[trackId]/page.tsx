@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/workspace/rights/
   const session = await getCurrentSession();
   if (!session) return {};
   const track = await getLibraryStore().catalog.findById(session.workspace.id, trackId);
-  return { title: track ? `${track.title} — RightsWatch` : "Page not found — RightsWatch" };
+  return { title: track ? `${track.title} — Bekvor` : "Page not found — Bekvor" };
 }
 
 const SOURCE_LABELS: Record<TrackSource, string> = {
@@ -48,7 +48,7 @@ const FILTERS = [
 
 /**
  * One song (Brief §10): what it is, what its licences cover — editable
- * right here — and every commercial post RightsWatch found it in, with the
+ * right here — and every commercial post Bekvor found it in, with the
  * verdict on each. A song that isn't in the catalogue (one a scan heard,
  * or one taken out) shows its posts, unchecked, and how to add it.
  */

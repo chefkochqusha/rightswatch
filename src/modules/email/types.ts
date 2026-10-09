@@ -1,7 +1,7 @@
 export interface EmailMessage {
   to: string;
   subject: string;
-  /** Plain text. The messages RightsWatch sends are short and carry one link. */
+  /** Plain text. The messages Bekvor sends are short and carry one link. */
   text: string;
 }
 

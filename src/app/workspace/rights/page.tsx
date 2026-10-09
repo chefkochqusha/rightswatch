@@ -14,7 +14,7 @@ import { addKnownSongAction } from "./actions";
 import { loadDemoDataAction } from "../demo-actions";
 
 export const metadata = {
-  title: "Rights Library — RightsWatch",
+  title: "Rights Library — Bekvor",
 };
 
 /**
@@ -95,7 +95,7 @@ export default async function RightsLibraryPage() {
           <div className="rounded-[1.125rem] border border-dashed border-line px-6 py-12 text-center">
             <p className="text-[1.0625rem] font-semibold tracking-[-0.01em]">Your catalogue is empty.</p>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-t2">
-              Search for the songs you administer and add them. RightsWatch then looks for them in every paid post
+              Search for the songs you administer and add them. Bekvor then looks for them in every paid post
               your creators publish.
             </p>
           </div>

@@ -20,6 +20,9 @@ const rise: Variants = {
   show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", duration: 0.6, bounce: 0 } },
 };
 
+/** The name is stretched to the full width; the width follows its length so a name of any length keeps the same letter shapes. */
+const NAME_WIDTH = BRAND.name.length * 91;
+
 const linkClass = "text-[0.9375rem] text-t2 transition-colors hover:text-tx";
 
 export function SiteFooter() {
@@ -65,14 +68,14 @@ export function SiteFooter() {
         </div>
 
         <motion.div variants={rise} aria-hidden="true" className="mt-16 select-none lg:mt-24">
-          <svg className="block h-auto w-full" viewBox="0 18 1000 120" preserveAspectRatio="xMidYMax meet">
+          <svg className="block h-auto w-full" style={{ maxWidth: `${(NAME_WIDTH / 1000) * 100}%` }} viewBox={`0 18 ${NAME_WIDTH} 120`} preserveAspectRatio="xMidYMax meet">
             <defs>
               <linearGradient id="footer-name" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#1f3dff" stopOpacity="0.32" />
                 <stop offset="100%" stopColor="#1f3dff" stopOpacity="0.02" />
               </linearGradient>
             </defs>
-            <text x="0" y="138" textLength="1000" lengthAdjust="spacingAndGlyphs" fill="url(#footer-name)" fontSize="170" fontWeight="800" className="font-display tracking-[-0.04em]">
+            <text x="0" y="138" textLength={NAME_WIDTH} lengthAdjust="spacingAndGlyphs" fill="url(#footer-name)" fontSize="170" fontWeight="800" className="font-display tracking-[-0.04em]">
               {BRAND.name}
             </text>
           </svg>

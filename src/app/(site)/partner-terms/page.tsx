@@ -1,6 +1,6 @@
 import { PARTNER_PROGRAMME } from "@/modules/referrals";
 
-export const metadata = { title: "Partner terms — RightsWatch", robots: { index: false } };
+export const metadata = { title: "Partner terms — Bekvor", robots: { index: false } };
 
 /**
  * Draft of the partner programme terms: the rules the product enforces and the
@@ -25,11 +25,11 @@ export default function Page() {
         </li>
         <li>
           <strong className="text-tx">Label it as advertising.</strong> Wherever you share the link (posts, videos, stories, newsletters), mark it
-          clearly as advertising, for example with &ldquo;Werbung&rdquo; or &ldquo;Anzeige&rdquo;. Don&apos;t present RightsWatch as an independent test
+          clearly as advertising, for example with &ldquo;Werbung&rdquo; or &ldquo;Anzeige&rdquo;. Don&apos;t present Bekvor as an independent test
           or review.
         </li>
         <li>
-          <strong className="text-tx">No spam.</strong> No unsolicited emails, messages or texts, no paid search ads on the RightsWatch name, no
+          <strong className="text-tx">No spam.</strong> No unsolicited emails, messages or texts, no paid search ads on the Bekvor name, no
           misleading claims about what the product does.
         </li>
         <li>
@@ -41,7 +41,7 @@ export default function Page() {
           cancels commissions that are not yet paid out.
         </li>
       </ol>
-      <p className="mt-8 text-[0.875rem] text-t2">The link carries a code in the address only. RightsWatch sets no tracking cookie for it.</p>
+      <p className="mt-8 text-[0.875rem] text-t2">The link carries a code in the address only. Bekvor sets no tracking cookie for it.</p>
     </div>
   );
 }

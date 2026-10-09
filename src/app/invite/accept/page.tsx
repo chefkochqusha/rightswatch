@@ -5,7 +5,7 @@ import { verifyInviteToken } from "@/modules/auth";
 import { AcceptInviteForm } from "./accept-invite-form";
 
 export const metadata = {
-  title: "Accept invite — RightsWatch",
+  title: "Accept invite — Bekvor",
 };
 
 const LOG_IN_FOOTER = (
@@ -49,7 +49,7 @@ export default async function AcceptInvitePage({
           href="/"
           className="block w-full rounded-lg border border-line px-4 py-2.5 text-center text-sm font-medium text-tx hover:bg-hover"
         >
-          Back to RightsWatch
+          Back to Bekvor
         </Link>
       </AuthShell>
     );

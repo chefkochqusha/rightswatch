@@ -21,7 +21,7 @@ export interface DataExport {
 
 const WORKSPACE_NOTES = [
   "Everything the workspace holds that a person can see in the product: members, creators, songs and rights records, detections, cases and notes, activity log, plan.",
-  "Not included: password hashes and session tokens (never exported), payment details (held by Stripe, not by RightsWatch), and the raw answers of the TikTok and AudD services.",
+  "Not included: password hashes and session tokens (never exported), payment details (held by Stripe, not by Bekvor), and the raw answers of the TikTok and AudD services.",
   "Detections are the report rows, one per post with a song in it, as in the CSV report for all time.",
 ];
 
@@ -43,7 +43,7 @@ export function rowsToRecords(rows: readonly (readonly (string | number | null)[
 
 export function exportFileName(scope: ExportScope, workspaceSlug: string, now: Date): string {
   const slug = workspaceSlug.replace(/[^a-z0-9-]/gi, "").toLowerCase() || "workspace";
-  return `rightswatch-${scope}-data-${slug}-${now.toISOString().slice(0, 10)}.json`;
+  return `bekvor-${scope}-data-${slug}-${now.toISOString().slice(0, 10)}.json`;
 }
 
 export function parseExportScope(value: unknown): ExportScope {

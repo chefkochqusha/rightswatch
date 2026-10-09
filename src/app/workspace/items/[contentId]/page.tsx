@@ -23,7 +23,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
  * Uses `getCurrentSession` rather than the page body's own
  * `requireSession` for the no-session case — metadata generation
  * shouldn't be the thing that redirects to `/login`; `{}` there just
- * falls back to no override (the layout's plain "RightsWatch") for the
+ * falls back to no override (the layout's plain "Bekvor") for the
  * moment before the page body's own `requireSession` redirects away.
  */
 export async function generateMetadata({
@@ -35,8 +35,8 @@ export async function generateMetadata({
   const session = await getCurrentSession();
   if (!session) return {};
   const item = await getWorkspaceScanItem(session.workspace.id, contentId);
-  if (!item) return { title: "Page not found — RightsWatch" };
-  return { title: `@${item.creatorUsername} — RightsWatch` };
+  if (!item) return { title: "Page not found — Bekvor" };
+  return { title: `@${item.creatorUsername} — Bekvor` };
 }
 
 /**

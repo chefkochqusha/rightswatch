@@ -9,7 +9,7 @@ import type { UserRecord } from "@/modules/auth";
 import type { CaseRecord } from "@/modules/cases";
 
 export const metadata = {
-  title: "Audit log — RightsWatch",
+  title: "Audit log — Bekvor",
 };
 
 /**

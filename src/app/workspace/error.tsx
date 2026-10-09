@@ -21,7 +21,7 @@ export default function WorkspaceError({
 
   return (
     <div className="py-16 text-center">
-      <title>Something went wrong — RightsWatch</title>
+      <title>Something went wrong — Bekvor</title>
       <p className="text-sm font-semibold text-t2">Error</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-tx">Something went wrong</h1>
       <p className="mx-auto mt-2 max-w-md text-sm text-t2">

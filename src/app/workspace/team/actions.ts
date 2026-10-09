@@ -10,7 +10,7 @@ export interface InviteTeammateFormState {
   fieldErrors?: Partial<Record<"email" | "role", string>>;
   formError?: string;
   /** Set on success — the raw invite token, turned into a shareable link by
-   *  the client component (RightsWatch sends no email yet, see
+   *  the client component (Bekvor sends no email yet, see
    *  `modules/auth/invite-token.ts`'s doc comment). */
   issuedToken?: string;
   invitedEmail?: string;

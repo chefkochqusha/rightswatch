@@ -1,4 +1,4 @@
-# RightsWatch on our own server (see SELF_HOSTING.md). Three stages:
+# Bekvor on our own server (see SELF_HOSTING.md). Three stages:
 #   deps    – exact packages from package-lock.json
 #   builder – Prisma client + standalone Next.js build; also used once per
 #             deploy to sync the schema (`migrate` service in deploy/compose.yml)
