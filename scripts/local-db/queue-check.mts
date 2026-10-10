@@ -12,6 +12,7 @@ if (!/localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL ?? "")) throw new Er
 
 const type = `queue-check-${Date.now()}`;
 const queue = new PrismaJobRepository();
+try {
 const ids = new Set<string>();
 for (let i = 0; i < 20; i++) ids.add((await queue.enqueue({ workspaceId: null, type, payload: { i } })).id);
 
@@ -40,6 +41,8 @@ assert.equal(again?.id, stale.id);
 assert.equal(again?.attempts, 2);
 await queue.fail(stale.id, "boom", null);
 
-await getPrisma().job.deleteMany({ where: { type } });
+} finally {
+  await getPrisma().job.deleteMany({ where: { type } });
+}
 console.log("queue-check: ok (20 jobs, 5 workers, no double claims; stale job recovered)");
 process.exit(0);

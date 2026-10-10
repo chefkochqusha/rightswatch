@@ -190,8 +190,14 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.
-- [ ] **Transactional email (Resend)** — password reset and email
-  confirmation work today; they only need the account. Create a Resend account, verify your sending domain
+- [ ] **Transactional email (SMTP or Resend)** — password reset and email
+  confirmation work today; they only need a mail account. **Own server:** any
+  SMTP provider works (an EU one keeps mail in the EU, e.g. the mail service of
+  the server's hosting company): set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+  `SMTP_PASSWORD`, `EMAIL_FROM` and `APP_URL`, add the provider's SPF/DKIM
+  records and a DMARC record for bekvor.com, sign its AVV. The SMTP sender is
+  tested with a stubbed transport only; send one reset email on the first
+  deploy. **Or Resend:** create a Resend account, verify your sending domain
   (SPF/DKIM records), then set `RESEND_API_KEY`, `EMAIL_FROM` (e.g.
   `Bekvor <no-reply@yourdomain>`) and `APP_URL` (the public https
   address) in Vercel. Until then production says email isn't set up and sends

@@ -13,7 +13,7 @@ const globalForVerify = globalThis as unknown as { __rightswatchVerifyLimiter?: 
 export async function sendVerificationLink(userId: string): Promise<"SENT" | "ALREADY_VERIFIED" | "RATE_LIMITED" | "UNAVAILABLE"> {
   const sender = getEmailSender();
   const baseUrl = await getAppBaseUrl();
-  if (sender.mode !== "RESEND" || !baseUrl) return "UNAVAILABLE";
+  if (sender.mode === "OUTBOX" || !baseUrl) return "UNAVAILABLE";
 
   const limiter = (globalForVerify.__rightswatchVerifyLimiter ??= new InMemoryRateLimiter({ maxAttempts: 3 }));
   const store = getAuthStore();

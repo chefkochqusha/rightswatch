@@ -43,3 +43,35 @@ describe("email senders", () => {
     });
   });
 });
+
+describe("SMTP sender", () => {
+  test("sends from the configured address through the transport", async () => {
+    const { SmtpEmailSender } = await import("./smtp");
+    const sent: unknown[] = [];
+    const sender = new SmtpEmailSender(
+      { host: "smtp.example.eu", port: 587, user: "u", password: "p", from: "Bekvor <hello@bekvor.com>" },
+      () => ({ sendMail: async (m) => { sent.push(m); return {}; } }),
+    );
+    await sender.send({ to: "a@example.com", subject: "Hi", text: "Body" });
+    assert.equal(sender.mode, "SMTP");
+    assert.deepEqual(sent, [{ from: "Bekvor <hello@bekvor.com>", to: "a@example.com", subject: "Hi", text: "Body" }]);
+  });
+
+  test("says when the mail server refuses, without the password", async () => {
+    const { SmtpEmailSender } = await import("./smtp");
+    const sender = new SmtpEmailSender(
+      { host: "smtp.example.eu", port: 587, user: "u", password: "secret-pass", from: "x@bekvor.com" },
+      () => ({ sendMail: async () => { throw new Error("535 Authentication failed"); } }),
+    );
+    await assert.rejects(sender.send({ to: "a@example.com", subject: "s", text: "t" }), (e: Error) => /535/.test(e.message) && !/secret-pass/.test(e.message));
+  });
+
+  test("reads its settings from the environment, only when complete", async () => {
+    const { smtpSettingsFromEnv } = await import("./smtp");
+    assert.equal(smtpSettingsFromEnv({ SMTP_HOST: "smtp.example.eu" }), null, "no sender address");
+    assert.equal(smtpSettingsFromEnv({ SMTP_HOST: "h", EMAIL_FROM: "x@y", SMTP_PORT: "99999" }), null);
+    assert.deepEqual(smtpSettingsFromEnv({ SMTP_HOST: " h ", EMAIL_FROM: "x@y", SMTP_USER: "u", SMTP_PASSWORD: "p" }), {
+      host: "h", port: 587, user: "u", password: "p", from: "x@y",
+    });
+  });
+});

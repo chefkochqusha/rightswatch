@@ -179,9 +179,11 @@ application code until a provider is chosen.
 ### Email
 
 `modules/email` defines an `EmailSender` with two implementations:
-`OutboxEmailSender` (keeps messages in memory; the default) and
-`ResendEmailSender`, chosen only when both `RESEND_API_KEY` and `EMAIL_FROM`
-are set (`app/_lib/email.ts`). Links in an email take their origin from
+`OutboxEmailSender` (keeps messages in memory; the default),
+`SmtpEmailSender` (any SMTP server, chosen when `SMTP_HOST` and `EMAIL_FROM`
+are set; TLS on 465, STARTTLS required otherwise — the own-server choice, so
+no single mail vendor is needed) and `ResendEmailSender` (when
+`RESEND_API_KEY` and `EMAIL_FROM` are set and SMTP isn't) (`app/_lib/email.ts`). Links in an email take their origin from
 `APP_URL` / `VERCEL_PROJECT_PRODUCTION_URL` in production, never from the
 request's Host header. Password reset and email confirmation send email. Invite links
 are still shown in-app for the inviter to copy, and in-app notifications
@@ -258,7 +260,13 @@ switched on by configuration alone. Setup and verification steps:
 
 ### Monitoring
 
-`SENTRY_DSN` is a placeholder in `.env.example`. Nothing reports to it yet.
+No monitoring service. `GET /api/health` answers `{ ok }` (200 or 503) for
+the container health check and any uptime monitor; with
+`Authorization: Bearer <HEALTH_TOKEN>` it also reports the database, the
+recognition service and the job queue (jobs waiting over 15 minutes, failures
+in the last day). The worker, the queue and the recognition service write one
+JSON line per event to stdout (`app/_lib/log.ts`), readable with
+`docker compose logs`. `SENTRY_DSN` stays an unused placeholder.
 
 ## Module-layer architecture
 
@@ -1116,7 +1124,10 @@ local development and never commit real values.
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank — demo connector used. Setting both switches every workspace except the public demo to the real one |
 | `JOB_RUNNER` | `inline` (default, Vercel) or `worker` (own server: Postgres job queue, worker and schedule in the server process) | `inline` on Vercel; `worker` in `deploy/compose.yml` |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
-| `SENTRY_DSN` | Monitoring | Blank — not wired up |
+| `SENTRY_DSN` | Monitoring | Blank — not used; `/api/health` and JSON logs instead |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Email through any SMTP server (preferred over Resend) | Blank |
+| `HEALTH_TOKEN` | Detailed `/api/health` answer | Blank |
+| `RECOGNIZER_URL`, `RECOGNIZER_TOKEN`, `UPLOAD_DIR`, `RECOGNITION_*` | Own song recognition (own server) | Set in `deploy/compose.yml`; blank on Vercel |
 | `DEMO_MODE` | Forces Demo Mode regardless of connector configuration | `"true"` |
 
 ## Known gaps and deliberately out-of-scope work

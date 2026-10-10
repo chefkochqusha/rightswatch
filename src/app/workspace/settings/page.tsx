@@ -3,6 +3,7 @@ import { dataModeFor } from "@/app/_lib/connector-mode";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
+import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
 import { getRecognitionMode } from "@/app/_lib/recognition";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
 import { canManageWorkspace } from "@/app/_lib/authorize";
@@ -80,7 +81,13 @@ export default async function SettingsPage() {
     {
       name: "Music in posts",
       what: "Identifies which song a post uses",
-      ...(isRealData
+      ...(isOwnRecognitionEnabled() && !isDemo
+        ? {
+            state: "Bekvor recognition",
+            tone: "ok" as const,
+            detail: "Bekvor's own recognition, on its own server. Add reference audio to your songs, then upload a post's video or sound and Bekvor finds which of your songs it uses. Post audio isn't fetched from TikTok automatically.",
+          }
+        : isRealData
         ? getRecognitionMode() === "AUDD"
           ? {
               state: "AudD",
@@ -101,7 +108,7 @@ export default async function SettingsPage() {
     {
       name: "Email",
       what: "Password reset emails",
-      ...(email.mode === "RESEND"
+      ...(email.mode !== "OUTBOX"
         ? { state: "Sending", tone: "ok" as const, detail: "Emails go out through the configured sender address." }
         : { state: "Not set up", tone: "off" as const, detail: "Nothing is sent yet. Invite links are shared by hand and password reset by email isn't available." }),
     },

@@ -1,19 +1,25 @@
 import { headers } from "next/headers";
-import { OutboxEmailSender, ResendEmailSender } from "@/modules/email";
+import { OutboxEmailSender, ResendEmailSender, SmtpEmailSender, smtpSettingsFromEnv } from "@/modules/email";
 import type { EmailSender } from "@/modules/email";
 
 /**
- * The email sender: Resend when `RESEND_API_KEY` and `EMAIL_FROM` are both
- * set, the in-memory outbox otherwise (nothing is sent). Same all-or-nothing
- * rule as the Stripe variables.
+ * The email sender: any SMTP server when `SMTP_HOST` and `EMAIL_FROM` are
+ * set (our own server's choice: any mail provider, no single vendor), else
+ * Resend when `RESEND_API_KEY` and `EMAIL_FROM` are set, else the in-memory
+ * outbox (nothing is sent).
  */
 const globalForEmail = globalThis as unknown as { __rightswatchEmail?: EmailSender };
 
 export function getEmailSender(): EmailSender {
   if (!globalForEmail.__rightswatchEmail) {
+    const smtp = smtpSettingsFromEnv(process.env);
     const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.EMAIL_FROM;
-    globalForEmail.__rightswatchEmail = apiKey && from ? new ResendEmailSender({ apiKey, from }) : new OutboxEmailSender();
+    globalForEmail.__rightswatchEmail = smtp
+      ? new SmtpEmailSender(smtp)
+      : apiKey && from
+        ? new ResendEmailSender({ apiKey, from })
+        : new OutboxEmailSender();
   }
   return globalForEmail.__rightswatchEmail;
 }
