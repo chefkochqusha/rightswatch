@@ -3,19 +3,23 @@
  * an arbitrary string — `log-in.ts` keeps two: one per email+IP pair and one
  * per IP across all emails.
  *
- * Not distributed: on Vercel each serverless instance keeps its own counts,
- * so this slows an attacker down rather than stopping one outright. A real
- * deployment moves it to Upstash Redis (RELEASE_CHECKLIST.md); this
- * interface is shaped so a `RedisRateLimiter` is a drop-in replacement with
- * no change to `log-in.ts` or the Server Action that calls it.
+ * Not distributed: on Vercel each serverless instance keeps its own counts.
+ * There the app uses the Postgres-backed limiter with the same interface
+ * (`app/_lib/rate-limit-store.ts`); callers always `await` its answers, so
+ * either one fits.
  */
 export interface RateLimiter {
   /** Records one failed attempt for `key`. */
-  recordFailure(key: string, now?: number): void;
+  recordFailure(key: string, now?: number): void | Promise<void>;
   /** Clears recorded failures for `key` — call on a successful login. */
-  reset(key: string): void;
+  reset(key: string): void | Promise<void>;
   /** Whether `key` is currently blocked, and for how much longer. */
-  isBlocked(key: string, now?: number): { blocked: boolean; retryAfterMs: number };
+  isBlocked(key: string, now?: number): RateLimitState | Promise<RateLimitState>;
+}
+
+export interface RateLimitState {
+  blocked: boolean;
+  retryAfterMs: number;
 }
 
 export interface RateLimiterOptions {

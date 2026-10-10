@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   // A full export reads the whole workspace: a few a hour is plenty.
-  const wait = spendRequest("data-export", session.user.id, { max: 5, windowMs: 60 * 60_000 });
+  const wait = await spendRequest("data-export", session.user.id, { max: 5, windowMs: 60 * 60_000, shared: true });
   if (wait !== null) {
     return new Response(`Too many exports. Try again in ${Math.ceil(wait / 60)} minutes.`, { status: 429, headers: { "Retry-After": String(wait), "Cache-Control": "no-store" } });
   }

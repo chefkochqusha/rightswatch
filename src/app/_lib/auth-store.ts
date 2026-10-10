@@ -1,4 +1,4 @@
-import { InMemoryRateLimiter } from "@/modules/auth";
+import { createRateLimiter } from "./rate-limit-store";
 import type {
   AccountRepository,
   MembershipRepository,
@@ -21,9 +21,8 @@ import {
  * `modules/auth` or the Server Actions depends on that — only on the
  * repository interfaces in `modules/auth/types.ts`.
  *
- * The two login rate limiters stay in memory, per serverless instance — see
- * `modules/auth/rate-limiter.ts` for what that does and doesn't stop, and
- * RELEASE_CHECKLIST.md for moving them to Upstash Redis.
+ * The rate limiters count in Postgres on Vercel and in memory on our own
+ * server (`rate-limit-store.ts`).
  */
 interface AuthStore {
   users: UserRepository;
@@ -50,9 +49,9 @@ export function getAuthStore(): AuthStore {
       memberships: new PrismaMembershipRepository(),
       accounts: new PrismaAccountRepository(),
       sessions: new PrismaSessionRepository(),
-      loginRateLimiter: new InMemoryRateLimiter(),
-      loginIpRateLimiter: new InMemoryRateLimiter({ maxAttempts: 30 }),
-      resetRateLimiter: new InMemoryRateLimiter({ maxAttempts: 3 }),
+      loginRateLimiter: createRateLimiter("login"),
+      loginIpRateLimiter: createRateLimiter("login-ip", { maxAttempts: 30 }),
+      resetRateLimiter: createRateLimiter("password-reset", { maxAttempts: 3 }),
     };
   }
   return globalForAuth.__rightswatchAuthStore;

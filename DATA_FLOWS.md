@@ -16,6 +16,7 @@ This is an engineering inventory, not legal advice.
 | Creators: TikTok username, display name, profile link, country, follower count | Creators (third parties, public data) | Postgres | The watchlist |
 | Posts: date, brand names, label, video link, territory, matched song | Creators (public data) | Postgres | Detections |
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |
+| Rate-limit counters: an HMAC of the email + IP address or the IP address, failure count, block time | Visitors, members | Postgres (`rate_limits`), on Vercel only | Brute-force and abuse defence. Not reversible without `SESSION_SECRET`; rows untouched for a day are removed |
 | Request logs (IP address, URL, time) | Visitors, members | Vercel (platform logs) | Operation, abuse defence |
 | Partner code, which workspaces signed up through it, commissions (amount, invoice id, payout date) | Partners (members who joined the programme) | Postgres | Partner programme payouts and bookkeeping |
 | Song fingerprints (landmark hashes, not playable), file name, length | The customer | Postgres | Own song recognition (our own server only) |

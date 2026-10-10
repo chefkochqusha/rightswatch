@@ -1,4 +1,5 @@
-import { InMemoryRateLimiter, sendEmailVerification, type RateLimiter } from "@/modules/auth";
+import { sendEmailVerification, type RateLimiter } from "@/modules/auth";
+import { createRateLimiter } from "./rate-limit-store";
 import { getAuthStore } from "./auth-store";
 import { getAppBaseUrl, getEmailSender } from "./email";
 import { getSessionSecret } from "./session-cookie";
@@ -15,7 +16,7 @@ export async function sendVerificationLink(userId: string): Promise<"SENT" | "AL
   const baseUrl = await getAppBaseUrl();
   if (sender.mode === "OUTBOX" || !baseUrl) return "UNAVAILABLE";
 
-  const limiter = (globalForVerify.__rightswatchVerifyLimiter ??= new InMemoryRateLimiter({ maxAttempts: 3 }));
+  const limiter = (globalForVerify.__rightswatchVerifyLimiter ??= createRateLimiter("email-verification", { maxAttempts: 3 }));
   const store = getAuthStore();
   const result = await sendEmailVerification(userId, {
     userRepository: store.users,

@@ -8,7 +8,7 @@ legal pages, cookies, emails, AI or uploads**, and add new rules here first.
 Engineering notes, not legal advice: the lawyer and the tax advisor have the
 last word.
 
-Last checked: 2026-10-10 (legal drafts in `legal/` for the lawyer: imprint, privacy policy, terms, AVV; imprint and privacy pages built from env; service emails; uploads: DSA, copyright, GDPR; product name Bekvor).
+Last checked: 2026-10-10 (signup limited per IP address, counted as an HMAC in Postgres: in the privacy texts and `DATA_FLOWS.md`; legal drafts in `legal/` for the lawyer: imprint, privacy policy, terms, AVV; imprint and privacy pages built from env; service emails; uploads: DSA, copyright, GDPR; product name Bekvor).
 
 ## Applies now
 

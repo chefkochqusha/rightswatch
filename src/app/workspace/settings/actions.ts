@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { changePassword, deleteOwnAccount, deleteWorkspace, InMemoryRateLimiter, MIN_PASSWORD_LENGTH } from "@/modules/auth";
+import { changePassword, deleteOwnAccount, deleteWorkspace, MIN_PASSWORD_LENGTH, type RateLimiter } from "@/modules/auth";
+import { createRateLimiter } from "@/app/_lib/rate-limit-store";
 import { cancelSubscription } from "@/modules/billing";
 import { recordAudit } from "@/app/_lib/audit-event";
 import { getReferralStore } from "@/app/_lib/referral-store";
@@ -58,9 +59,9 @@ export interface DeleteWorkspaceFormState {
 }
 
 // Password guesses on this form: 5 per 15 minutes per account (in memory, per instance, like the login limits).
-const globalForDelete = globalThis as unknown as { __rightswatchDeleteLimiter?: InMemoryRateLimiter };
+const globalForDelete = globalThis as unknown as { __rightswatchDeleteLimiter?: RateLimiter };
 function deleteLimiter() {
-  return (globalForDelete.__rightswatchDeleteLimiter ??= new InMemoryRateLimiter({ maxAttempts: 5, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 }));
+  return (globalForDelete.__rightswatchDeleteLimiter ??= createRateLimiter("delete", { maxAttempts: 5, windowMs: 15 * 60 * 1000, blockMs: 15 * 60 * 1000 }));
 }
 
 /**

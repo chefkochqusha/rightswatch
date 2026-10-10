@@ -66,8 +66,8 @@ export async function sendEmailVerification(userId: string, deps: SendVerificati
   if (user.emailVerifiedAt) return { ok: false, error: "ALREADY_VERIFIED" };
 
   const key = `verify-email:${userId}`;
-  if (deps.rateLimiter?.isBlocked(key).blocked) return { ok: false, error: "RATE_LIMITED" };
-  deps.rateLimiter?.recordFailure(key);
+  if ((await deps.rateLimiter?.isBlocked(key))?.blocked) return { ok: false, error: "RATE_LIMITED" };
+  await deps.rateLimiter?.recordFailure(key);
 
   const token = createEmailVerificationToken(user, deps.secret, deps.now);
   await deps.sendLink(user.email, deps.linkFor(token));

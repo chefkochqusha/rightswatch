@@ -610,9 +610,10 @@ listed under "Known gaps"):
   account out; now an attacker's failures block only the attacker's
   address, and a successful login never resets the per-IP count. The client
   IP is the first `x-forwarded-for` entry, which Vercel sets itself and
-  doesn't let clients spoof. Both limiters are per serverless instance; a
-  shared one needs Upstash Redis (`RELEASE_CHECKLIST.md`), and the interface
-  is already shaped for a drop-in `RedisRateLimiter`.
+  doesn't let clients spoof. On Vercel both count in Postgres
+  (`app/_lib/rate-limit-store.ts`), so they hold across serverless
+  instances; on our own server, in memory. Signups are limited to 20 per hour
+  per address the same way.
 - **Password reset** (`modules/auth/password-reset*.ts`,
   `/forgot-password`, `/reset-password`): the request page answers the same
   way whether or not the email exists, and sends a link with a signed,
@@ -1176,10 +1177,6 @@ reads as an oversight:
 - Multi-workspace membership — Phase 5 scope is one workspace per user;
   turning `current-user.ts` into a workspace picker is a bigger, riskier
   change than anything else on this list
-- Signup rate-limiting by IP — the host is settled now (Vercel), but a
-  per-process, in-memory limiter only sees one serverless instance's
-  traffic; this waits on the same shared store (Upstash Redis) the login
-  limiter should move to
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
 - Managing campaigns (§2, and §8's "group creators" and "assign

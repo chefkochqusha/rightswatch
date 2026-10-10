@@ -75,13 +75,15 @@ jobs:
         run: npm run build
       - name: Job queue against Postgres (5 workers, no double claims)
         run: npx tsx scripts/local-db/queue-check.mts
+      - name: Shared rate limits against Postgres (two instances, one count)
+        run: npx tsx scripts/local-db/rate-limit-check.mts
       - name: Test audio
         run: python e2e/make-audio.py
       - name: Start the recognition service and the app (worker mode)
         run: |
           mkdir -p /tmp/uploads
           (cd services/recognizer && PORT=8090 nohup python server.py > /tmp/recognizer.log 2>&1 &)
-          JOB_RUNNER=worker RECOGNIZER_URL=http://127.0.0.1:8090 UPLOAD_DIR=/tmp/uploads \
+          JOB_RUNNER=worker RATE_LIMIT_STORE=postgres RECOGNIZER_URL=http://127.0.0.1:8090 UPLOAD_DIR=/tmp/uploads \
             nohup npx next start -p 3100 > /tmp/app.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://127.0.0.1:3100/api/health && break; sleep 2; done
           curl -sf http://127.0.0.1:3100/api/health

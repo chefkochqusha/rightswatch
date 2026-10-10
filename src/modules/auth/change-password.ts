@@ -25,13 +25,13 @@ export async function changePassword(
   deps: ChangePasswordDependencies,
 ): Promise<ChangePasswordResult> {
   const key = `change-password:${input.userId}`;
-  if (deps.rateLimiter?.isBlocked(key).blocked) return { ok: false, error: "RATE_LIMITED" };
+  if ((await deps.rateLimiter?.isBlocked(key))?.blocked) return { ok: false, error: "RATE_LIMITED" };
 
   const user = await deps.userRepository.findById(input.userId);
   if (!user) return { ok: false, error: "NO_SUCH_USER" };
 
   if (!(await verifyPassword(input.currentPassword, user.passwordHash))) {
-    deps.rateLimiter?.recordFailure(key);
+    await deps.rateLimiter?.recordFailure(key);
     return { ok: false, error: "WRONG_PASSWORD" };
   }
   if (input.newPassword.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "WEAK_PASSWORD" };

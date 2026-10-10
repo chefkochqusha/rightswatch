@@ -32,7 +32,7 @@ export async function deleteWorkspace(
   deps: DeleteWorkspaceDependencies,
 ): Promise<DeleteWorkspaceResult> {
   const key = `delete-workspace:${input.actorUserId}`;
-  if (deps.rateLimiter?.isBlocked(key).blocked) return { ok: false, error: "RATE_LIMITED" };
+  if ((await deps.rateLimiter?.isBlocked(key))?.blocked) return { ok: false, error: "RATE_LIMITED" };
 
   const workspace = await deps.workspaceRepository.findById(input.workspaceId);
   if (!workspace) return { ok: false, error: "NO_SUCH_WORKSPACE" };
@@ -42,7 +42,7 @@ export async function deleteWorkspace(
 
   const user = await deps.userRepository.findById(input.actorUserId);
   if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
-    deps.rateLimiter?.recordFailure(key);
+    await deps.rateLimiter?.recordFailure(key);
     return { ok: false, error: "WRONG_PASSWORD" };
   }
   if (input.confirmName.trim() !== workspace.name) return { ok: false, error: "NAME_MISMATCH" };

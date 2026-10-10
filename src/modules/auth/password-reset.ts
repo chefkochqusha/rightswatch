@@ -35,8 +35,8 @@ export async function requestPasswordReset(
   const email = input.email.trim().toLowerCase();
   if (!email) return { ok: true };
 
-  if (deps.rateLimiter?.isBlocked(email).blocked) return { ok: true };
-  deps.rateLimiter?.recordFailure(email);
+  if ((await deps.rateLimiter?.isBlocked(email))?.blocked) return { ok: true };
+  await deps.rateLimiter?.recordFailure(email);
 
   const user = await deps.userRepository.findByEmail(email);
   if (!user) return { ok: true };

@@ -63,8 +63,10 @@ Arbeitsbereichs.
 **Wozu:** Konto anlegen, Anmeldung, Rechte im Team, Nachvollziehbarkeit
 innerhalb des Arbeitsbereichs.
 **Rechtsgrundlage:** Art. 6 Abs. 1 lit. b DSGVO (Vertrag); für das
-Aktivitätsprotokoll und die Missbrauchsabwehr (Begrenzung von Anmeldeversuchen)
-Art. 6 Abs. 1 lit. f DSGVO.
+Aktivitätsprotokoll und die Missbrauchsabwehr (Begrenzung von Anmelde- und
+Registrierungsversuchen) Art. 6 Abs. 1 lit. f DSGVO. Für die Begrenzung speichern
+wir nur einen nicht umkehrbaren Code (HMAC) aus E-Mail-Adresse und IP-Adresse,
+der nach einem Tag ohne weitere Versuche gelöscht wird.
 **Wie lange:** Bis Sie Ihr Konto löschen oder der Arbeitsbereich gelöscht wird.
 Danach bleiben Daten bis zu [[7]] Tage in den Sicherungen des Datenbankanbieters,
 bis diese überschrieben werden. Notizen und Protokolleinträge bleiben beim

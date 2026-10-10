@@ -231,8 +231,8 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   is on. The Growth plan promises scans every 6 hours: Vercel's free plan
   allows only daily cron jobs, so either move to a paid Vercel plan and change
   the schedule in `vercel.json`, or change the plan wording.
-- [ ] **Upstash Redis** via the Vercel Marketplace — a login rate limit shared
-  across serverless instances (and a real job queue, if scans outgrow cron).
+- [x] ~~Upstash Redis~~ — not needed: shared rate limits live in Postgres
+  (2026-10-10, `SECURITY.md`), the job queue too.
 - [ ] **Custom domain** (optional).
 - [ ] **Fresh `SESSION_SECRET`** (still open: the current value is stored as a readable secret, so re-enter it as *Sensitive*): a new random value of at least 32 characters
   in Vercel (Settings → Environment Variables), then redeploy. Logs everyone

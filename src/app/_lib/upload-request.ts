@@ -72,7 +72,7 @@ export async function receiveUpload(
     if (reason) return refuse(403, reason);
   }
 
-  const wait = spendRequest("upload", session.user.id, { max: 60, windowMs: 3600_000 });
+  const wait = await spendRequest("upload", session.user.id, { max: 60, windowMs: 3600_000, shared: true });
   if (wait !== null) return refuse(429, "Too many uploads. Please wait a little.", { "Retry-After": String(wait) });
 
   const pending = await getPrisma().job.count({

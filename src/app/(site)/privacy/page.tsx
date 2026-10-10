@@ -82,8 +82,9 @@ export default function Page() {
         <p>
           Email address, name (optional), password (stored only as a scrypt hash), your role, the workspace name, your confirmation that you sign up
           for a business and are of age, login times and sessions, and entries in the workspace&apos;s activity log. We need them to run your
-          account and the team&apos;s permissions (Art. 6(1)(b) GDPR); the activity log and the limits on login attempts serve traceability and
-          abuse prevention (Art. 6(1)(f)).
+          account and the team&apos;s permissions (Art. 6(1)(b) GDPR); the activity log and the limits on login and sign-up attempts serve traceability and
+          abuse prevention (Art. 6(1)(f)). For those limits we keep only a one-way code of your email and IP address, removed after a day
+          without attempts.
         </p>
         <p>
           We keep them until you delete your account or the workspace is deleted. Backups are overwritten within days after that. Notes and log

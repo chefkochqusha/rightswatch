@@ -895,3 +895,19 @@ enum VatIdStatus {
   UNVERIFIED // the register doesn't know it
   UNAVAILABLE // the register couldn't be reached; Stripe asks again
 }
+
+/// Shared rate-limit counters (`app/_lib/rate-limit-store.ts`), used where the
+/// app runs as several instances (Vercel) so limits hold across all of them.
+/// Keys are stored only as an HMAC (they contain emails and addresses).
+model RateLimitCounter {
+  scope        String
+  keyHash      String
+  failures     Int       @default(0)
+  windowStart  DateTime
+  blockedUntil DateTime?
+  updatedAt    DateTime
+
+  @@id([scope, keyHash])
+  @@index([updatedAt])
+  @@map("rate_limits")
+}

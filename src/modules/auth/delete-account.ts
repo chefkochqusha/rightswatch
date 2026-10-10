@@ -27,7 +27,7 @@ export async function deleteOwnAccount(
   deps: DeleteAccountDependencies,
 ): Promise<DeleteAccountResult> {
   const key = `delete-account:${input.userId}`;
-  if (deps.rateLimiter?.isBlocked(key).blocked) return { ok: false, error: "RATE_LIMITED" };
+  if ((await deps.rateLimiter?.isBlocked(key))?.blocked) return { ok: false, error: "RATE_LIMITED" };
 
   const user = await deps.userRepository.findById(input.userId);
   if (!user) return { ok: false, error: "NO_SUCH_USER" };
@@ -36,7 +36,7 @@ export async function deleteOwnAccount(
   if (memberships.some((m) => m.role === "OWNER")) return { ok: false, error: "OWNER" };
 
   if (!(await verifyPassword(input.password, user.passwordHash))) {
-    deps.rateLimiter?.recordFailure(key);
+    await deps.rateLimiter?.recordFailure(key);
     return { ok: false, error: "WRONG_PASSWORD" };
   }
 

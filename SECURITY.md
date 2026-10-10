@@ -20,7 +20,7 @@ penetration test and not legal advice. Companion files: `DATA_FLOWS.md`,
 | User access | Every Server Action calls a role check (`requireCaseManager` / `requireWorkspaceManager` / `requireSession`); every repository lookup is scoped by `workspaceId`; the demo workspace is a view-only role. |
 | Admin routes | No separate admin area. Workspace owner/admin actions (billing, invites, full data export) need `requireWorkspaceManager`. |
 | API endpoints | `uploads/*` (see uploads below), `songs/search`, `reports/export` and `settings/export` need a session; the recognizer service needs a bearer token and is not published to the internet; `cron/scans` needs `CRON_SECRET` (constant-time); the Stripe webhook verifies the signature; `artwork` accepts only a MusicBrainz release id and raster image types. |
-| Rate limiting | Login (per email+IP and per IP), password reset, email verification, demo entry, workspace deletion, song search (40/min per member), artwork (120/min per address), data export (5/hour per member), uploads (60/hour per member, 10 waiting per workspace). In memory: shared on our own server (one process), per instance on Vercel. |
+| Rate limiting | Login (per email+IP and per IP), password reset, email verification, demo entry, workspace deletion, song search (40/min per member), artwork (120/min per address), data export (5/hour per member), uploads (60/hour per member, 10 waiting per workspace). In memory on our own server (one process); in Postgres on Vercel, except song search and artwork (`rate-limit-store.ts`). |
 | Forms / input | Server-side validation in every action (Zod or module checks); no `dangerouslySetInnerHTML`, `eval` or raw SQL anywhere. Prisma parameterises queries. CSV export neutralises formula cells. |
 | XSS | React escapes output; Content-Security-Policy with a per-request script nonce and `strict-dynamic`. Links that come from outside (TikTok video links, stored post links, profile links) are shown only when they are plain `https:` addresses (`httpsUrl`), so a `javascript:` or `data:` link never reaches an `href`. |
 | CSRF | Server Actions are POST-only and Next.js refuses them when the `Origin` header doesn't match the host; the cookie is SameSite=Lax. Nothing that changes data runs on GET (the exports only read, and write an activity-log line). A foreign page can start a download for a signed-in member but cannot read it. |
@@ -88,11 +88,17 @@ writing its outcome.
    the only automatic "fix" is a downgrade to Prisma 6, which is worse. Wait
    for Prisma 8; Dependabot will propose it. New dependency: `nodemailer`
    10.0.10 (MIT-0, picked as a release more than two weeks old).
-2. **Rate limits live in the app's memory.** On our own server there is one
-   app process, so every request shares the same limits. On Vercel each
-   serverless instance has its own and they only slow a script down. A
-   Postgres-backed limiter is only needed if the app ever runs as several
-   instances; no Redis is planned.
+2. ~~Rate limits live in the app's memory.~~ **Fixed 2026-10-10:** on Vercel
+   (or with `RATE_LIMIT_STORE=postgres`) login, password reset, email
+   confirmation, account deletion, the demo, uploads, data exports and the
+   "account exists" email count in Postgres (`rate_limits`, keys stored only as
+   an HMAC with `SESSION_SECRET`), so the limits hold across all instances. Our
+   own server keeps them in memory (one process). Song search and artwork stay
+   per instance on purpose: cheap reads, where a database write per request
+   would cost more than it protects. If the database can't be reached the
+   limiter lets requests through and logs `rate_limit.unavailable`. CI runs the
+   app with the Postgres limiter and checks it with two instances
+   (`scripts/local-db/rate-limit-check.mts`).
 3. **`SESSION_SECRET` stored as a readable secret** in Vercel. Re-enter a new
    32+ character value as *Sensitive* and redeploy (logs everyone out once).
 4. **Signup reveals whether an email is registered — only without email.**

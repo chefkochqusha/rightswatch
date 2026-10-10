@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signUp } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
@@ -9,7 +10,7 @@ import { getReferralStore } from "@/app/_lib/referral-store";
 import { recordReferral } from "@/modules/referrals";
 import { accountExistsEmail } from "@/modules/email";
 import { getAppBaseUrl, getEmailSender } from "@/app/_lib/email";
-import { spendRequest } from "@/app/_lib/request-limit";
+import { clientIpFrom, spendRequest } from "@/app/_lib/request-limit";
 
 export interface SignUpFormState {
   fieldErrors?: Partial<Record<"workspaceName" | "email" | "password" | "confirmBusiness", string>>;
@@ -38,6 +39,13 @@ export async function signUpAction(
     return { fieldErrors: { confirmBusiness: "Please confirm this is for business use and that you are at least 18." } };
   }
 
+  // New accounts per network address, counted across all instances: enough for
+  // an office signing up its team, not for a script creating accounts in bulk.
+  const wait = await spendRequest("signup-ip", clientIpFrom(await headers()), { max: 20, windowMs: 3600_000, shared: true });
+  if (wait !== null) {
+    return { fieldErrors: { email: `Too many sign-ups from this network. Try again in ${Math.ceil(wait / 60)} minutes.` } };
+  }
+
   const store = getAuthStore();
   const result = await signUp(
     { email, password, name: name || null, workspaceName },
@@ -57,7 +65,7 @@ export async function signUpAction(
   const canEmail = sender.mode !== "OUTBOX" && baseUrl !== null;
   if (canEmail && !result.ok && result.error === "EMAIL_ALREADY_REGISTERED") {
     const to = email.trim().toLowerCase();
-    if (spendRequest("account-exists-email", to, { max: 3, windowMs: 3600_000 }) === null) {
+    if ((await spendRequest("account-exists-email", to, { max: 3, windowMs: 3600_000, shared: true })) === null) {
       await sender
         .send(accountExistsEmail({ to, loginLink: `${baseUrl}/login`, resetLink: `${baseUrl}/forgot-password` }))
         .catch(() => undefined);

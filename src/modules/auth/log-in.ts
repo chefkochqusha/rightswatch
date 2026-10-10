@@ -51,10 +51,10 @@ export async function logIn(
   const clientIp = input.clientIp?.trim() || null;
   const accountKey = `${email}|${clientIp ?? "unknown"}`;
 
-  const statuses = [
+  const statuses = await Promise.all([
     deps.rateLimiter?.isBlocked(accountKey),
     clientIp ? deps.ipRateLimiter?.isBlocked(clientIp) : undefined,
-  ];
+  ]);
   const retryAfterMs = Math.max(0, ...statuses.map((s) => (s?.blocked ? s.retryAfterMs : 0)));
   if (retryAfterMs > 0) {
     return { ok: false, error: "RATE_LIMITED", retryAfterMs };
@@ -66,12 +66,12 @@ export async function logIn(
     : await simulatePasswordCheck(input.password);
 
   if (!user || !valid) {
-    deps.rateLimiter?.recordFailure(accountKey);
-    if (clientIp) deps.ipRateLimiter?.recordFailure(clientIp);
+    await deps.rateLimiter?.recordFailure(accountKey);
+    if (clientIp) await deps.ipRateLimiter?.recordFailure(clientIp);
     return { ok: false, error: "INVALID_CREDENTIALS" };
   }
 
-  deps.rateLimiter?.reset(accountKey);
+  await deps.rateLimiter?.reset(accountKey);
 
   if (needsRehash(user.passwordHash)) {
     try {

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/v1/artwo
   if (!RELEASE_ID.test(releaseId)) return new Response("Not found", { status: 404 });
 
   // Only requests that reach this server count: a cover already in the edge cache never gets here.
-  const wait = spendRequest("artwork", clientIpFrom(request.headers), { max: 120, windowMs: 60_000 });
+  const wait = await spendRequest("artwork", clientIpFrom(request.headers), { max: 120, windowMs: 60_000 });
   if (wait !== null) return new Response("Too many requests.", { status: 429, headers: { "Retry-After": String(wait), "Cache-Control": "no-store" } });
 
   let upstream: Response;

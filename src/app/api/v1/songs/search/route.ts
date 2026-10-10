@@ -44,7 +44,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   // MusicBrainz asks for about one request a second from a client; a member typing fast
   // stays well inside this, a script looping the endpoint does not.
-  const wait = spendRequest("song-search", session.user.id, { max: 40, windowMs: 60_000 });
+  const wait = await spendRequest("song-search", session.user.id, { max: 40, windowMs: 60_000 });
   if (wait !== null) {
     const limited = error(429, "RATE_LIMITED", `Too many searches. Try again in ${wait} second${wait === 1 ? "" : "s"}.`);
     limited.headers.set("Retry-After", String(wait));

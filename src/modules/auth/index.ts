@@ -84,4 +84,4 @@ export type {
 } from "./accept-invite";
 
 export { InMemoryRateLimiter } from "./rate-limiter";
-export type { RateLimiter, RateLimiterOptions } from "./rate-limiter";
+export type { RateLimiter, RateLimiterOptions, RateLimitState } from "./rate-limiter";
