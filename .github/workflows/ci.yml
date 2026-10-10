@@ -1,0 +1,102 @@
+# Every push and pull request: type check, lint, unit tests, recognizer tests,
+# then the whole system end to end (Postgres, recognition service, app with
+# the background worker, browser). Nothing here uses real secrets or real music.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Types, lint, unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npx eslint src
+      - run: npm test
+
+  recognizer:
+    name: Recognition service
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pip install -r services/recognizer/requirements.txt
+      - run: python -m unittest discover -s services/recognizer -p "test_*.py"
+
+  end-to-end:
+    name: End to end (Postgres, recognizer, worker, browser)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: [checks, recognizer]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bekvor
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bekvor
+      SESSION_SECRET: ci-only-session-secret-not-used-anywhere-else-0123456789
+      RECOGNIZER_TOKEN: ci-recognizer-token
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pip install -r services/recognizer/requirements.txt
+      - run: npm ci
+      - name: Schema, plans and production build
+        run: npm run build
+      - name: Job queue against Postgres (5 workers, no double claims)
+        run: npx tsx scripts/local-db/queue-check.mts
+      - name: Test audio
+        run: python e2e/make-audio.py
+      - name: Start the recognition service and the app (worker mode)
+        run: |
+          mkdir -p /tmp/uploads
+          (cd services/recognizer && PORT=8090 nohup python server.py > /tmp/recognizer.log 2>&1 &)
+          JOB_RUNNER=worker RECOGNIZER_URL=http://127.0.0.1:8090 UPLOAD_DIR=/tmp/uploads \
+            nohup npx next start -p 3100 > /tmp/app.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3100/api/health && break; sleep 2; done
+          curl -sf http://127.0.0.1:3100/api/health
+      - run: npx playwright install --with-deps chromium
+      - name: End-to-end checks
+        run: E2E_RECOGNITION=1 npm run test:e2e
+      - name: Uploads were deleted after reading
+        run: test -z "$(ls -A /tmp/uploads)"
+      - if: failure()
+        run: tail -n 200 /tmp/app.log /tmp/recognizer.log || true
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

@@ -10,6 +10,9 @@ import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { manualPostContent, parseManualPost, type ManualPostField } from "@/modules/connectors/manual-post";
 
 export interface AddPostState {
+  /** What was sent, so the form keeps it after an error (React resets a form after its action). */
+  values?: Record<"creatorId" | "url" | "publishedOn" | "brands" | "territory" | "label", string>;
+  attempt?: number;
   formError?: string;
   fieldErrors?: Partial<Record<ManualPostField | "creatorId", string>>;
   existing?: string;
@@ -21,7 +24,24 @@ export interface AddPostState {
  * be identified — by uploading its audio (own recognition) or by choosing
  * it. A post that's already there isn't added twice.
  */
-export async function addPostAction(_prev: AddPostState, formData: FormData): Promise<AddPostState> {
+export async function addPostAction(prev: AddPostState, formData: FormData): Promise<AddPostState> {
+  const result = await addPost(formData);
+  const field = (name: string) => String(formData.get(name) ?? "");
+  return {
+    ...result,
+    attempt: (prev.attempt ?? 0) + 1,
+    values: {
+      creatorId: field("creatorId"),
+      url: field("url"),
+      publishedOn: field("publishedOn"),
+      brands: field("brands"),
+      territory: field("territory"),
+      label: field("label"),
+    },
+  };
+}
+
+async function addPost(formData: FormData): Promise<AddPostState> {
   const session = await requireCaseManager();
   if (session.workspace.slug === DEMO_WORKSPACE_SLUG) return { formError: "The demo workspace's posts are fixed. Sign up to add your own." };
   const workspaceId = session.workspace.id;

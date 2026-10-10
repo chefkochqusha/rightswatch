@@ -12,7 +12,9 @@
     "db:push": "prisma db push",
     "db:local": "prisma dev --name rightswatch-local",
     "db:local:push": "node scripts/local-db/push-schema.mjs",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:recognizer": "python3 -m unittest discover -s services/recognizer -p \"test_*.py\""
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "5.3.0",
@@ -31,6 +33,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "20.19.43",
     "@types/pg": "8.23.1",
