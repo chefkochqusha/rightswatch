@@ -3,6 +3,7 @@ import { AuthShell } from "@/components/layout/auth-shell";
 import { verifyEmail } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
+import { getCurrentSession } from "@/app/_lib/current-user";
 
 export const metadata = { title: "Confirm your email — Bekvor", robots: { index: false } };
 
@@ -15,6 +16,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
   const { token } = await searchParams;
   const value = typeof token === "string" ? token : "";
   const result = value ? await verifyEmail(value, { userRepository: getAuthStore().users, secret: getSessionSecret() }) : { ok: false as const };
+  const signedIn = (await getCurrentSession()) !== null;
 
   return (
     <AuthShell
@@ -25,8 +27,8 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
           : "It may have expired or been altered. Log in and ask for a new one from the banner at the top of the app."
       }
       footer={
-        <Link href="/workspace" className="font-medium text-accent hover:underline">
-          Go to Bekvor
+        <Link href={signedIn ? "/workspace" : "/login"} className="font-medium text-accent hover:underline">
+          {signedIn ? "Go to Bekvor" : "Log in"}
         </Link>
       }
     >

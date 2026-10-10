@@ -40,10 +40,8 @@ function CopyLinkButton({ link }: { link: string }) {
  * session (see `page.tsx`), but `actions.ts`'s `requireAdmin` is the real
  * guard — this component doesn't re-check the role itself.
  *
- * Bekvor doesn't send invite emails yet (Master Brief scope; see
- * `modules/auth/invite-token.ts`), so on success this shows the raw link to
- * copy and send by hand instead — a stopgap that's honest about what's
- * actually wired up, the same call already made for the payment provider.
+ * When this server sends email, the invite is emailed; the link is shown
+ * either way, to copy and send by hand if the email doesn't arrive.
  */
 export function InviteForm() {
   const [state, formAction, pending] = useActionState(inviteTeammateAction, initialState);
@@ -108,8 +106,17 @@ export function InviteForm() {
       {inviteLink && (
         <div className="mt-4 rounded-md border border-line bg-surface-2 p-3">
           <p className="text-[0.8125rem] text-tx">
-            Invite created for <strong>{state.invitedEmail}</strong>. Copy this link and send it
-            to them yourself — it works for 7 days:
+            {state.emailed ? (
+              <>
+                We emailed the invite to <strong>{state.invitedEmail}</strong>. If it doesn&apos;t arrive, send them this link yourself.
+                It works for 7 days:
+              </>
+            ) : (
+              <>
+                Invite created for <strong>{state.invitedEmail}</strong>. Copy this link and send it to them yourself. It works for 7
+                days:
+              </>
+            )}
           </p>
           <div className="mt-2 flex gap-2">
             <input

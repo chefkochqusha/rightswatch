@@ -75,3 +75,33 @@ describe("SMTP sender", () => {
     });
   });
 });
+
+describe("email texts", () => {
+  test("invite names who, where, as what, and the link", async () => {
+    const { inviteEmail } = await import("./templates");
+    const m = inviteEmail({ to: "a@x.com", workspaceName: "Northstar", inviterName: "Lena", roleLabel: "Analyst", link: "https://bekvor.com/invite/accept?token=t" });
+    assert.equal(m.subject, "Lena invited you to Northstar on Bekvor");
+    assert.match(m.text, /as Analyst/);
+    assert.match(m.text, /invite\/accept\?token=t/);
+  });
+
+  test("new cases: count in the subject, at most ten listed, a way to turn it off, no legal claim", async () => {
+    const { newCasesEmail } = await import("./templates");
+    const cases = Array.from({ length: 12 }, (_, i) => ({ creatorUsername: `c${i}`, verdict: "Potential mismatch", link: `https://b/i/${i}` }));
+    const m = newCasesEmail({ to: "a@x.com", workspaceName: "W", cases, casesLink: "https://b/cases", settingsLink: "https://b/settings" });
+    assert.equal(m.subject, "12 new cases in W");
+    assert.match(m.text, /and 2 more/);
+    assert.doesNotMatch(m.text, /c10/);
+    assert.match(m.text, /Turn these emails off in Settings: https:\/\/b\/settings/);
+    assert.match(m.text, /not a legal finding/);
+    assert.doesNotMatch(m.text, /infring/i);
+    assert.equal(newCasesEmail({ to: "a", workspaceName: "W", cases: cases.slice(0, 1), casesLink: "x", settingsLink: "y" }).subject, "1 new case in W");
+  });
+
+  test("account exists: login and reset links, nothing changed", async () => {
+    const { accountExistsEmail } = await import("./templates");
+    const m = accountExistsEmail({ to: "a@x.com", loginLink: "https://b/login", resetLink: "https://b/forgot-password" });
+    assert.match(m.text, /https:\/\/b\/login/);
+    assert.match(m.text, /Nothing about your account changed/);
+  });
+});

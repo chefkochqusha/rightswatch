@@ -186,9 +186,14 @@ are set; TLS on 465, STARTTLS required otherwise — the own-server choice, so
 no single mail vendor is needed) and `ResendEmailSender` (when
 `RESEND_API_KEY` and `EMAIL_FROM` are set and SMTP isn't) (`app/_lib/email.ts`). Links in an email take their origin from
 `APP_URL` / `VERCEL_PROJECT_PRODUCTION_URL` in production, never from the
-request's Host header. Password reset and email confirmation send email. Invite links
-are still shown in-app for the inviter to copy, and in-app notifications
-are the only notification channel (see "Notifications" below). A
+request's Host header. Emails (`modules/email/templates.ts`, service emails
+only, nothing promotional): password reset, email confirmation, invites
+(also shown in-app to copy), "you already have an account" (signup never
+reveals whether an address is registered when email is on; both paths end on
+`/signup/check-email`), and new cases — one email per run to owners, admins
+and analysts (`app/_lib/case-alerts.ts`), off per person in Settings
+(`NotificationPreference`, channel "email"). In-app notifications come
+either way. A
 domain-verified sender address is part of `RELEASE_CHECKLIST.md`.
 
 **Deleting a workspace (GDPR Art. 17).** Settings has a "Delete workspace"
@@ -1159,9 +1164,6 @@ reads as an oversight:
 **Deliberately not built — would be speculative scope today:**
 - `PlanEntitlement` / `UsageRecord` (billing) — no concrete entitlement or
   usage rollup exists yet to populate them with
-- `NotificationPreference`, and an email notification channel — only one
-  channel exists, so there's nothing to toggle between, and no
-  email-sending mechanism exists to add a second channel with
 - `CaseEvidence` file attachments — no object-storage decision yet
 - Multi-workspace membership — Phase 5 scope is one workspace per user;
   turning `current-user.ts` into a workspace picker is a bigger, riskier
@@ -1170,9 +1172,6 @@ reads as an oversight:
   per-process, in-memory limiter only sees one serverless instance's
   traffic; this waits on the same shared store (Upstash Redis) the login
   limiter should move to
-- Signup is still the one place that reveals whether an email is
-  registered (Brief §17 asks for it not to; fixing it means signing up
-  without saying so, which needs working email first)
 - Revoking an invite link before it expires — needs an `Invite` table the
   schema doesn't have; links are stateless and expire after 7 days
 - Managing campaigns (§2, and §8's "group creators" and "assign

@@ -11,6 +11,7 @@ import { getAuthStore } from "@/app/_lib/auth-store";
 import { getBillingStore } from "@/app/_lib/billing-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
+import { setEmailAlerts } from "@/app/_lib/case-alerts";
 import { clearSessionCookie, setSessionCookie } from "@/app/_lib/session-cookie";
 
 export interface ChangePasswordFormState {
@@ -168,4 +169,12 @@ export async function joinPartnerAction(_prev: JoinPartnerFormState, formData: F
   await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "partner.joined", targetType: "user", targetId: session.user.id });
   revalidatePath("/workspace/settings");
   return {};
+}
+
+/** "Email me about new cases" on or off, for the signed-in person. */
+export async function setEmailAlertsAction(formData: FormData): Promise<void> {
+  const session = await requireSession();
+  if (session.workspace.slug === DEMO_WORKSPACE_SLUG) return;
+  await setEmailAlerts(session.user.id, formData.get("enabled") === "on");
+  revalidatePath("/workspace/settings");
 }

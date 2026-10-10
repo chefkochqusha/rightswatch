@@ -95,8 +95,12 @@ writing its outcome.
    instances; no Redis is planned.
 3. **`SESSION_SECRET` stored as a readable secret** in Vercel. Re-enter a new
    32+ character value as *Sensitive* and redeploy (logs everyone out once).
-4. **Signup reveals whether an email is registered.** Fixing it means
-   confirming by email first, which needs Resend (RELEASE_CHECKLIST.md).
+4. **Signup reveals whether an email is registered — only without email.**
+   With email set up (SMTP or Resend), every signup ends on "check your
+   inbox": a new address gets the confirmation link and logs in after
+   confirming, an existing one gets "you already have an account" (at most 3
+   an hour per address). Without email the form still says the address is
+   taken.
 5. **CSP allows inline styles.** React's `style=""` attributes can't carry a
    nonce, and a style can't run code. Scripts are the part that matters.
 6. **Spend limits (needs the Pro plan).** Set a spend limit with pause in Vercel (Spend Management is not available on Hobby, and Hobby is non-commercial only), and turn on its

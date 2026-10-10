@@ -5,6 +5,8 @@ import { getCaseStore } from "./case-store";
 import { getNotificationStore } from "./notification-store";
 import { getAuthStore } from "./auth-store";
 import { getAuditStore } from "./audit-store";
+import { sendNewCaseAlerts } from "./case-alerts";
+import { DEMO_WORKSPACE_SLUG } from "./demo-constants";
 
 /**
  * Case Creation (Brief §51): a case for every assessed item the Rights
@@ -29,6 +31,7 @@ export async function openCasesForFlaggedItems(
   const recipientUserIds = memberships.map((m) => m.userId);
 
   let opened = 0;
+  const openedCases: { contentId: string; creatorUsername: string; status: string }[] = [];
   for (const item of items) {
     if (item.kind !== "ASSESSED" || item.assessment.status === "CLEARED") continue;
 
@@ -38,6 +41,7 @@ export async function openCasesForFlaggedItems(
     );
     if (!result.created) continue;
     opened += 1;
+    openedCases.push({ contentId: item.content.externalContentId, creatorUsername: item.creatorUsername, status: item.assessment.status });
 
     await notifyCaseOpened(
       {
@@ -62,5 +66,8 @@ export async function openCasesForFlaggedItems(
       targetId: result.case.id,
     });
   }
+  // Not for the public demo workspace: nobody there wants mail.
+  const workspace = await getAuthStore().workspaces.findById(workspaceId);
+  if (workspace && workspace.slug !== DEMO_WORKSPACE_SLUG) await sendNewCaseAlerts(workspaceId, openedCases);
   return opened;
 }

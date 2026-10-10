@@ -4,6 +4,7 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
 import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
+import { emailAlertsEnabled } from "@/app/_lib/case-alerts";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
 import { canManageWorkspace } from "@/app/_lib/authorize";
 import { buttonStyles } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { JoinPartnerForm, PartnerLink } from "./partner-section";
 import { DeleteAccountForm } from "./delete-account-form";
 import { DeleteWorkspaceForm } from "./delete-workspace-form";
 import { PasswordForm } from "./password-form";
+import { setEmailAlertsAction } from "./actions";
 
 export const metadata = {
   title: "Settings — Bekvor",
@@ -52,6 +54,7 @@ export default async function SettingsPage() {
   const payments = getBillingStore().mode;
 
   const isRealData = dataModeFor(session.workspace) === "REAL";
+  const emailAlerts = await emailAlertsEnabled(session.user.id);
 
   // Partner programme: link, referrals and commissions of the signed-in person.
   const referralStore = getReferralStore().referrals;
@@ -148,6 +151,22 @@ export default async function SettingsPage() {
           <dt className="text-t2">Role</dt>
           <dd className="text-tx">{ROLE_LABELS[session.role]}</dd>
         </dl>
+
+        {!isDemo && session.role !== "VIEWER" && (
+          <div id="email-alerts" className="mt-6 scroll-mt-8 rounded-lg border border-line bg-surface p-5">
+            <h3 className="text-sm font-semibold">Email about new cases</h3>
+            <p className="mt-1 text-[0.8125rem] text-t2">
+              {email.mode === "OUTBOX"
+                ? "This server doesn't send email yet. Once it does, you get one email when a scan or a check opens new cases."
+                : "One email when a scan or a check opens new cases, with a link to each. Notifications in the app come either way."}
+            </p>
+            <form action={setEmailAlertsAction} className="mt-3 flex items-center gap-3">
+              <input id="email-alerts-enabled" name="enabled" type="checkbox" defaultChecked={emailAlerts} className="h-4 w-4 accent-accent" />
+              <label htmlFor="email-alerts-enabled" className="text-sm">Email me when new cases open</label>
+              <button type="submit" className={buttonStyles("secondary", "sm")}>Save</button>
+            </form>
+          </div>
+        )}
 
         <div className="mt-6 rounded-lg border border-line bg-surface p-5">
           <h3 className="text-sm font-semibold">Change password</h3>
