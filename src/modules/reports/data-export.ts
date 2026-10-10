@@ -20,7 +20,7 @@ export interface DataExport {
 }
 
 const WORKSPACE_NOTES = [
-  "Everything the workspace holds that a person can see in the product: members, creators, songs and rights records, reference audio and audio checks, detections, cases and notes, activity log, plan.",
+  "Everything the workspace holds that a person can see in the product: members, creators, songs and rights records, reference audio and audio checks, detections, cases and notes, activity log, plan, company details for invoices.",
   "Reference audio is listed by its details only: the fingerprint itself is a machine format that can't be played back, and the uploaded recordings and post files are deleted after reading.",
   "Not included: password hashes and session tokens (never exported), payment details (held by Stripe, not by Bekvor), and the raw answers of the TikTok service.",
   "Detections are the report rows, one per post with a song in it, as in the CSV report for all time.",

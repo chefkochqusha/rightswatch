@@ -40,6 +40,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "team.invited": "Invited a teammate",
   "billing.plan_chosen": "Chose a plan",
   "billing.canceled": "Cancelled the subscription",
+  "billing.details_updated": "Updated the company details for invoices",
   "data.exported": "Downloaded workspace data",
   "account.deleted": "A member deleted their account",
   "partner.joined": "Joined the partner programme",

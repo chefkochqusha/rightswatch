@@ -12,6 +12,7 @@ This is an engineering inventory, not legal advice.
 | Email, name, password hash (scrypt), role | Team members (customers' staff) | Postgres (Neon) | Login, roles |
 | Session rows (hashed id, expiry) | Team members | Postgres | Logout, revocation. Valid 7 days |
 | Workspace name, plan, subscription status | The customer | Postgres, Stripe | Accounts, billing |
+| Company name, billing address, VAT ID and its VIES result | The customer (a business; a sole trader's name is personal data) | Postgres (`billing_profiles`), Stripe customer | Invoices (§ 14 UStG), the B2B check; Stripe asks VIES about EU VAT IDs |
 | Creators: TikTok username, display name, profile link, country, follower count | Creators (third parties, public data) | Postgres | The watchlist |
 | Posts: date, brand names, label, video link, territory, matched song | Creators (public data) | Postgres | Detections |
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |

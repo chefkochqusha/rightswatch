@@ -6,14 +6,39 @@ import { getCreatorStore } from "@/app/_lib/creator-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { SubscriptionStatusBadge } from "@/components/billing/subscription-status-badge";
 import { formatPlanPrice, SCAN_CADENCE_LABELS } from "@/components/billing/labels";
-import { LOYALTY, PLAN_CATALOG, TRIAL_LENGTH_DAYS, annualPriceCents, isMockCustomerId, loyaltyStatus, monthOfMaxDiscount, monthlyPriceCents } from "@/modules/billing";
+import { BILLING_COUNTRIES, LOYALTY, PLAN_CATALOG, TRIAL_LENGTH_DAYS, annualPriceCents, isEuCountry, isMockCustomerId, loyaltyStatus, monthOfMaxDiscount, monthlyPriceCents } from "@/modules/billing";
+import type { VatIdStatus } from "@/modules/billing";
+import { findBillingProfile } from "@/app/_lib/billing-profile";
 import { choosePlanAction, cancelSubscriptionAction, openBillingPortalAction } from "./actions";
+import { BillingDetailsForm } from "./billing-details-form";
 
 export const metadata = {
   title: "Billing — Bekvor",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+const COUNTRY_OPTIONS = BILLING_COUNTRIES.map((code) => ({ code, name: countryNames.of(code) ?? code, eu: isEuCountry(code) })).sort(
+  (a, b) => Number(b.eu) - Number(a.eu) || a.name.localeCompare(b.name, "en"),
+);
+
+/** What the EU VAT register (VIES, asked by Stripe) said about the VAT ID. */
+function vatIdStatusText(status: VatIdStatus, stripeMode: boolean): { text: string; tone: string } | null {
+  switch (status) {
+    case "VERIFIED":
+      return { text: "Confirmed by the EU VAT register.", tone: "text-cleared" };
+    case "PENDING":
+      return { text: "Being checked with the EU VAT register.", tone: "text-t2" };
+    case "UNVERIFIED":
+      return { text: "The EU VAT register doesn\u2019t know this number. Please check it and save it again.", tone: "text-mismatch" };
+    case "UNAVAILABLE":
+      return { text: "The EU VAT register couldn\u2019t be reached; it\u2019s asked again automatically.", tone: "text-unknown" };
+    case "FORMAT_OK":
+      return { text: stripeMode ? "Format checked." : "Format checked. It\u2019s checked with the EU VAT register once real billing is on.", tone: "text-t2" };
+    default:
+      return null;
+  }
+}
 
 /**
  * The real workspace's plan/subscription page (Master Brief §18–20). The
@@ -41,6 +66,8 @@ export default async function BillingPage() {
   const trackedCreators = await getCreatorStore().creators.countMonitored(session.workspace.id);
   const memberCount = (await getAuthStore().memberships.findForWorkspace(session.workspace.id)).length;
   const loyalty = subscription && !isCanceled ? loyaltyStatus(subscription, new Date()) : null;
+  const profile = await findBillingProfile(session.workspace.id);
+  const vatStatus = profile ? vatIdStatusText(profile.vatIdStatus, isStripeMode) : null;
 
   return (
     <div>
@@ -58,6 +85,70 @@ export default async function BillingPage() {
             ? "This is how plans look in a workspace. In the public demo you can look but not change anything."
             : "Plans, trials, switching and cancelling all work, but no payment is taken and no invoices exist. Real billing through Stripe turns on once it\u2019s connected."}
         </p>
+      )}
+
+      {/* The public demo has no company behind it: nothing to show. */}
+      {!(session.workspace.slug === DEMO_WORKSPACE_SLUG && !profile) && (
+      <section aria-labelledby="company-details" className="mt-6 rounded-lg border border-line bg-surface p-5">
+        <h2 id="company-details" className="text-sm font-semibold">
+          Company details for invoices
+        </h2>
+        {profile ? (
+          <>
+            <address className="mt-3 text-[0.8125rem] leading-relaxed not-italic text-tx">
+              {profile.companyName}
+              <br />
+              {profile.addressLine1}
+              {profile.addressLine2 && (
+                <>
+                  <br />
+                  {profile.addressLine2}
+                </>
+              )}
+              <br />
+              {profile.postalCode} {profile.city}, {countryNames.of(profile.country) ?? profile.country}
+            </address>
+            {profile.vatId && (
+              <p className="mt-2 text-[0.8125rem] text-t2">
+                VAT ID <span className="text-tx">{profile.vatId}</span>
+                {vatStatus && <span className={`ml-1.5 ${vatStatus.tone}`}>{vatStatus.text}</span>}
+                {profile.vatIdStatus === "VERIFIED" && profile.vatIdVerifiedName && (
+                  <span className="block">Registered to: {profile.vatIdVerifiedName}</span>
+                )}
+              </p>
+            )}
+            {canManage && (
+              <details className="mt-4">
+                <summary className="cursor-pointer text-[0.8125rem] font-medium text-accent">Change company details</summary>
+                <div className="mt-4">
+                  <BillingDetailsForm
+                    defaults={{
+                      companyName: profile.companyName,
+                      addressLine1: profile.addressLine1,
+                      addressLine2: profile.addressLine2,
+                      postalCode: profile.postalCode,
+                      city: profile.city,
+                      country: profile.country,
+                      vatId: profile.vatId,
+                    }}
+                    countries={COUNTRY_OPTIONS}
+                  />
+                </div>
+              </details>
+            )}
+          </>
+        ) : canManage ? (
+          <>
+            <p className="mt-1 mb-5 text-[0.8125rem] text-t2">
+              Bekvor is for businesses only. Invoices are made out to these details; a VAT ID from another EU country is checked with the EU VAT
+              register.
+            </p>
+            <BillingDetailsForm defaults={{}} countries={COUNTRY_OPTIONS} />
+          </>
+        ) : (
+          <p className="mt-1 text-[0.8125rem] text-t2">An owner or admin adds the company details before choosing a plan.</p>
+        )}
+      </section>
       )}
 
       {subscription && currentPlan && (
@@ -219,6 +310,8 @@ export default async function BillingPage() {
                     ? `You monitor ${trackedCreators} creators. Pause or remove some to switch to ${plan.name}.`
                     : `Your team has ${memberCount} members; ${plan.name} has ${plan.seatCap} ${plan.seatCap === 1 ? "seat" : "seats"}.`}
                 </p>
+              ) : canManage && !profile ? (
+                <p className="mt-5 text-[0.8125rem] text-t2">Add your company details above to start a trial.</p>
               ) : canManage ? (
                 <form action={choosePlanAction} className="mt-5 grid gap-2">
                   <input type="hidden" name="planTier" value={plan.tier} />
@@ -235,7 +328,7 @@ export default async function BillingPage() {
                           current
                             ? "w-full rounded-full bg-hover px-4 py-2 text-sm font-medium text-t2"
                             : interval === "MONTHLY"
-                              ? "w-full rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
+                              ? "w-full rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-accent-strong"
                               : "w-full rounded-full border border-line px-4 py-2 text-sm font-medium text-tx hover:bg-hover"
                         }
                       >

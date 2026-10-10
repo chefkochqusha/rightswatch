@@ -124,6 +124,25 @@ latest → Redeploy. From that deployment on, billing runs on Stripe.
   coupon on each `invoice.upcoming`. Until then, don't take real monthly
   payments: what the page promises and what Stripe charges would differ.
 
+### 7. Company details and VAT IDs (added 2026-10-10)
+
+- The billing page asks for company name, address and (for EU customers
+  outside Germany, required) the VAT ID before the first plan. They're stored
+  in `billing_profiles` and put on the Stripe customer (`name`, `address`, a
+  tax ID of type `eu_vat`, `gb_vat`, `ch_vat` or `no_vat`) when the plan
+  creates the customer and whenever they change
+  (`modules/billing/stripe-billing-details.ts`).
+- Stripe checks `eu_vat` numbers with VIES. **Webhook events:** add
+  `customer.tax_id.created` and `customer.tax_id.updated` to the destination;
+  the result ("Confirmed by the EU VAT register", "doesn't know this number",
+  "couldn't be reached") then shows on the billing page.
+- **Customer portal:** leave customer information (name, address, tax IDs)
+  *not* editable there. Bekvor's billing page is where they're changed;
+  edits in the portal wouldn't come back.
+- Tax rates and the reverse-charge note on invoices are Stripe settings
+  (Stripe Tax or manual tax rates), decided with the tax advisor
+  (`RELEASE_CHECKLIST.md`). The app doesn't set `tax_exempt`.
+
 ## Checking that it works
 
 1. `/workspace/billing` no longer shows the "Demo billing" notice.

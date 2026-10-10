@@ -55,6 +55,13 @@ export interface HandleStripeWebhookDependencies {
    * Optional: without it invoices are only acknowledged.
    */
   onInvoicePaid?: (invoice: { workspaceId: string; invoiceId: string; amountCents: number; paidAt: Date }) => Promise<string>;
+  /**
+   * A customer's tax ID was created or its check against the EU VAT register
+   * (VIES) finished (`customer.tax_id.created` / `.updated`). Gets Stripe's
+   * tax ID id and verification; returns the outcome for the log. Optional:
+   * without it these events are only acknowledged.
+   */
+  onTaxIdUpdated?: (taxId: { stripeTaxIdId: string; verification: Stripe.TaxId["verification"] }) => Promise<string>;
   now?: () => Date;
 }
 
@@ -137,6 +144,10 @@ export async function handleStripeWebhook(
     let outcome = "acknowledged";
     if (event.type === "invoice.paid" && deps.onInvoicePaid) {
       outcome = await handleInvoicePaid(event.data.object as Stripe.Invoice, deps, deps.onInvoicePaid);
+    }
+    if ((event.type === "customer.tax_id.created" || event.type === "customer.tax_id.updated") && deps.onTaxIdUpdated) {
+      const taxId = event.data.object as Stripe.TaxId;
+      outcome = await deps.onTaxIdUpdated({ stripeTaxIdId: taxId.id, verification: taxId.verification });
     }
     if (snapshot) {
       const current = deps.retrieveSubscription

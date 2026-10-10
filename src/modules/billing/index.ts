@@ -74,3 +74,8 @@ export type {
   CancelSubscriptionDependencies,
   CancelSubscriptionResult,
 } from "./cancel-subscription";
+
+export { BILLING_COUNTRIES, EU_VAT_PREFIX, HOME_COUNTRY, isEuCountry, normalizeVatId, parseBillingDetails, stripeTaxIdType, taxSituation } from "./billing-details";
+export type { BillingDetails, BillingDetailsField, ParseBillingDetailsResult, TaxSituation } from "./billing-details";
+export { syncStripeBillingDetails, vatIdStatusFromStripe } from "./stripe-billing-details";
+export type { StripeBillingSyncResult, VatIdStatus } from "./stripe-billing-details";

@@ -95,6 +95,7 @@ model Workspace {
   fingerprints  TrackFingerprint[]
   audioChecks   AudioCheck[]
   referral      Referral?
+  billingProfile BillingProfile?
 
   @@map("workspaces")
 }
@@ -857,4 +858,40 @@ model AudioCheck {
 
   @@index([workspaceId, contentId, createdAt])
   @@map("audio_checks")
+}
+
+/// Who invoices are made out to (§ 14 (4) UStG) and the VAT ID for
+/// reverse-charge invoices (§ 14a (1) UStG). Required before the first plan,
+/// which is also the check that the customer is a business. One per workspace.
+model BillingProfile {
+  workspaceId  String        @id
+  companyName  String
+  addressLine1 String
+  addressLine2 String?
+  postalCode   String
+  city         String
+  /// ISO 3166-1 alpha-2
+  country      String
+  /// Normalised ("DE123456789"); null when the customer has none.
+  vatId        String?
+  vatIdStatus  VatIdStatus   @default(NONE)
+  /// The name the EU VAT register returned, when it returned one.
+  vatIdVerifiedName String?
+  /// Stripe's id for the tax ID object on the customer, to replace it when the VAT ID changes.
+  stripeTaxIdId String?
+  updatedAt    DateTime      @updatedAt
+  updatedById  String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("billing_profiles")
+}
+
+enum VatIdStatus {
+  NONE // no VAT ID given
+  FORMAT_OK // shape checked; not checked against the register (demo billing, or a country Stripe can't check)
+  PENDING // Stripe is asking the EU VAT register
+  VERIFIED // the register knows it
+  UNVERIFIED // the register doesn't know it
+  UNAVAILABLE // the register couldn't be reached; Stripe asks again
 }

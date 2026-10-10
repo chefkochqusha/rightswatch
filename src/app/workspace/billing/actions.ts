@@ -13,8 +13,10 @@ import {
   cancelSubscription,
   createStripeBillingPortalSession,
   isMockCustomerId,
+  parseBillingDetails,
 } from "@/modules/billing";
-import type { PlanTier } from "@/modules/billing";
+import type { BillingDetailsField, PlanTier } from "@/modules/billing";
+import { findBillingProfile, saveBillingProfile, syncBillingProfileToStripe } from "@/app/_lib/billing-profile";
 
 const PLAN_TIERS: PlanTier[] = ["SOLO", "STARTER", "GROWTH", "AGENCY"];
 
@@ -34,6 +36,13 @@ export async function choosePlanAction(formData: FormData) {
   const interval = formData.get("billingInterval") === "ANNUAL" ? "ANNUAL" : "MONTHLY";
   const session = await requireWorkspaceManager();
   const store = getBillingStore();
+
+  // Invoices need the company's name and address, and asking for them is how
+  // "businesses only" gets checked (LEGAL_DE.md). The page asks first; this
+  // refuses a request that skipped it.
+  if (!(await findBillingProfile(session.workspace.id))) {
+    throw new Error("Add your company details before choosing a plan.");
+  }
 
   // A plan smaller than what's already monitored would leave creators over
   // its limit (Brief §19). The page doesn't offer that switch; this refuses
@@ -61,6 +70,8 @@ export async function choosePlanAction(formData: FormData) {
       paymentProvider: store.paymentProvider,
     },
   );
+  // A new Stripe customer gets the company details and VAT ID now.
+  await syncBillingProfileToStripe(session.workspace.id);
   await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "billing.plan_chosen", targetType: "plan", targetId: rawTier, metadata: { interval } });
   revalidatePath("/workspace", "layout");
 }
@@ -103,4 +114,36 @@ export async function openBillingPortalAction() {
 
   // Outside any try/catch, per the `redirect` docs: it works by throwing.
   redirect(url);
+}
+
+const BILLING_FIELDS: BillingDetailsField[] = ["companyName", "addressLine1", "addressLine2", "postalCode", "city", "country", "vatId"];
+
+export interface BillingDetailsState {
+  /** Changes on every submit, so the form remounts with `values`. */
+  attempt?: number;
+  values?: Partial<Record<BillingDetailsField, string>>;
+  fieldErrors?: Partial<Record<BillingDetailsField, string>>;
+  saved?: boolean;
+}
+
+/** The company details form on the billing page (owners and admins). */
+export async function saveBillingDetailsAction(_previous: BillingDetailsState, formData: FormData): Promise<BillingDetailsState> {
+  const session = await requireWorkspaceManager();
+  const values = Object.fromEntries(BILLING_FIELDS.map((field) => [field, String(formData.get(field) ?? "")]));
+  const attempt = Date.now();
+  const parsed = parseBillingDetails(values);
+  if (!parsed.ok) return { attempt, values, fieldErrors: parsed.errors };
+
+  await saveBillingProfile({ workspaceId: session.workspace.id, details: parsed.details, actorId: session.user.id });
+  // No address or VAT ID in the log: which fields changed is enough to trace it.
+  await recordAudit({
+    workspaceId: session.workspace.id,
+    actorId: session.user.id,
+    action: "billing.details_updated",
+    targetType: "workspace",
+    targetId: session.workspace.id,
+    metadata: { country: parsed.details.country, vatId: parsed.details.vatId ? "given" : "none" },
+  });
+  revalidatePath("/workspace/billing");
+  return { attempt, saved: true };
 }

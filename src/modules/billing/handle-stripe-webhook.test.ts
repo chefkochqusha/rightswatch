@@ -457,3 +457,31 @@ describe("handleStripeWebhook: invoice.paid (partner commissions)", () => {
     assert.equal(called, false);
   });
 });
+
+describe("handleStripeWebhook: customer.tax_id.* (VAT ID check)", () => {
+  function taxIdEvent(id: string, type: string, status: string) {
+    return {
+      id, object: "event", type, api_version: "2025-03-31.basil", created: 1_790_000_000,
+      livemode: false, pending_webhooks: 1, request: { id: null, idempotency_key: null },
+      data: { object: { id: "txi_1", object: "tax_id", type: "eu_vat", value: "FR12345678901", verification: { status, verified_name: "ACME SARL", verified_address: null } } },
+    };
+  }
+
+  test("passes the tax ID and its verification on, and records nothing personal", async () => {
+    const calls: unknown[] = [];
+    const recorded: WebhookEventRecord[] = [];
+    const { deps, webhookEventRepository } = await setup({ onTaxIdUpdated: async (t) => { calls.push(t); return "vat_id_verified"; } });
+    deps.webhookEventRepository = recordingWebhookRepo(webhookEventRepository, recorded);
+    const result = await handleStripeWebhook(signed(taxIdEvent("evt_tax_1", "customer.tax_id.updated", "verified")), deps);
+    assert.equal(result.status, 200);
+    assert.equal(result.log.outcome, "vat_id_verified");
+    assert.deepEqual(calls, [{ stripeTaxIdId: "txi_1", verification: { status: "verified", verified_name: "ACME SARL", verified_address: null } }]);
+    assert.deepEqual(recorded[0].payload, { type: "customer.tax_id.updated" });
+  });
+
+  test("is only acknowledged without a handler", async () => {
+    const { deps } = await setup();
+    const result = await handleStripeWebhook(signed(taxIdEvent("evt_tax_2", "customer.tax_id.created", "pending")), deps);
+    assert.equal(result.log.outcome, "acknowledged");
+  });
+});

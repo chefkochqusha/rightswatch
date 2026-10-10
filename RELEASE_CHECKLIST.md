@@ -161,9 +161,20 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Stripe prices for all four plans** (Solo €29, Starter €99, Growth €299,
   Agency €999; monthly and yearly): `STRIPE_PRICE_ID_SOLO(_ANNUAL)` is new.
   Stripe switches on only when every monthly price id is set.
-- [ ] **B2B check at checkout**: turn on tax ID collection in Stripe Checkout
-  and require a company name and VAT ID (the BGH asks for a real check, not just
-  a note; `LEGAL_DE.md`).
+- [x] **B2B check before the first plan** — built 2026-10-10: the billing page
+  asks for company name and address first, a VAT ID from EU customers outside
+  Germany (optional in Germany), and puts them on the Stripe customer; Stripe
+  checks EU VAT IDs with VIES and the result shows on the page. Owner: in the
+  Stripe webhook endpoint, also send `customer.tax_id.created` and
+  `customer.tax_id.updated`; in the Customer Portal settings, don't let
+  customers edit name, address or tax IDs there (Bekvor's page is the source,
+  otherwise the two drift apart). Lawyer: confirm this counts as the check.
+- [ ] **Invoices: tax set-up in Stripe** (owner with the tax advisor, before the
+  first paid invoice): German VAT for domestic customers (unless Kleinunternehmer),
+  reverse charge with both VAT IDs and the wording "Steuerschuldnerschaft des
+  Leistungsempfängers" for EU businesses, the treatment outside the EU, your own
+  VAT ID on the invoice template, and the quarterly Zusammenfassende Meldung.
+  The app collects the data; it doesn't set rates.
 - [ ] **`SALES_EMAIL`** for the Enterprise "Talk to us" button (until then the
   card says to start with Agency). Read at build time.
 - [ ] **Limits per plan** (creators, seats, songs with reference audio) are

@@ -13,10 +13,12 @@
 (2) Bekvor schließt Verträge **ausschließlich mit Unternehmern** im Sinne des
 § 14 BGB, juristischen Personen des öffentlichen Rechts und öffentlich-rechtlichen
 Sondervermögen. Der Kunde bestätigt bei der Registrierung, für ein Unternehmen
-oder seine berufliche Tätigkeit zu handeln, und gibt beim Abschluss eines
-bezahlten Plans Firma, Anschrift und, soweit vorhanden, seine
-Umsatzsteuer-Identifikationsnummer an. Wir dürfen diese Angaben prüfen und
-Verträge mit Verbrauchern ablehnen oder beenden.
+oder seine berufliche Tätigkeit zu handeln, und gibt vor dem ersten Plan Firma
+und Anschrift an, Kunden aus anderen EU-Staaten zusätzlich ihre
+Umsatzsteuer-Identifikationsnummer (in Deutschland freiwillig). Die USt-IdNr.
+wird über unseren Zahlungsdienstleister mit dem EU-Register (VIES) abgeglichen.
+Wir dürfen diese Angaben prüfen und Verträge mit Verbrauchern ablehnen oder
+beenden.
 
 (3) Abweichende Bedingungen des Kunden gelten nicht, auch wenn wir ihnen nicht
 widersprechen.
@@ -264,7 +266,8 @@ maschinenlesbaren Format (JSON) herunterladen.
 (2) **Exportierbare Daten** sind: Mitglieder und Rollen, Creator auf der
 Beobachtungsliste, Songs und Rechte-Einträge, Kampagnen, erkannte Posts mit
 Ergebnis und Begründung, Angaben zu Referenzaufnahmen und Audio-Prüfungen,
-Fälle mit Notizen, das Aktivitätsprotokoll und der Plan. **Nicht exportiert**
+Fälle mit Notizen, das Aktivitätsprotokoll, der Plan und die Firmendaten für
+Rechnungen. **Nicht exportiert**
 werden: Passwort-Hashes und Sitzungsschlüssel (Sicherheit), Zahlungsdaten (liegen
 bei Stripe), die akustischen Fingerabdrücke selbst (internes, nicht
 abspielbares Format von Bekvor) [[Anwalt: als Geschäftsgeheimnis / Teil des

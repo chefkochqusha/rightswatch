@@ -4,6 +4,7 @@ import { getBillingStore } from "@/app/_lib/billing-store";
 import { getWebhookStore } from "@/app/_lib/webhook-store";
 import { getReferralStore } from "@/app/_lib/referral-store";
 import { recordCommission } from "@/modules/referrals";
+import { applyTaxIdVerification } from "@/app/_lib/billing-profile";
 import { handleStripeWebhook, isStripeConfigured, planTierForPriceId } from "@/modules/billing";
 
 /**
@@ -45,6 +46,8 @@ export async function POST(request: Request): Promise<Response> {
           { workspaceId: invoice.workspaceId, invoiceId: invoice.invoiceId, invoiceCents: invoice.amountCents, paidAt: invoice.paidAt },
           getReferralStore(),
         )}`,
+      // The EU VAT register's answer about a customer's VAT ID (billing page).
+      onTaxIdUpdated: applyTaxIdVerification,
     },
   );
 

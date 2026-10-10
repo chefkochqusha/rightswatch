@@ -13,6 +13,7 @@ export async function newWorkspace(page: Page, name: string): Promise<void> {
   await page.click('main button[type="submit"]');
   await page.waitForURL(/\/workspace/);
   await page.goto("/workspace/billing");
+  await fillCompanyDetails(page);
   await page.locator('button[name="billingInterval"][value="MONTHLY"]').first().click();
   await expect(page.getByRole("button", { name: "Current plan" }).first()).toBeVisible();
   await page.goto("/workspace/creators");
@@ -41,4 +42,16 @@ export async function addPost(page: Page, videoId: string): Promise<void> {
   await page.fill('input[name="brands"]', "Glow Cosmetics");
   await page.getByRole("button", { name: "Add post" }).click();
   await page.waitForURL(new RegExp(`/workspace/items/${videoId}`));
+}
+
+/** The company details the billing page asks for before the first plan. */
+export async function fillCompanyDetails(page: Page, overrides: { country?: string; vatId?: string } = {}): Promise<void> {
+  await page.fill("#companyName", "E2E Test Records GmbH");
+  await page.fill("#addressLine1", "Teststraße 1");
+  await page.fill("#postalCode", "10115");
+  await page.fill("#city", "Berlin");
+  await page.selectOption("#country", overrides.country ?? "DE");
+  if (overrides.vatId !== undefined) await page.fill("#vatId", overrides.vatId);
+  await page.getByRole("button", { name: "Save company details" }).click();
+  await expect(page.getByText("E2E Test Records GmbH").first()).toBeVisible();
 }

@@ -2,6 +2,7 @@ import { getPrisma } from "@/lib/prisma-client";
 import { getAuditStore } from "./audit-store";
 import { getAuthStore } from "./auth-store";
 import { getBillingStore } from "./billing-store";
+import { findBillingProfile } from "./billing-profile";
 import { getCaseStore } from "./case-store";
 import type { CurrentSession } from "./current-user";
 import { getCreatorStore } from "./creator-store";
@@ -82,6 +83,7 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     }),
   ]);
   const plan = subscription ? await getBillingStore().plans.findById(subscription.planId) : null;
+  const billing = await findBillingProfile(workspaceId);
 
   return {
     ...base,
@@ -97,6 +99,19 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     activityLog: auditEntries,
     plan: subscription
       ? { name: plan?.name ?? null, status: subscription.status, currentPeriodEnd: subscription.currentPeriodEnd, since: subscription.createdAt }
+      : null,
+    companyDetails: billing
+      ? {
+          companyName: billing.companyName,
+          addressLine1: billing.addressLine1,
+          addressLine2: billing.addressLine2,
+          postalCode: billing.postalCode,
+          city: billing.city,
+          country: billing.country,
+          vatId: billing.vatId,
+          vatIdStatus: billing.vatIdStatus,
+          updatedAt: billing.updatedAt,
+        }
       : null,
   };
 }

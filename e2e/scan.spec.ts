@@ -7,7 +7,7 @@ test("a scan runs and its results appear on the overview", async ({ page }) => {
   await page.getByRole("button", { name: "Run scan" }).click();
   // Worker mode queues the scan and the page refreshes itself; inline mode answers at once.
   await expect(page.getByText(/Scan started|Scan complete/)).toBeVisible();
-  await expect(page.getByText("Videos checked")).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText("Videos checked", { exact: true })).toBeVisible({ timeout: 90_000 });
   await expect(page.getByText(/A scan is (running|waiting)/)).toHaveCount(0, { timeout: 90_000 });
 });
 
