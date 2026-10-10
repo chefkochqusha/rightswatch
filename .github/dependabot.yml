@@ -1,6 +1,11 @@
 # Weekly pull requests for new package versions. Versions in package.json are
 # pinned exactly, so nothing changes until one of these is merged, and each one
-# can be checked (npm test, build) before it ships.
+# can be checked (npm test, build, end-to-end) before it ships.
+#
+# Cooldown: a new release is only proposed once it has been public for a while,
+# so a hijacked or broken release is usually found and pulled before we see it.
+# Security updates are not delayed by this (GitHub applies cooldown to version
+# updates only).
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -9,6 +14,20 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # Node's types follow the Node version we run (22 in CI and the
+      # Dockerfile), not the newest Node. Move both together.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 14
