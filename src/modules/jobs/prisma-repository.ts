@@ -1,5 +1,6 @@
 import { getPrisma } from "@/lib/prisma-client";
 import type { Job, Prisma } from "@/generated/prisma/client";
+import { INLINE_STALE_MS } from "./types";
 import type { JobChanges, JobQueue, JobRecord, JobRepository, NewJob, QueuedJobInput } from "./types";
 
 /**
@@ -86,9 +87,9 @@ export class PrismaJobRepository implements JobRepository, JobQueue {
     await getPrisma().job.updateMany({ where: { id, lockedBy: workerId, status: "RUNNING" }, data: { lockedAt: now } });
   }
 
-  async complete<Payload>(id: string, payload?: Payload): Promise<void> {
-    await getPrisma().job.update({
-      where: { id },
+  async complete<Payload>(id: string, payload?: Payload, workerId?: string): Promise<boolean> {
+    const { count } = await getPrisma().job.updateMany({
+      where: { id, ...(workerId ? { lockedBy: workerId, status: "RUNNING" as const } : {}) },
       data: {
         status: "COMPLETED",
         completedAt: new Date(),
@@ -98,31 +99,46 @@ export class PrismaJobRepository implements JobRepository, JobQueue {
         ...(payload !== undefined ? { payload: toJson(payload) } : {}),
       },
     });
+    return count > 0;
   }
 
-  async fail(id: string, error: string, retryAt: Date | null): Promise<void> {
-    await getPrisma().job.update({
-      where: { id },
+  async fail(id: string, error: string, retryAt: Date | null, workerId?: string): Promise<boolean> {
+    const { count } = await getPrisma().job.updateMany({
+      where: { id, ...(workerId ? { lockedBy: workerId, status: "RUNNING" as const } : {}) },
       data: retryAt
         ? { status: "RETRYING", error: error.slice(0, 2000), runAfter: retryAt, lockedAt: null, lockedBy: null }
         : { status: "FAILED", error: error.slice(0, 2000), completedAt: new Date(), lockedAt: null, lockedBy: null },
     });
+    return count > 0;
   }
 
-  async recoverStale(staleBefore: Date, now: Date): Promise<number> {
+  async recoverStale(staleBefore: Date, now: Date, inlineStaleBefore: Date = new Date(now.getTime() - INLINE_STALE_MS)): Promise<number> {
     const error = "The worker stopped while running this job.";
-    return getPrisma().$executeRaw`
+    const recovered = await getPrisma().$executeRaw`
       UPDATE "jobs"
       SET "status" = CASE WHEN "attempts" < "maxAttempts" THEN 'RETRYING'::"JobStatus" ELSE 'FAILED'::"JobStatus" END,
           "runAfter" = ${now}::timestamp,
           "completedAt" = CASE WHEN "attempts" < "maxAttempts" THEN NULL ELSE ${now}::timestamp END,
           "error" = ${error}, "lockedAt" = NULL, "lockedBy" = NULL
       WHERE "status" = 'RUNNING' AND "lockedAt" IS NOT NULL AND "lockedAt" < ${staleBefore}::timestamp`;
+    const { count: cutOff } = await getPrisma().job.updateMany({
+      where: { status: "RUNNING", lockedAt: null, startedAt: { lt: inlineStaleBefore } },
+      data: { status: "FAILED", completedAt: now, error: "The request running this job was cut off." },
+    });
+    return recovered + cutOff;
   }
 
   async findPending<Payload>(workspaceId: string, type: string): Promise<JobRecord<Payload> | null> {
     const row = await getPrisma().job.findFirst({
-      where: { workspaceId, type, status: { in: ["QUEUED", "RETRYING", "RUNNING"] } },
+      where: {
+        workspaceId,
+        type,
+        OR: [
+          { status: { in: ["QUEUED", "RETRYING"] } },
+          { status: "RUNNING", lockedAt: { not: null } },
+          { status: "RUNNING", lockedAt: null, startedAt: { gte: new Date(Date.now() - INLINE_STALE_MS) } },
+        ],
+      },
       orderBy: { createdAt: "asc" },
     });
     return row ? mapJob<Payload>(row) : null;

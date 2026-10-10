@@ -9,6 +9,7 @@ import { getLibraryStore } from "./library-store";
 import { getRecognitionThresholds, getRecognizerClient, getUploadStore } from "./own-recognition";
 import { makeAssessor } from "./reassess";
 import { getScanResultStore } from "./scan-result-store";
+import { log } from "./log";
 
 /**
  * The worker's two recognition jobs (`worker.ts`):
@@ -69,7 +70,9 @@ export async function runFingerprintTrackJob(job: JobRecord): Promise<Fingerprin
       sourceSha256: payload.sha256,
       createdById: payload.requestedById,
     });
-    await store.delete(payload.uploadKey);
+    // The fingerprint is stored: nothing after this may fail the job (a retry
+    // would find the recording gone and report a failure that didn't happen).
+    await store.delete(payload.uploadKey).catch((e) => log("warn", "upload.delete", { error: String(e) }));
     await recordAudit({
       workspaceId,
       actorId: payload.requestedById,
@@ -99,6 +102,7 @@ export async function runAudioCheckJob(job: JobRecord): Promise<AudioCheckPayloa
     await store.delete(payload.uploadKey);
     throw new PermanentJobError("The audio check no longer exists.");
   }
+  if (check.status === "DONE") return payload; // a repeat of a finished check
   await prisma.audioCheck.update({ where: { id: check.id }, data: { status: "RUNNING", error: null } });
 
   try {
@@ -127,24 +131,29 @@ export async function runAudioCheckJob(job: JobRecord): Promise<AudioCheckPayloa
     }
     const decision = decideRecognition(result, getRecognitionThresholds());
     await finish(check.id, decision, result);
-    await store.delete(payload.uploadKey);
-
-    await recordAudit({
-      workspaceId,
-      actorId: check.requestedById,
-      action: "post.audio_checked",
-      targetType: "content",
-      targetId: check.content.externalContentId,
-      metadata: { outcome: decision.outcome, trackId: decision.trackId, confidence: decision.confidence },
-    });
-    if (decision.outcome === "MATCH" && decision.trackId && autoIdentifyEnabled()) {
-      await identifyRecognisedSong(workspaceId, check.content.externalContentId, decision);
+    // The result is stored: what follows may not turn it into a failure.
+    try {
+      await store.delete(payload.uploadKey);
+      await recordAudit({
+        workspaceId,
+        actorId: check.requestedById,
+        action: "post.audio_checked",
+        targetType: "content",
+        targetId: check.content.externalContentId,
+        metadata: { outcome: decision.outcome, trackId: decision.trackId, confidence: decision.confidence },
+      });
+      if (decision.outcome === "MATCH" && decision.trackId && autoIdentifyEnabled()) {
+        await identifyRecognisedSong(workspaceId, check.content.externalContentId, decision);
+      }
+    } catch (error) {
+      log("error", "audio_check.after_result", { audioCheckId: check.id, error: String(error) });
     }
     return payload;
   } catch (error) {
     const final = error instanceof PermanentJobError || job.attempts >= job.maxAttempts;
-    await prisma.audioCheck.update({
-      where: { id: check.id },
+    // Never over a stored result.
+    await prisma.audioCheck.updateMany({
+      where: { id: check.id, status: { not: "DONE" } },
       data: final
         ? { status: "FAILED", error: error instanceof Error ? error.message : String(error), completedAt: new Date() }
         : { status: "QUEUED", error: "The check will be tried again in a few minutes." },
@@ -205,6 +214,43 @@ async function finish(checkId: string, decision: RecognitionDecision, result: { 
 
 export function autoIdentifyEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.RECOGNITION_AUTO_IDENTIFY === "true";
+}
+
+/**
+ * Brings audio checks in line with their jobs, for the cases a job's own
+ * code can't handle: its process died (the queue took the job back or
+ * failed it), or the check was saved but its job never queued. Without
+ * this a check could show "Checking…" forever. Run by the worker's
+ * recovery loop.
+ */
+export async function reconcileAudioChecks(now: Date = new Date()): Promise<number> {
+  const prisma = getPrisma();
+  const open = await prisma.audioCheck.findMany({
+    where: { status: { in: ["QUEUED", "RUNNING"] }, createdAt: { lt: new Date(now.getTime() - 2 * 60_000) } },
+    select: { id: true, status: true, jobId: true, createdAt: true },
+    take: 500,
+  });
+  if (open.length === 0) return 0;
+  const jobs = new Map(
+    (await prisma.job.findMany({ where: { id: { in: open.flatMap((c) => (c.jobId ? [c.jobId] : [])) } }, select: { id: true, status: true, error: true } })).map((j) => [j.id, j]),
+  );
+  let changed = 0;
+  for (const check of open) {
+    const job = check.jobId ? jobs.get(check.jobId) : undefined;
+    let data: { status: "FAILED" | "QUEUED"; error: string; completedAt?: Date } | null = null;
+    if (!job) {
+      if (now.getTime() - check.createdAt.getTime() > 10 * 60_000) data = { status: "FAILED", error: "The check couldn't be started. Please upload the file again.", completedAt: now };
+    } else if (job.status === "FAILED" || job.status === "COMPLETED") {
+      data = { status: "FAILED", error: job.error ?? "The check ended without a result. Please upload the file again.", completedAt: now };
+    } else if ((job.status === "RETRYING" || job.status === "QUEUED") && check.status === "RUNNING") {
+      data = { status: "QUEUED", error: "The check will be tried again in a few minutes." };
+    }
+    if (data) {
+      const { count } = await prisma.audioCheck.updateMany({ where: { id: check.id, status: { not: "DONE" } }, data });
+      changed += count;
+    }
+  }
+  return changed;
 }
 
 function asPermanentIfUnreadable(error: unknown): never {

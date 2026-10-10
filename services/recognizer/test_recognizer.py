@@ -52,6 +52,12 @@ class FingerprintTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             fp.Fingerprint.from_bytes(b"other-1\n" + b"x")
 
+    def test_decode_refuses_a_playlist_posing_as_mp3(self):
+        # an HLS playlist behind an ID3 tag must not make ffmpeg fetch URLs
+        evil = b"ID3\x04\x00\x00\x00\x00\x00\x00#EXTM3U\n#EXTINF:10,\nhttp://127.0.0.1:9/x.ts\n#EXT-X-ENDLIST\n"
+        with self.assertRaises(fp.AudioError):
+            fp.decode(evil, 60)
+
     def test_decode_rejects_non_audio(self):
         with self.assertRaises(fp.AudioError):
             fp.decode(b"this is not audio at all" * 100, 60)
@@ -135,6 +141,11 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body["candidates"][0]["trackId"], "t4")
         self.assertEqual(self.call("POST", "/match/ws1?version=v2", body=b"x")[0], 409, "a new version needs a new index")
+
+    def test_409_reaches_the_client_even_with_a_large_body(self):
+        status, body = self.call("POST", "/match/ws-big?version=v1", body=b"\0" * (30 * 1024 * 1024))
+        self.assertEqual(status, 409)
+        self.assertTrue(body["needIndex"])
 
     def test_unreadable_audio(self):
         self.assertEqual(self.call("POST", "/fingerprint", body=b"not audio" * 1000)[0], 422)

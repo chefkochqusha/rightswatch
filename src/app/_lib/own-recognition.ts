@@ -20,6 +20,14 @@ export const MAX_SONG_UPLOAD_BYTES = 150 * 1024 * 1024;
 export const MAX_POST_UPLOAD_BYTES = 200 * 1024 * 1024;
 /** Uploads waiting or being processed per workspace, so one can't fill the disk. */
 export const MAX_PENDING_UPLOADS = 10;
+/** Uploads streaming in at the same time per workspace. */
+export const MAX_CONCURRENT_UPLOADS = 3;
+/** All waiting uploads together (`UPLOAD_DIR_MAX_GB`, default 5 GB), and
+ *  the disk space always left free, so uploads can't fill the server's disk. */
+export function uploadDiskLimits(env: Record<string, string | undefined> = process.env): { maxUsedBytes: number; minFreeBytes: number } {
+  const gb = Number(env.UPLOAD_DIR_MAX_GB);
+  return { maxUsedBytes: (Number.isFinite(gb) && gb > 0 ? gb : 5) * 1024 ** 3, minFreeBytes: 2 * 1024 ** 3 };
+}
 /** Leftovers of a crashed job are deleted after this. */
 export const UPLOAD_MAX_AGE_MS = 24 * 3600_000;
 

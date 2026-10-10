@@ -48,6 +48,10 @@ WINDOW_SEC = 12.0
 WINDOW_HOP_SEC = 6.0
 
 
+# ffmpeg demuxers for the containers the app accepts (media-type.ts).
+FORMAT_WHITELIST = "mp3,wav,aiff,flac,ogg,aac,mov,mp4,m4a,3gp,3g2,mj2,matroska,webm"
+
+
 class AudioError(Exception):
     """The file couldn't be read as audio."""
 
@@ -67,6 +71,11 @@ def decode(data: bytes, max_seconds: float, timeout: float = 180.0) -> np.ndarra
             f.write(data)
         cmd = [
             "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error",
+            # Local file only, and only plain audio/video containers: a file
+            # posing as a playlist (HLS, concat) can't make ffmpeg fetch URLs
+            # or open other files.
+            "-protocol_whitelist", "file",
+            "-format_whitelist", FORMAT_WHITELIST,
             "-t", str(max_seconds), "-i", path,
             "-vn", "-sn", "-dn", "-ac", "1", "-ar", str(FS), "-f", "s16le", "pipe:1",
         ]

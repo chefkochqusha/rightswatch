@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, statfs } from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
@@ -69,6 +69,19 @@ export class UploadStore {
 
   async delete(key: string): Promise<void> {
     await rm(this.pathFor(key), { force: true });
+  }
+
+  /** Bytes held by stored uploads, and bytes still free on the disk. */
+  async usage(): Promise<{ usedBytes: number; freeBytes: number }> {
+    await mkdir(this.root, { recursive: true, mode: 0o700 });
+    let usedBytes = 0;
+    for (const name of await readdir(this.root)) {
+      if (!KEY.test(name)) continue;
+      const info = await stat(path.join(this.root, name)).catch(() => null);
+      usedBytes += info?.size ?? 0;
+    }
+    const fs = await statfs(this.root);
+    return { usedBytes, freeBytes: Number(fs.bavail) * Number(fs.bsize) };
   }
 
   /** Deletes files older than `maxAgeMs`; returns how many. */

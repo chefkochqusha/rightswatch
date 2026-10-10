@@ -53,6 +53,29 @@ describe("job queue (in memory)", () => {
   });
 });
 
+describe("job queue: lost locks and cut-off inline runs", () => {
+  it("doesn't let a worker that lost its job write the outcome", async () => {
+    const queue = new InMemoryJobRepository();
+    const job = await queue.enqueue({ workspaceId: "w1", type: "scan", payload: null });
+    await queue.claim("slow", ["scan"], new Date("2026-10-10T10:00:00Z"));
+    await queue.recoverStale(new Date("2026-10-10T10:10:00Z"), new Date("2026-10-10T10:10:00Z"));
+    await queue.claim("fresh", ["scan"], new Date("2026-10-10T10:10:00Z"));
+    assert.equal(await queue.complete(job.id, { by: "slow" }, "slow"), false);
+    assert.equal(await queue.complete(job.id, { by: "fresh" }, "fresh"), true);
+    assert.deepEqual((await queue.findById("w1", job.id))?.payload, { by: "fresh" });
+  });
+
+  it("forgets an inline run whose request was cut off, and fails it", async () => {
+    const queue = new InMemoryJobRepository();
+    const job = await queue.create({ workspaceId: "w1", type: "scan", status: "RUNNING", attempts: 1, startedAt: new Date(Date.now() - 40 * 60_000), payload: null });
+    assert.equal(await queue.findPending("w1", "scan"), null, "no longer counts as running");
+    assert.equal(await queue.recoverStale(new Date(), new Date()), 1);
+    assert.equal((await queue.findById("w1", job.id))?.status, "FAILED");
+    const recent = await queue.create({ workspaceId: "w1", type: "scan", status: "RUNNING", attempts: 1, startedAt: new Date(), payload: null });
+    assert.equal((await queue.findPending("w1", "scan"))?.id, recent.id);
+  });
+});
+
 describe("processNextJob", () => {
   it("is idle when nothing is due", async () => {
     const queue = new InMemoryJobRepository();

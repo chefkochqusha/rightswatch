@@ -165,8 +165,9 @@ made once and referenced everywhere rather than re-litigated per file.
   `modules/jobs/due-scans.ts` which workspaces are due by plan cadence —
   "daily" after 20 hours, "every_6h" after 5 — so a run that started a few
   minutes late yesterday still counts today; "configurable" runs daily until
-  it has a setting. One workspace failing doesn't stop the others, and only
-  completed scans postpone the next. **Scheduled scans do nothing while the
+  it has a setting. One workspace failing doesn't stop the others; a scan
+  that failed for good (after the queue's retries) also counts as the last
+  scan, so a broken workspace isn't retried every few minutes. **Scheduled scans do nothing while the
   connector is the demo one**: a customer's workspace shouldn't be topped up
   with invented posts on a timer.
 

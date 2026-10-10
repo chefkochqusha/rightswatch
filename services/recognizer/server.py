@@ -114,6 +114,14 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return self.rfile.read(length)
 
+    def _discard_body(self) -> None:
+        remaining = min(int(self.headers.get("Content-Length") or 0), MAX_AUDIO_BYTES)
+        while remaining > 0:
+            chunk = self.rfile.read(min(remaining, 1 << 20))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+
     def _workspace(self, path: str, prefix: str) -> str | None:
         ws = path[len(prefix):]
         if not WORKSPACE_ID.match(ws):
@@ -156,6 +164,9 @@ class Handler(BaseHTTPRequestHandler):
             version = (parse_qs(url.query).get("version") or [""])[0]
             index = INDEXES.get(ws, version)
             if index is None:
+                # Read the audio before answering: closing the connection with
+                # unread data resets it, and the client would never see the 409.
+                self._discard_body()
                 return self._send(409, {"error": "Index not loaded.", "needIndex": True})
             data = self._body(MAX_AUDIO_BYTES)
             if data is None:

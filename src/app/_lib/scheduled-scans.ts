@@ -44,7 +44,10 @@ export async function runDueScans(now: Date = new Date(), budgetMs = 200_000): P
     },
     lastCompletedAt: async (workspaceId) => {
       const recent = await jobs.findRecent(workspaceId, SCAN_JOB_TYPE, 5);
-      return recent.find((job) => job.status === "COMPLETED")?.completedAt ?? null;
+      // A failed scan counts too: the queue has already retried it three
+      // times, and trying again every few minutes would only repeat the
+      // failure (and any per-post cost). The next try is the next due time.
+      return recent.find((job) => job.status === "COMPLETED" || job.status === "FAILED")?.completedAt ?? null;
     },
     scan:
       getJobRunnerMode() === "worker"

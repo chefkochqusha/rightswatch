@@ -4,7 +4,7 @@ import { SCAN_JOB_TYPE, processNextJob, type JobHandler } from "@/modules/jobs";
 import { getJobStore } from "./job-store";
 import { log } from "./log";
 import { AUDIO_CHECK_JOB, FINGERPRINT_TRACK_JOB, UPLOAD_MAX_AGE_MS, getUploadStore, isOwnRecognitionEnabled } from "./own-recognition";
-import { runAudioCheckJob, runFingerprintTrackJob } from "./recognition-jobs";
+import { reconcileAudioChecks, runAudioCheckJob, runFingerprintTrackJob } from "./recognition-jobs";
 import { runQueuedScan } from "./scan-queue";
 import { runDueScans } from "./scheduled-scans";
 
@@ -76,6 +76,8 @@ export function startWorker(): void {
       if (isOwnRecognitionEnabled()) {
         const swept = await getUploadStore().sweep(UPLOAD_MAX_AGE_MS);
         if (swept > 0) log("info", "uploads.swept", { count: swept });
+        const reconciled = await reconcileAudioChecks(now);
+        if (reconciled > 0) log("warn", "audio_checks.reconciled", { count: reconciled });
       }
     } catch (error) {
       log("error", "jobs.recover", { error: String(error) });

@@ -75,12 +75,21 @@ export interface JobQueue {
   claim(workerId: string, types: readonly string[], now: Date): Promise<JobRecord | null>;
   /** The running worker is still alive; keeps the job from being taken back. */
   heartbeat(id: string, workerId: string, now: Date): Promise<void>;
-  complete<Payload>(id: string, payload?: Payload): Promise<void>;
+  /** With `workerId`: only if that worker still holds the job (returns false
+   *  if it was taken back meanwhile, so the outcome isn't written twice). */
+  complete<Payload>(id: string, payload?: Payload, workerId?: string): Promise<boolean>;
   /** `retryAt` null: failed for good. Otherwise queued again for then. */
-  fail(id: string, error: string, retryAt: Date | null): Promise<void>;
+  fail(id: string, error: string, retryAt: Date | null, workerId?: string): Promise<boolean>;
   /** Jobs RUNNING with no heartbeat since `staleBefore` (their worker died)
-   *  go back to the queue, or fail when they have no tries left. */
-  recoverStale(staleBefore: Date, now: Date): Promise<number>;
-  /** A job of this type is waiting or running for the workspace. */
+   *  go back to the queue, or fail when they have no tries left. Jobs run
+   *  inline (no worker, so no heartbeat) that started before
+   *  `inlineStaleBefore` fail: their request was cut off. */
+  recoverStale(staleBefore: Date, now: Date, inlineStaleBefore?: Date): Promise<number>;
+  /** A job of this type is waiting or running for the workspace. An inline
+   *  run older than `INLINE_STALE_MS` doesn't count: its request died. */
   findPending<Payload>(workspaceId: string, type: string): Promise<JobRecord<Payload> | null>;
 }
+
+/** An inline job (run inside a request) still RUNNING after this was cut off
+ *  (Vercel stops a function after 300 s). */
+export const INLINE_STALE_MS = 30 * 60_000;

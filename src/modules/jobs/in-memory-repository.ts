@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { INLINE_STALE_MS } from "./types";
 import type { JobChanges, JobQueue, JobRecord, JobRepository, NewJob, QueuedJobInput } from "./types";
 
 /** The same contract as `PrismaJobRepository`, for tests. */
@@ -81,25 +82,36 @@ export class InMemoryJobRepository implements JobRepository, JobQueue {
     if (lock && lock.lockedBy === workerId) this.locks.set(id, { lockedAt: now, lockedBy: workerId });
   }
 
-  async complete<Payload>(id: string, payload?: Payload): Promise<void> {
+  async complete<Payload>(id: string, payload?: Payload, workerId?: string): Promise<boolean> {
+    if (workerId && !this.holds(id, workerId)) return false;
     await this.update<Payload>(id, { status: "COMPLETED", completedAt: new Date(), error: null, ...(payload !== undefined ? { payload } : {}) });
     this.locks.delete(id);
+    return true;
   }
 
-  async fail(id: string, error: string, retryAt: Date | null): Promise<void> {
+  async fail(id: string, error: string, retryAt: Date | null, workerId?: string): Promise<boolean> {
     const job = this.byId.get(id);
-    if (!job) return;
+    if (!job || (workerId && !this.holds(id, workerId))) return false;
     this.byId.set(id, retryAt
       ? { ...job, status: "RETRYING", error, runAfter: retryAt }
       : { ...job, status: "FAILED", error, completedAt: new Date() });
     this.locks.delete(id);
+    return true;
   }
 
-  async recoverStale(staleBefore: Date, now: Date): Promise<number> {
+  async recoverStale(staleBefore: Date, now: Date, inlineStaleBefore: Date = new Date(now.getTime() - INLINE_STALE_MS)): Promise<number> {
     let recovered = 0;
     for (const job of this.byId.values()) {
+      if (job.status !== "RUNNING") continue;
       const lock = this.locks.get(job.id);
-      if (job.status !== "RUNNING" || !lock?.lockedAt || lock.lockedAt >= staleBefore) continue;
+      if (!lock?.lockedAt) {
+        if (job.startedAt && job.startedAt < inlineStaleBefore) {
+          this.byId.set(job.id, { ...job, status: "FAILED", error: "The request running this job was cut off.", completedAt: now });
+          recovered += 1;
+        }
+        continue;
+      }
+      if (lock.lockedAt >= staleBefore) continue;
       const error = "The worker stopped while running this job.";
       this.byId.set(job.id, job.attempts < job.maxAttempts
         ? { ...job, status: "RETRYING", error, runAfter: now }
@@ -110,9 +122,20 @@ export class InMemoryJobRepository implements JobRepository, JobQueue {
     return recovered;
   }
 
+  private holds(id: string, workerId: string): boolean {
+    const job = this.byId.get(id);
+    return job?.status === "RUNNING" && this.locks.get(id)?.lockedBy === workerId;
+  }
+
   async findPending<Payload>(workspaceId: string, type: string): Promise<JobRecord<Payload> | null> {
+    const inlineCutoff = Date.now() - INLINE_STALE_MS;
     const job = Array.from(this.byId.values()).find(
-      (j) => j.workspaceId === workspaceId && j.type === type && (j.status === "QUEUED" || j.status === "RETRYING" || j.status === "RUNNING"),
+      (j) =>
+        j.workspaceId === workspaceId &&
+        j.type === type &&
+        (j.status === "QUEUED" ||
+          j.status === "RETRYING" ||
+          (j.status === "RUNNING" && (this.locks.has(j.id) || (j.startedAt?.getTime() ?? 0) >= inlineCutoff))),
     );
     return job ? ({ ...job } as JobRecord<Payload>) : null;
   }

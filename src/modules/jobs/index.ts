@@ -1,4 +1,5 @@
 export type { JobChanges, JobQueue, JobRecord, JobRepository, JobStatus, NewJob, QueuedJobInput } from "./types";
+export { INLINE_STALE_MS } from "./types";
 export { PermanentJobError, processNextJob, retryDelayMs } from "./worker";
 export type { JobHandler, JobStepResult } from "./worker";
 export { InMemoryJobRepository } from "./in-memory-repository";

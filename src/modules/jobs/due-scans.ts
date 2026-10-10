@@ -13,7 +13,7 @@ export interface DueScanDependencies {
   workspaceIds: readonly string[];
   /** The plan's scan cadence, or null when the workspace has no active plan. */
   cadenceFor: (workspaceId: string) => Promise<string | null>;
-  /** When the last scan that completed did, or null if none did. Failed runs don't count. */
+  /** When the last finished scan ended, or null if none did. The caller decides which runs count (the app counts completed and finally failed ones). */
   lastCompletedAt: (workspaceId: string) => Promise<Date | null>;
   /** Runs one workspace's scan. Returns false when there was nothing to scan. */
   scan: (workspaceId: string) => Promise<boolean>;
@@ -27,7 +27,7 @@ export interface DueScanDependencies {
 /**
  * Runs the scans that are due, one workspace at a time. One workspace
  * failing doesn't stop the others, and a workspace whose last scan failed
- * is tried again on the next run (only completed scans postpone it).
+ * is tried again when `lastCompletedAt` says it is due.
  */
 export async function runDueScansFor(deps: DueScanDependencies): Promise<DueScanSummary> {
   const clock = deps.clock ?? Date.now;

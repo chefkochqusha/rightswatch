@@ -56,17 +56,17 @@ export async function processNextJob(options: JobStepOptions): Promise<JobStepRe
 
   try {
     const payload = await handler(job);
-    await options.queue.complete(job.id, payload === undefined ? undefined : payload);
+    await options.queue.complete(job.id, payload === undefined ? undefined : payload, options.workerId);
     return { outcome: "completed", job };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const permanent = error instanceof PermanentJobError;
     if (!permanent && job.attempts < job.maxAttempts) {
       const retryAt = new Date(clock().getTime() + retryDelayMs(job.attempts));
-      await options.queue.fail(job.id, message, retryAt);
+      await options.queue.fail(job.id, message, retryAt, options.workerId);
       return { outcome: "retrying", job, error: message, retryAt };
     }
-    await options.queue.fail(job.id, message, null);
+    await options.queue.fail(job.id, message, null, options.workerId);
     return { outcome: "failed", job, error: message };
   } finally {
     clearInterval(heartbeat);

@@ -33,7 +33,7 @@ penetration test and not legal advice. Companion files: `DATA_FLOWS.md`,
 | Row Level Security (RLS) | Not applicable the way it is for Supabase: there is no public database API or key, the browser never talks to Postgres. The risk RLS covers (a browser reading any row with the public key) does not exist here. Postgres RLS as a second layer under the code-level scoping is a possible hardening, not a gap. |
 | Unused dependencies | None found (`depcheck`). |
 | Prompt injection / AI data leaks | No AI or language-model feature exists, so nothing reads TikTok, AudD or customer text with a model. Rules for the day one is added are in `DATA_FLOWS.md`. |
-| Malware / file uploads | **New 2026-10-10 (own server only):** song recordings and post videos for own recognition (`/api/uploads/*`, `app/_lib/upload-request.ts`). Checks in order: feature configured; session, analyst or above, not the demo; same-site `Origin` plus a custom header a form can't send; 60 uploads/hour per member and 10 waiting per workspace; declared and actual size (150/200 MB, Caddy 210 MB for these paths only); type from the first bytes (audio/video containers only). Stored under a random name in a private directory (0700/0600), never served back, deleted after reading or by the 24-hour sweep. Decoding (ffmpeg) runs in the separate recognizer container with CPU/memory limits and a 3-minute timeout. No virus scan: the files are never opened by a person or served to a browser, only decoded as audio. `CaseEvidence` (attachments people download) is still unbuilt and would need a scan. |
+| Malware / file uploads | **New 2026-10-10 (own server only):** song recordings and post videos for own recognition (`/api/uploads/*`, `app/_lib/upload-request.ts`). Checks in order: feature configured; session, analyst or above, not the demo; same-site `Origin` plus a custom header a form can't send; 60 uploads/hour per member, 3 streaming in and 10 waiting per workspace, and a disk cap for all waiting uploads (`UPLOAD_DIR_MAX_GB`, default 5 GB) with 2 GB always left free; declared and actual size (150/200 MB, Caddy 210 MB for these paths only); type from the first bytes (audio/video containers only). Stored under a random name in a private directory (0700/0600), never served back, deleted after reading or by the 24-hour sweep. Decoding (ffmpeg) runs in the separate recognizer container with CPU/memory limits and a 3-minute timeout, reads local files only (`-protocol_whitelist file`) and only plain audio/video containers (`-format_whitelist`), so a file posing as a playlist can't make it fetch URLs (tested). No virus scan: the files are never opened by a person or served to a browser, only decoded as audio. `CaseEvidence` (attachments people download) is still unbuilt and would need a scan. |
 | Audit log | Case, watchlist, song and rights changes, report and data downloads, password changes, invites, plan choice and cancellation, **new 2026-10-08:** logins, login attempts with a wrong password for a real account (no address or password stored; unknown emails leave no trace), and a nameless line when a member deletes their account. Not yet in it: member removal by an admin (no such feature yet). |
 | PII in logs | Reviewed every `console.*`: the Stripe webhook logs event ids and outcomes only; the rehash and scheduled-scan lines log internal ids; the audit-write failure logs the action name only; error boundaries log to the browser console. No email, password, token or reset link is written to a log. Vercel's own request logs hold IP addresses and URLs (said in `DATA_FLOWS.md`). |
 | Data deletion and export | Owner deletes a workspace (password + name typed, subscription ended first). **New 2026-10-08:** every other member can delete their own account (password, rate-limited); their case notes and activity stay with the workspace without their name (`onDelete: SetNull`), cases assigned to them become unassigned, their sessions end. Settings → "Download your data": JSON of the workspace (owners and admins) or of one's own account; audited, rate-limited, not in the demo. |
@@ -63,6 +63,17 @@ read or write customer data. Fix, in this order, before real customers:
 
 Local development already uses its own database (`npm run db:local`) and
 `.env.local`, never production.
+
+## Review of the own-server backend (2026-10-10)
+
+An independent review of the job queue, uploads and recognition found eight
+issues; all are fixed and covered by tests or end-to-end checks: audio checks
+that could stay "checking" forever after a crash (now reconciled by the
+worker), a stored result that a later error could overwrite, inline scans cut
+off by Vercel blocking new scans, the recognizer's 409 lost on large uploads,
+SSRF through ffmpeg playlists, the disk fillable by parallel uploads, failed
+scans re-queued every few minutes, and a worker that lost its lock still
+writing its outcome.
 
 ## Open items
 

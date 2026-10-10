@@ -38,6 +38,15 @@ describe("UploadStore", () => {
     assert.deepEqual(await readdir(root), []);
   });
 
+  it("reports the space its files use and what's free", async () => {
+    const store = new UploadStore(await tempRoot());
+    await store.save(Readable.from([Buffer.alloc(1000)]), 10_000);
+    await store.save(Readable.from([Buffer.alloc(500)]), 10_000);
+    const usage = await store.usage();
+    assert.equal(usage.usedBytes, 1500);
+    assert.ok(usage.freeBytes > 0);
+  });
+
   it("refuses keys that aren't its own", async () => {
     const store = new UploadStore(await tempRoot());
     await assert.rejects(store.read("../../etc/passwd"), /Bad upload key/);
