@@ -16,12 +16,12 @@ undue delay" (Art. 33(2)): in practice the same day.
 
 | Situation | Do this |
 |---|---|
-| A secret leaked (pasted in chat, committed, shown in a log) | Replace it at the provider **first**, then in Vercel: Stripe key (roll in the Stripe dashboard), `DATABASE_URL` (reset the role password in Neon, update Vercel), `RESEND_API_KEY`, `AUDD_API_TOKEN`, TikTok client secret, `CRON_SECRET`. Redeploy |
+| A secret leaked (pasted in chat, committed, shown in a log) | Replace it at the provider **first**, then in Vercel: Stripe key (roll in the Stripe dashboard), `DATABASE_URL` (reset the role password in Neon, update Vercel), `RESEND_API_KEY` or `SMTP_PASSWORD`, `RECOGNIZER_TOKEN`, `HEALTH_TOKEN`, TikTok client secret, `CRON_SECRET`. Redeploy |
 | Someone may hold a valid session | Set a new `SESSION_SECRET` (Sensitive) and redeploy: every signed cookie stops working. For one user: change their password (ends all their sessions). Last resort: `DELETE FROM sessions;` in the Neon SQL editor |
 | Data of one customer visible to another | Pause the project in Vercel (Settings → Pause, or deploy a maintenance page), keep it paused until the cause is fixed and tested |
 | Database credentials or backups exposed | Reset the Neon role password, check Neon's access log for the window, treat everything as read |
 | Suspicious deploy or dependency | Roll back in Vercel to the last good deployment (Deployments → Promote), then investigate |
-| Cost spike (bill, bandwidth, AudD) | Remove `AUDD_API_TOKEN` (recognition stops at once), pause the project, turn on Vercel's attack challenge mode / spend limit |
+| Cost spike (bill, bandwidth) | Pause the project, turn on Vercel's attack challenge mode / spend limit |
 
 Then **preserve evidence**: export the Vercel runtime logs for the time window
 (kept 1 hour on the Hobby plan, 1 day on Pro, per Vercel's plan comparison, so do it first), note deployment ids, copy the activity-log
@@ -42,7 +42,7 @@ rows (`/workspace/audit`) of the affected workspace.
 | **The customer** (workspace owner), as processor | Without undue delay, same day if their data is touched | Email from the support address: what happened, what data, what we did, what they must do |
 | **The data protection authority** (the one for the company's seat; for a seat in Schleswig-Holstein that is the ULD, `datenschutzzentrum.de`) | Within **72 hours of becoming aware**, unless the breach is unlikely to result in a risk. A late report states the reason for the delay | The authority's online breach form |
 | **The people concerned** | Without undue delay if the risk is **high** (Art. 34) | Plain language: what, which data, what to do (change passwords), who to ask |
-| Stripe / TikTok / AudD | If their credentials or data are involved | Their security contacts |
+| Stripe / TikTok / mail provider | If their credentials or data are involved | Their security contacts |
 | Insurance, lawyer | Early | Phone call first |
 
 Fill in before launch: lawyer ____ · authority ____ · support address ____ ·

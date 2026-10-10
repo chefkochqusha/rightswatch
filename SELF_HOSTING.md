@@ -14,7 +14,7 @@ environment. Expect one small fix on the first `docker compose up`.
 |---|---|
 | Vercel functions, US company | `app`: Next.js standalone build (`Dockerfile`) |
 | Vercel Cron, daily | Nothing extra: the worker in the `app` process (`JOB_RUNNER=worker`) runs queued jobs from Postgres and queues the scheduled scans itself |
-| AudD (paid, per post) | `recognizer`: own song recognition (`services/recognizer`), private network only, plus an `uploads` volume for files waiting to be read |
+| Paid song recognition (AudD, removed) | `recognizer`: own song recognition (`services/recognizer`), private network only, plus an `uploads` volume for files waiting to be read |
 | Neon Postgres | `db`: Postgres 17, reachable only from the other containers |
 | Neon history window | `backup`: nightly `pg_dump`, encrypted with an age public key, kept 14 days |
 | Vercel HTTPS and edge | `caddy`: automatic Let's Encrypt certificates, compression, 10 MB body limit |

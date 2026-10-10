@@ -6,5 +6,3 @@ export type {
 } from './types';
 export { NoRecognitionProvider } from './no-recognition-provider';
 export { FixtureMusicIdentificationProvider, type FixtureCatalogueSong } from './fixture-provider';
-export { BudgetedRecognitionProvider } from './budgeted-provider';
-export { AuddRecognitionProvider,AUDD_MATCH_CONFIDENCE, type AuddProviderOptions } from './audd-provider';

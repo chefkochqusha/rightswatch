@@ -93,7 +93,7 @@ Security and data protection (2026-10-05): a full audit is in `SECURITY.md`
 (secrets, access, CSP with nonce, request limits, link and SSRF checks, exact
 dependency versions with weekly Dependabot pull requests, accessibility scan).
 Customers can download their data as JSON (Settings), security events are in
-the audit log, and AudD spending is capped per scan. `DATA_FLOWS.md` lists
+the audit log, and no pay-per-use service is involved (song recognition is Bekvor's own). `DATA_FLOWS.md` lists
 which service sees which data, `INCIDENT_RESPONSE.md` and `BACKUP_RESTORE.md`
 are the runbooks. What still needs the owner (preview database, spend limit,
 restore drill, lawyer and tax items) is in `RELEASE_CHECKLIST.md`.

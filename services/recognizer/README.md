@@ -1,6 +1,6 @@
 # Song recognition service
 
-Bekvor's own song recognition, replacing AudD: it finds a customer's catalogue
+Bekvor's own song recognition (no outside recognition service): it finds a customer's catalogue
 songs in a post's audio, even sped up, slowed, pitch-shifted, compressed or
 under a voice-over. Method and first results: `research/fingerprint/README.md`.
 Own code (numpy/scipy); no third-party recognition licence applies.

@@ -4,7 +4,6 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
 import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
-import { getRecognitionMode } from "@/app/_lib/recognition";
 import { getMusicSearchMode } from "@/app/_lib/song-search";
 import { canManageWorkspace } from "@/app/_lib/authorize";
 import { buttonStyles } from "@/components/ui/button";
@@ -88,21 +87,15 @@ export default async function SettingsPage() {
             detail: "Bekvor's own recognition, on its own server. Add reference audio to your songs, then upload a post's video or sound and Bekvor finds which of your songs it uses. Post audio isn't fetched from TikTok automatically.",
           }
         : isRealData
-        ? getRecognitionMode() === "AUDD"
           ? {
-              state: "AudD",
-              tone: "ok" as const,
-              detail: "Songs in real posts are identified with AudD. AudD reports a match but no confidence score, so the percentage shown for its matches is a fixed value, not a measurement.",
-            }
-          : {
-              state: "Not connected",
+              state: "Not on this server",
               tone: "off" as const,
-              detail: "TikTok's commercial data carries no music information, so identifying songs in posts needs audio recognition, which isn't connected yet. Until then posts are listed as having no song identified.",
+              detail: "TikTok's commercial data carries no music information. Bekvor's own recognition runs on its own server; until it's set up here, choose the song in each post yourself.",
             }
         : {
             state: "Demo",
             tone: "demo" as const,
-            detail: "Matches in demo data are made up. Identifying songs in real posts needs audio recognition, which isn't connected yet.",
+            detail: "Matches in demo data are made up. For real posts, Bekvor recognises songs from the post's video or sound with its own recognition.",
           }),
     },
     {

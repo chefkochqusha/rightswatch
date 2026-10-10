@@ -34,7 +34,6 @@ analytics or advertising identifiers (none), keystroke or session recordings
 | **Stripe** | Customer email, workspace id, plan; card data goes to Stripe directly | Once Stripe is on | Own controller for payment data. Webhook logs here hold ids only |
 | **Resend** (email) | Recipient address and the text of reset and confirmation emails | Once configured | Nothing is sent today. DPA to confirm |
 | **TikTok** Commercial Content API | The creator usernames on a watchlist | Each scan, once keys exist | Terms for commercial monitoring and storing the data are an open question (checklist) |
-| **AudD** | The video link of each post to identify; AudD downloads the video from TikTok | Each scan, once the token exists | At most 200 posts per scan (`AUDD_MAX_POSTS_PER_SCAN`), https links only. AudD's terms and its data handling to check; the creators' videos are third-party content |
 | **Recognition service** (`services/recognizer`, our own) | Uploaded audio, a workspace's fingerprints | Each upload | Runs on our own server on the private network; keeps nothing on disk. Not a third party |
 | **MusicBrainz** | The text a member types into song search, sent by our server (not the member's browser) | Song search | Public data service. Searches are not linked to a member on their side |
 | **Cover Art Archive** (Internet Archive) | A release id | Cover art | Fetched by our server, so no member IP address goes there |
@@ -43,12 +42,12 @@ Never sent anywhere: member passwords, session cookies, rights records and
 cases (they stay in Postgres).
 
 **No AI or language-model feature exists.** No customer text is sent to an AI
-provider, and no model reads TikTok or AudD output. If one is added: list the
+provider, and no model reads TikTok output. If one is added: list the
 provider here first, sign a DPA, switch off training on customer data, keep
 untrusted text (creator names, brand names, notes) away from any model that can
 take actions, and tell people they are talking to an AI (AI Act, Art. 50).
 
-## Transfers to the US (Vercel, Stripe, Resend, AudD, Neon)
+## Transfers to the US (Vercel, Stripe, Resend, Neon)
 
 Two separate things are often mixed up (the reel comments about Vercel and
 Cloudflare do this):

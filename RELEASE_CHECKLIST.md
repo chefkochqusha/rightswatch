@@ -69,13 +69,13 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   Bekvor processes their creators' data. The reels' US-style class-action
   waiver and arbitration clause do not carry over; a lawyer decides what does.
 - [ ] **Privacy policy lists every service in `DATA_FLOWS.md`** (Vercel, Neon,
-  Stripe, Resend, TikTok, AudD, MusicBrainz, Cover Art Archive), the 7-day (or
+  Stripe, Resend or the SMTP provider, TikTok, MusicBrainz, Cover Art Archive), the 7-day (or
   plan-dependent) backup lag after deletion, and the one session cookie. Also: an
   imprint with a real address (Impressum) — missing or wrong ones are what
   gets a warning letter (Abmahnung) in Germany, typically 500–1,500 € in lawyer fees
   and a contractual penalty if repeated.
 - [ ] **Data processing agreements with the providers**: Vercel, Neon, Stripe,
-  Resend, AudD. Ask each where data is stored and which transfer mechanism covers
+  Resend. Ask each where data is stored and which transfer mechanism covers
   the US.
 - [ ] **Marketing email and texts**: none are sent today (only password reset and
   confirmation). For a launch newsletter: double opt-in, imprint data, a working
@@ -176,17 +176,6 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   and tested with stubbed answers only, so expect the first live call to need a
   small fix; a failure shows as "couldn't be fetched" with the reason on the
   creator. The public demo workspace stays on fake data either way.
-- [ ] **Music identification (AudD)**: an AudD adapter is built
-  (`modules/music/audd-provider.ts`) and stays off until `AUDD_API_TOKEN` is set
-  in Vercel; without it posts are listed as "no song yet" and the team
-  identifies them by hand. It is written against AudD's public docs and
-  tested with a stubbed `fetch`, not yet against the live service: expect a
-  small fix on the first real post. Costs about 5 USD per 1,000 requests; a
-  scan sends every fetched post, and the daily re-fetch overlaps the day
-  before, so a post is sent about twice. AudD gives no confidence score, so
-  its matches carry a fixed 90 % (the settings page says so). Check AudD's and
-  TikTok's terms for fetching a video by link before using it (also on the
-  lawyer list).
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.
@@ -225,7 +214,7 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
 - [ ] **Dev and prod separation** (owner, in Vercel and Neon): turn on preview
   branching in the Neon integration, give `SESSION_SECRET`, `CRON_SECRET` and every
   key a Production-only scope with separate Preview values (Stripe test keys; no
-  AudD, TikTok or Resend key in previews), keep Deployment Protection on. Until
+  TikTok or Resend key in previews), keep Deployment Protection on. Until
   then a preview build runs `prisma db push && prisma db seed` against the
   production database.
 - [ ] **Neon plan and backups**: check which plan the project is on (history
@@ -237,8 +226,6 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   is (a flood bills by usage even on static pages).
 - [ ] **Fill in `INCIDENT_RESPONSE.md`**: lawyer, data protection authority,
   support address, who decides.
-- [ ] **AudD spending cap**: scans send at most 200 posts to AudD each
-  (`AUDD_MAX_POSTS_PER_SCAN` changes it). Pick the number with the price list in hand.
 
 ## Final
 
