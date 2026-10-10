@@ -866,8 +866,14 @@ services. Only on our own server: it needs `RECOGNIZER_URL`,
   then the rights check runs and a case opens if needed (the same path as
   identifying by hand). `RECOGNITION_AUTO_IDENTIFY=true` lets a MATCH
   identify the song itself (provider `bekvor`); off by default, because the
-  synthetic calibration had one look-alike judged a sure match and an
-  automatic identification can't be undone yet.
+  synthetic calibration had one look-alike judged a sure match; real music
+  decides.
+- **"Wrong song?"** (post page, `app/_lib/reject-song.ts`): withdraws any
+  identification — a scan's, Bekvor's recognition's or a colleague's. The
+  `MusicMatch` row is kept with `rejectedAt` and every read ignores it, so the
+  post has no song again and can be identified anew; its case is dismissed
+  with a note, and it's audit-logged. A withdrawn post's case no longer
+  appears in the case list (it stays in the data export and the audit log).
 - **Uploads** (`app/_lib/upload-request.ts`, `modules/storage`): same-site
   only, analyst and up, not the demo, rate- and queue-limited, size-limited
   while streaming, type checked from the first bytes. Details in
@@ -881,7 +887,7 @@ services. Only on our own server: it needs `RECOGNIZER_URL`,
 - **Not built:** fetching a post's audio automatically from TikTok. Whether
   TikTok's terms allow downloading videos for analysis is open
   (`RELEASE_CHECKLIST.md`); until then the audio comes from the customer.
-  Also not built: undoing an identification, and telling the recognition
+  Also not built: telling the recognition
   service to forget a deleted workspace's index (it drops out of its memory
   cache on its own).
 

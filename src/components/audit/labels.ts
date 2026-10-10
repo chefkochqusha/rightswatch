@@ -27,6 +27,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "post.added": "Added a post by hand",
   "post.audio_checked": "Checked a post's audio",
   "post.song_recognised": "Bekvor recognised the song in a post",
+  "post.song_rejected": "Withdrew a wrong song from a post",
   "song.reference_audio_added": "Added reference audio to a song",
   "song.reference_audio_removed": "Removed a song's reference audio",
   "song.added": "Added a song to the catalogue",

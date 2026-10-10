@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
 import { identifyPostSong } from "@/app/_lib/identify-post";
+import { rejectPostSong } from "@/app/_lib/reject-song";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 
 export interface IdentifyFormState {
   error?: string;
@@ -32,6 +34,22 @@ export async function identifySongAction(_prev: IdentifyFormState, formData: For
     };
   }
   // The post is now assessed, and may have opened a case and notifications.
+  revalidatePath("/workspace", "layout");
+  return {};
+}
+
+export interface RejectFormState {
+  error?: string;
+}
+
+/** "Wrong song": withdraws the post's song identification. Analyst and up; not in the public demo. */
+export async function rejectSongAction(_prev: RejectFormState, formData: FormData): Promise<RejectFormState> {
+  const session = await requireCaseManager();
+  if (session.workspace.slug === DEMO_WORKSPACE_SLUG) return { error: "The demo workspace's posts are fixed." };
+  const contentId = String(formData.get("contentId") ?? "");
+  const note = String(formData.get("note") ?? "").trim() || null;
+  const result = await rejectPostSong({ workspaceId: session.workspace.id, actorUserId: session.user.id, externalContentId: contentId, note });
+  if (!result.ok) return { error: "This post has no song to withdraw." };
   revalidatePath("/workspace", "layout");
   return {};
 }

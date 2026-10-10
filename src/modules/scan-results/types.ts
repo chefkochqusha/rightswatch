@@ -125,6 +125,20 @@ export interface ScanResultRepository {
      *  Own recognition passes `{ provider: "bekvor", confidence, manual: false }`. */
     source?: IdentificationSource;
   }): Promise<StoredScanItem | null>;
+
+  /**
+   * A person says the post's current song is wrong: that identification is
+   * marked rejected and every read ignores it from then on, so the post has
+   * no song again (or the next-best identification, if there was one) and
+   * can be identified anew. Nothing is deleted. Returns null when the post
+   * has no song to withdraw.
+   */
+  rejectIdentification(input: {
+    workspaceId: string;
+    externalContentId: string;
+    rejectedById: string;
+    note: string | null;
+  }): Promise<RejectedIdentification | null>;
 }
 
 export interface IdentificationSource {
@@ -134,6 +148,15 @@ export interface IdentificationSource {
 }
 
 export const MANUAL_IDENTIFICATION: IdentificationSource = { provider: "manual", confidence: 1, manual: true };
+
+/** What withdrawing a post's song identification affected. */
+export interface RejectedIdentification {
+  trackId: string;
+  title: string;
+  provider: string;
+  /** The assessment the identification carried (and a case may hang off). */
+  rightsAssessmentId: string | null;
+}
 
 /** A post a song was identified in, as `reassessTrack` hands it over. */
 export interface TrackMatchForAssessment extends CreatorContext {

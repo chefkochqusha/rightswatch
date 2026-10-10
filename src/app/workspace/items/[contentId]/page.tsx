@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { CasePanel } from "./case-panel";
 import { IdentifyForm } from "./identify-form";
+import { RejectSongForm } from "./reject-song-form";
 import { PostAudioCheck } from "@/components/recognition/post-audio-check";
 import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
@@ -88,6 +89,9 @@ export default async function WorkspaceItemDetailPage({
       )}
 
       <AssessmentSummary item={item} />
+      {(item.kind === "ASSESSED" || item.kind === "OTHER_MUSIC") && canManageCases(session.role) && session.workspace.slug !== DEMO_WORKSPACE_SLUG && (
+        <RejectSongForm contentId={contentId} title={item.musicMatch.title} hasCase={item.kind === "ASSESSED"} />
+      )}
 
       <div className="mt-4">
         {item.kind === "ASSESSED" ? (

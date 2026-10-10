@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { NormalizedMusicMatch } from "../music/types";
 import type { RightsAssessmentResult } from "../rights-engine/types";
 import { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
-import type { IdentificationSource, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
+import type { IdentificationSource, RejectedIdentification, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
 
 /**
  * The same contract as `PrismaScanResultRepository`, for tests: idempotent
@@ -112,6 +112,20 @@ export class InMemoryScanResultRepository implements ScanResultRepository {
     };
     stored.set(content.externalContentId, next);
     return next;
+  }
+
+  async rejectIdentification(input: {
+    workspaceId: string;
+    externalContentId: string;
+    rejectedById: string;
+    note: string | null;
+  }): Promise<RejectedIdentification | null> {
+    const stored = this.itemsOf(input.workspaceId);
+    const existing = stored.get(input.externalContentId);
+    if (!existing || (existing.kind !== "ASSESSED" && existing.kind !== "OTHER_MUSIC")) return null;
+    const { content, creatorId, creatorExternalId, creatorUsername, musicMatch, rightsAssessmentId } = existing;
+    stored.set(input.externalContentId, { kind: "NO_MUSIC_MATCH", content, creatorId, creatorExternalId, creatorUsername, rightsAssessmentId: null });
+    return { trackId: musicMatch.trackId, title: musicMatch.title, provider: musicMatch.provider, rightsAssessmentId };
   }
 
   private itemsOf(workspaceId: string): Map<string, StoredScanItem> {

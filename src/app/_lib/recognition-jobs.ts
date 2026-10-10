@@ -23,8 +23,9 @@ import { log } from "./log";
  *   itself (provider "bekvor"), and the post is then assessed and, if not
  *   cleared, gets a case like any scan result. Off by default: the
  *   calibration on synthetic songs found one look-alike song judged a sure
- *   match (`services/recognizer/README.md`), and an automatic identification
- *   can't be undone yet. The upload is deleted afterwards.
+ *   match (`services/recognizer/README.md`); real music decides. A wrong
+ *   identification can be withdrawn ("Wrong song?", `reject-song.ts`). The
+ *   upload is deleted afterwards.
  *
  * Unreadable files fail at once; an unreachable recognition service is
  * retried by the queue (1, 5, 25 minutes) and the upload is kept until

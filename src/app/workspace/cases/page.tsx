@@ -61,7 +61,11 @@ export default async function CasesPage({ searchParams }: PageProps<"/workspace/
   const trackById = new Map(tracks.map((track) => [track.id, track]));
   const nameOf = new Map(members.map((member) => [member.userId, member.name]));
 
-  const counts = Object.fromEntries(GROUPS.map((g) => [g.key, cases.filter((c) => statusInGroup(c.status, g.key)).length])) as Record<CaseGroup, number>;
+  // A case whose post's song was withdrawn as wrong ("Wrong song?") has no
+  // post to show any more; it stays in the data export and the audit log,
+  // and is left out here and in the counts alike.
+  const listed = cases.filter((c) => itemByAssessment.get(c.rightsAssessmentId)?.kind === "ASSESSED");
+  const counts = Object.fromEntries(GROUPS.map((g) => [g.key, listed.filter((c) => statusInGroup(c.status, g.key)).length])) as Record<CaseGroup, number>;
   const needle = q.toLowerCase();
 
   const rows = sortCasesByUrgency(cases)

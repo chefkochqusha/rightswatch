@@ -31,6 +31,14 @@ test("reference audio, a post's video, a recognised song, confirmed into a case"
   await audioSection.getByRole("button", { name: /Identify song/ }).click();
   await expect(page.getByText("Potential mismatch").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Case" })).toBeVisible();
+
+  // Wrong song: withdraw it; the post has no song again and the case is dismissed.
+  await page.getByText("Wrong song?").click();
+  await page.fill("#reject-note", "Checked by ear: it's a different song.");
+  await page.getByRole("button", { name: "Withdraw this song" }).click();
+  await expect(page.getByText("No song was identified in this post.")).toBeVisible();
+  await page.goto("/workspace/audit");
+  await expect(page.getByText("Withdrew a wrong song from a post").first()).toBeVisible();
 });
 
 test("uploads only from Bekvor's own pages", async ({ page, baseURL }) => {

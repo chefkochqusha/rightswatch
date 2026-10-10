@@ -302,6 +302,13 @@ model MusicMatch {
   confidence          Float    @default(1)
   manual              Boolean  @default(false)
   matchedAt           DateTime @default(now())
+  // A person said this identification is wrong. The row stays (with its
+  // assessment and any case, which is dismissed) as a record, but every
+  // read ignores it, so the post has no song again. Identifying the same song
+  // again later clears these.
+  rejectedAt          DateTime?
+  rejectedById        String?
+  rejectionNote       String?
 
   commercialContent CommercialContent @relation(fields: [commercialContentId], references: [id], onDelete: Cascade)
   musicTrack        MusicTrack?       @relation(fields: [musicTrackId], references: [id])

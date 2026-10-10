@@ -10,8 +10,16 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "research", "fingerprint"))
-from bench import mix_db  # noqa: E402
+import numpy as np  # noqa: E402
 from synth import SR, make_song, make_voice  # noqa: E402
+
+
+def mix_db(music, other, music_db):
+    """Music `music_db` dB relative to the other signal (e.g. -6 under a voice)."""
+    o = other[: len(music)]
+    rm, ro = np.sqrt(np.mean(music ** 2)) + 1e-9, np.sqrt(np.mean(o ** 2)) + 1e-9
+    y = music * (ro / rm) * 10 ** (music_db / 20) + o
+    return (y / (np.max(np.abs(y)) + 1e-9) * 0.9).astype(np.float32)
 
 OUT = os.path.join(HERE, ".audio")
 os.makedirs(OUT, exist_ok=True)

@@ -229,3 +229,22 @@ describe("InMemoryScanResultRepository", () => {
   });
 });
 
+
+describe("rejectIdentification", () => {
+  test("a withdrawn song leaves the post without one, and says what was withdrawn", async () => {
+    const repo = new InMemoryScanResultRepository();
+    await repo.saveScan({ workspaceId: "w1", musicProviderName: "none", items: [{ kind: "NO_MUSIC_MATCH", content: CONTENT, ...CREATOR }] });
+    await repo.identifyPost({
+      workspaceId: "w1",
+      externalContentId: CONTENT.externalContentId,
+      track: { id: "t1", title: "Wrong One", artist: null, isrc: null },
+      assess: async () => ({ status: "POTENTIAL_MISMATCH", reason: "NO_RIGHTS_RECORD", matchedRecordIds: [], explanation: "x" }),
+    });
+    const rejected = await repo.rejectIdentification({ workspaceId: "w1", externalContentId: CONTENT.externalContentId, rejectedById: "u1", note: null });
+    assert.equal(rejected?.title, "Wrong One");
+    assert.ok(rejected?.rightsAssessmentId);
+    assert.equal((await repo.findByContentId("w1", CONTENT.externalContentId))?.kind, "NO_MUSIC_MATCH");
+    assert.equal(await repo.rejectIdentification({ workspaceId: "w1", externalContentId: CONTENT.externalContentId, rejectedById: "u1", note: null }), null);
+    assert.equal(await repo.rejectIdentification({ workspaceId: "w2", externalContentId: CONTENT.externalContentId, rejectedById: "u1", note: null }), null, "another workspace's post");
+  });
+});

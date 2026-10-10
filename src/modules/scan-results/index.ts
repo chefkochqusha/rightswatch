@@ -1,4 +1,4 @@
-export type { IdentificationSource, ScanItemInput, StoredScanItem, ScanResultRepository, TrackMatchForAssessment } from "./types";
+export type { IdentificationSource, RejectedIdentification, ScanItemInput, StoredScanItem, ScanResultRepository, TrackMatchForAssessment } from "./types";
 export { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
 export { summarizeSongMatches } from "./song-summary";
 export type { SongMatchSummary } from "./song-summary";

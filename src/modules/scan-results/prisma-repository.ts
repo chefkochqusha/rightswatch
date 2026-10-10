@@ -5,7 +5,7 @@ import type { NormalizedMusicMatch } from "../music/types";
 import type { RightsAssessmentReason, RightsAssessmentResult, RightsAssessmentStatus } from "../rights-engine/types";
 import { findSameTrack, normalizeIsrc } from "../catalog/identity";
 import { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
-import type { IdentificationSource, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
+import type { IdentificationSource, RejectedIdentification, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
 
 /**
  * Scan results in Postgres (see `types.ts` for the chain and the contract).
@@ -29,6 +29,7 @@ const CONTENT_INCLUDE = {
   commercialContent: {
     include: {
       musicMatches: {
+        where: { rejectedAt: null },
         include: { musicTrack: true, rightsAssessment: true },
         orderBy: { matchedAt: "desc" },
       },
@@ -109,7 +110,7 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     const rows = await getPrisma().content.findMany({
       where: {
         creator: { workspaceId },
-        commercialContent: { musicMatches: { some: { musicTrackId: trackId } } },
+        commercialContent: { musicMatches: { some: { musicTrackId: trackId, rejectedAt: null } } },
       },
       include: CONTENT_INCLUDE,
       orderBy: { publishedAt: "desc" },
@@ -128,6 +129,7 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     const matches = await getPrisma().musicMatch.findMany({
       where: {
         musicTrackId: input.trackId,
+        rejectedAt: null,
         musicTrack: { workspaceId: input.workspaceId },
         commercialContent: { content: { creator: { workspaceId: input.workspaceId } } },
       },
@@ -209,7 +211,7 @@ export class PrismaScanResultRepository implements ScanResultRepository {
           },
         },
         create: { commercialContentId: row.commercialContent!.id, musicTrackId: track.id, provider: source.provider, confidence: source.confidence, manual: source.manual },
-        update: { confidence: source.confidence, manual: source.manual, matchedAt: new Date() },
+        update: { confidence: source.confidence, manual: source.manual, matchedAt: new Date(), rejectedAt: null, rejectedById: null, rejectionNote: null },
       });
       await tx.rightsAssessment.upsert({
         where: { musicMatchId: match.id },
@@ -220,6 +222,33 @@ export class PrismaScanResultRepository implements ScanResultRepository {
 
     const fresh = await prisma.content.findUniqueOrThrow({ where: { id: row.id }, include: CONTENT_INCLUDE });
     return toStoredItem(fresh);
+  }
+
+  async rejectIdentification(input: {
+    workspaceId: string;
+    externalContentId: string;
+    rejectedById: string;
+    note: string | null;
+  }): Promise<RejectedIdentification | null> {
+    const prisma = getPrisma();
+    const row = await prisma.content.findFirst({
+      where: { externalContentId: input.externalContentId, creator: { workspaceId: input.workspaceId } },
+      include: CONTENT_INCLUDE,
+    });
+    const matches = row?.commercialContent?.musicMatches ?? [];
+    // The same choice `toStoredItem` makes: the newest assessed one, else the newest with a song.
+    const current = matches.find((m) => m.musicTrack && m.rightsAssessment) ?? matches.find((m) => m.musicTrack);
+    if (!current?.musicTrack) return null;
+    await prisma.musicMatch.update({
+      where: { id: current.id },
+      data: { rejectedAt: new Date(), rejectedById: input.rejectedById, rejectionNote: input.note?.slice(0, 500) ?? null },
+    });
+    return {
+      trackId: current.musicTrack.id,
+      title: current.musicTrack.title,
+      provider: current.provider,
+      rightsAssessmentId: current.rightsAssessment?.id ?? null,
+    };
   }
 }
 
