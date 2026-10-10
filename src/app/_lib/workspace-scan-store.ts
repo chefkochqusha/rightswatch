@@ -81,6 +81,11 @@ export async function runWorkspaceScan(
   /** Who started it — recorded on the job, and the actor of any case it
    *  opens in the audit log. */
   triggeredByUserId: string | null,
+  options: {
+    /** Run as this job from the queue (`scan-queue.ts`) instead of creating
+     *  one. The worker marks it completed or failed afterwards. */
+    queuedJobId?: string;
+  } = {},
 ): Promise<RunWorkspaceScanResult> {
   const allowance = await getCreatorAllowance(workspaceId);
   if (allowance.cap <= 0) return { ok: false, error: "NO_PLAN" };
@@ -101,6 +106,14 @@ export async function runWorkspaceScan(
     creatorsTotal: creators.length,
     skippedOverLimit: monitored.length - creators.length,
   });
+
+  if (options.queuedJobId) {
+    // Errors go up to the worker, which decides between retrying and failing.
+    await jobs.update<ScanJobPayload>(options.queuedJobId, { payload });
+    const final = await scanCreators(workspaceId, triggeredByUserId, creators, startedAt, payload, connectorMode);
+    return { ok: true, job: await jobs.update<ScanJobPayload>(options.queuedJobId, { payload: final }) };
+  }
+
   const job = await jobs.create<ScanJobPayload>({
     workspaceId,
     type: SCAN_JOB_TYPE,

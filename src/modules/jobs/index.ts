@@ -1,4 +1,6 @@
-export type { JobChanges, JobRecord, JobRepository, JobStatus, NewJob } from "./types";
+export type { JobChanges, JobQueue, JobRecord, JobRepository, JobStatus, NewJob, QueuedJobInput } from "./types";
+export { PermanentJobError, processNextJob, retryDelayMs } from "./worker";
+export type { JobHandler, JobStepResult } from "./worker";
 export { InMemoryJobRepository } from "./in-memory-repository";
 // `PrismaJobRepository`: import from "@/modules/jobs/prisma-repository" —
 // kept out of this barrel for the same reason as every other module's.

@@ -43,8 +43,8 @@ describe("creatorScanHistory", () => {
     const lena = { creatorId: "c-lena", handle: "lena.creates", videos: 3, matches: 1, error: null };
     const history = creatorScanHistory(
       [
-        { id: "j2", workspaceId: "w1", type: SCAN_JOB_TYPE, status: "FAILED", attempts: 1, startedAt: null, completedAt: null, error: "boom", payload: base, createdAt: at },
-        { id: "j1", workspaceId: "w1", type: SCAN_JOB_TYPE, status: "COMPLETED", attempts: 1, startedAt: at, completedAt: at, error: null, payload: { ...base, creators: [lena] }, createdAt: at },
+        { id: "j2", workspaceId: "w1", type: SCAN_JOB_TYPE, status: "FAILED", attempts: 1, startedAt: null, completedAt: null, error: "boom", payload: base, createdAt: at, runAfter: at, maxAttempts: 3 },
+        { id: "j1", workspaceId: "w1", type: SCAN_JOB_TYPE, status: "COMPLETED", attempts: 1, startedAt: at, completedAt: at, error: null, payload: { ...base, creators: [lena] }, createdAt: at, runAfter: at, maxAttempts: 3 },
       ],
       "c-lena",
     );

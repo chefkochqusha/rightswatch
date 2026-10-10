@@ -22,6 +22,10 @@ export interface JobRecord<Payload = unknown> {
   error: string | null;
   payload: Payload | null;
   createdAt: Date;
+  /** Queue: not picked up before this time. */
+  runAfter: Date;
+  /** Queue: tries before the job counts as failed for good. */
+  maxAttempts: number;
 }
 
 export interface NewJob<Payload = unknown> {
@@ -44,4 +48,39 @@ export interface JobRepository {
   findById<Payload>(workspaceId: string, id: string): Promise<JobRecord<Payload> | null>;
   /** Newest first. */
   findRecent<Payload>(workspaceId: string, type: string, limit: number): Promise<JobRecord<Payload>[]>;
+}
+
+/** A job to put on the queue (`JobQueue.enqueue`). */
+export interface QueuedJobInput<Payload = unknown> {
+  workspaceId: string | null;
+  type: string;
+  payload: Payload | null;
+  /** Default: now. */
+  runAfter?: Date;
+  /** Default: 3. */
+  maxAttempts?: number;
+}
+
+/**
+ * The job queue, kept in the `jobs` table (no Redis). A job goes
+ * QUEUED → RUNNING → COMPLETED, or back to RETRYING (with a later
+ * `runAfter`) when it fails and has tries left, or FAILED when it hasn't.
+ * Several workers can claim at once; each job goes to exactly one.
+ */
+export interface JobQueue {
+  enqueue<Payload>(input: QueuedJobInput<Payload>): Promise<JobRecord<Payload>>;
+  /** Takes the job that has waited longest among the due QUEUED/RETRYING
+   *  jobs of these types, marks it RUNNING (attempts + 1) under this
+   *  worker's name, or returns null when there is none. */
+  claim(workerId: string, types: readonly string[], now: Date): Promise<JobRecord | null>;
+  /** The running worker is still alive; keeps the job from being taken back. */
+  heartbeat(id: string, workerId: string, now: Date): Promise<void>;
+  complete<Payload>(id: string, payload?: Payload): Promise<void>;
+  /** `retryAt` null: failed for good. Otherwise queued again for then. */
+  fail(id: string, error: string, retryAt: Date | null): Promise<void>;
+  /** Jobs RUNNING with no heartbeat since `staleBefore` (their worker died)
+   *  go back to the queue, or fail when they have no tries left. */
+  recoverStale(staleBefore: Date, now: Date): Promise<number>;
+  /** A job of this type is waiting or running for the workspace. */
+  findPending<Payload>(workspaceId: string, type: string): Promise<JobRecord<Payload> | null>;
 }

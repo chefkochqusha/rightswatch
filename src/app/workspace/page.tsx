@@ -15,6 +15,9 @@ import { CoverArt } from "@/components/music/cover-art";
 import { DetectionCard, type DetectionSong } from "@/components/feed/detection-card";
 import type { StoredScanItem } from "@/modules/scan-results";
 import { RunScanButton } from "@/components/scans/run-scan-button";
+import { ScanInProgress } from "@/components/scans/scan-in-progress";
+import { getJobStore } from "@/app/_lib/job-store";
+import { SCAN_JOB_TYPE } from "@/modules/jobs";
 
 export const metadata = {
   title: "Overview — Bekvor",
@@ -58,12 +61,13 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
   const canManage = canManageCases(session.role);
   const workspaceId = session.workspace.id;
 
-  const [items, creators, allowance, cases, tracks] = await Promise.all([
+  const [items, creators, allowance, cases, tracks, pendingScan] = await Promise.all([
     getWorkspaceScanItems(workspaceId),
     getCreatorStore().creators.findForWorkspace(workspaceId),
     getCreatorAllowance(workspaceId),
     getCaseStore().cases.findForWorkspace(workspaceId),
     getLibraryStore().catalog.findAllKnown(workspaceId),
+    getJobStore().queue.findPending(workspaceId, SCAN_JOB_TYPE),
   ]);
   const monitored = creators.filter((creator) => creator.monitoringEnabled);
   const caseByAssessment = new Map(cases.map((c) => [c.rightsAssessmentId, c]));
@@ -133,6 +137,8 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
         }
         actions={canManage && allowance.cap > 0 && monitored.length > 0 ? <RunScanButton creatorCount={Math.min(monitored.length, allowance.cap)} /> : undefined}
       />
+
+      {pendingScan && <ScanInProgress running={pendingScan.status === "RUNNING"} retrying={pendingScan.status === "RETRYING"} />}
 
       {nextStep !== -1 && (
         <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">

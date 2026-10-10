@@ -26,6 +26,10 @@ export function RunScanButton({ creatorCount }: { creatorCount: number }) {
           <span className="text-mismatch">{state.message}</span>
         ) : state.status === "done" ? (
           summary(state)
+        ) : state.status === "queued" ? (
+          state.alreadyQueued
+            ? "A scan is already on its way. Results appear on this page when it's done."
+            : "Scan started. It runs in the background; results appear on this page when it's done."
         ) : null}
       </p>
     </form>

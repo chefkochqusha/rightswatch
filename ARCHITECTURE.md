@@ -53,7 +53,7 @@ targets").
 | Validation | Zod | Built (where used) |
 | ORM | Prisma (`prisma/schema.prisma`) | Schema complete; generated and pushed to Neon on every Vercel build, and verifiable locally against a real Postgres — see "Open decisions" and "Testing & verification conventions" |
 | Database | PostgreSQL, hosted on Neon | Provisioned and live (Vercel marketplace integration) — see "Open decisions" |
-| Background jobs | BullMQ on Upstash Redis | Chosen, not wired — see "Open decisions" |
+| Background jobs | Job queue in Postgres (`jobs` table), worker in the server process | Built — see "Open decisions" → Background jobs |
 | Auth | Session-based, signed cookie (Brief §40) | Built, Prisma-backed (Neon) |
 | Payments | Stripe (test mode) | Built; turns on once its five env vars are set (`STRIPE_INTEGRATION.md`) — production runs clearly-labeled demo billing (`MockPaymentProvider`) until then |
 | Hosting | Vercel (production deploys from `main`) | Live |
@@ -136,36 +136,39 @@ made once and referenced everywhere rather than re-litigated per file.
 
 ### Background jobs
 
-- **BullMQ, backed by Upstash Redis.** BullMQ and its durable `Job` audit
-  row are Brief §21; Upstash specifically is a standing project decision
-  (pairing naturally with Neon's serverless-first hosting story), not a
-  Brief citation.
-- **Current reality:** nothing is queued yet. A scan runs synchronously,
-  in-process, triggered by a Server Action ("Run scan") rather than a
-  scheduled job — but every run is already recorded as a `Job` row
-  (`modules/jobs`): created `RUNNING` when it starts, `COMPLETED` or
-  `FAILED` when it ends, with per-creator results as its payload. That row
-  is what a creator's monitoring history (§8) reads, and what a queue will
-  pick up and retry once there is one. `Job.workspaceId` is an addition to
-  §21's field list, documented on the model: a scan always works for one
-  workspace. (`WebhookEvent`, the other operations table, is live — see
-  "Payments".)
-- **Scheduled scans** don't need the queue. `vercel.json` has a daily cron
-  (04:30 UTC, the only frequency Vercel's free Hobby plan allows; Hobby is non-commercial only, so a paid launch moves to Pro, see `RELEASE_CHECKLIST.md`) calling
-  `/api/cron/scans`, which refuses everything unless the request carries
-  `Authorization: Bearer <CRON_SECRET>` (and refuses all of it while the
-  variable is unset). `runDueScans` (`app/_lib/scheduled-scans.ts`) asks
-  `modules/jobs/due-scans.ts` to scan each workspace whose plan cadence says
-  it's due — "daily" counts as due after 20 hours and "every_6h" after 5, so a
-  run that started a few minutes late yesterday still counts today;
-  "configurable" runs daily until it has a setting. A workspace's failing scan
-  doesn't stop the others, a failed run doesn't postpone the next try, and no
-  new workspace starts after a 200 s budget. The scan is a normal `Job` with
-  no triggering user, so the cases it opens are audit-logged without an actor.
-  **It does nothing while the connector is the demo one**: demo scans produce
-  invented posts, and a customer's workspace shouldn't be topped up with them
-  on a timer. The Growth plan's six-hour cadence needs a more frequent
-  trigger than the free Vercel plan allows; on that plan it runs daily.
+- **A queue in Postgres, no Redis.** The `jobs` table (Brief §21's `Job`)
+  is the queue: `modules/jobs` adds `enqueue`, `claim` (one row with
+  `FOR UPDATE SKIP LOCKED`, so several workers never take the same job),
+  `heartbeat`, `complete`, `fail` and `recoverStale`. A job goes QUEUED →
+  RUNNING → COMPLETED, or RETRYING (after 1, 5, 25 minutes) while it has
+  tries left (`maxAttempts`, default 3), then FAILED. A handler throwing
+  `PermanentJobError` fails at once (wrong input; retrying can't help). A
+  RUNNING job whose heartbeat (every 30 s) stopped for 5 minutes — its
+  process died — goes back to the queue. Checked against a real Postgres by
+  `scripts/local-db/queue-check.mts` (20 jobs, 5 workers claiming at once).
+  BullMQ/Upstash, the earlier plan, is dropped.
+- **Where work runs** is `JOB_RUNNER` (`app/_lib/job-runner.ts`):
+  - `inline` (default, Vercel): "Run scan" runs the scan in the request, as
+    before, and Vercel Cron calls `/api/cron/scans` daily at 04:30 UTC with
+    `Authorization: Bearer <CRON_SECRET>` (refused while unset). Hobby is
+    non-commercial only; see `RELEASE_CHECKLIST.md`.
+  - `worker` (our own server, `deploy/compose.yml`): "Run scan" queues the
+    scan and returns; the Overview shows "A scan is running" and refreshes
+    itself until the results are in. A second click while one is waiting
+    gets the same job. The worker (`app/_lib/worker.ts`) starts with the
+    server process from `src/instrumentation.ts` and also queues the
+    scheduled scans every 5 minutes, so there is no cron at all. The cron
+    endpoint still works and queues instead of running.
+- **Every scan is a `Job` row** either way, with per-creator results as its
+  payload — what a creator's monitoring history (§8) and "last scan" (§7)
+  read. `runDueScans` (`app/_lib/scheduled-scans.ts`) asks
+  `modules/jobs/due-scans.ts` which workspaces are due by plan cadence —
+  "daily" after 20 hours, "every_6h" after 5 — so a run that started a few
+  minutes late yesterday still counts today; "configurable" runs daily until
+  it has a setting. One workspace failing doesn't stop the others, and only
+  completed scans postpone the next. **Scheduled scans do nothing while the
+  connector is the demo one**: a customer's workspace shouldn't be topped up
+  with invented posts on a timer.
 
 ### Object storage
 
@@ -634,7 +637,7 @@ Case Creation → Notifications.**
 `runScan()` (`src/modules/scan-pipeline/`) implements the middle of that
 chain — Connector → Normalize → Music Identification → Rights Engine — as a
 single function with no side effects of its own, so it's equally usable from
-a demo script, a real BullMQ job, or a test. Deduplication is deliberately
+a demo script, a queued job, or a test. Deduplication is deliberately
 not reimplemented inside it: Brief §22 asks for a uniqueness strategy on
 stable external ids, which is the database's job, so it happens where the
 results are persisted — `modules/scan-results`, whose `saveScan` upserts the
@@ -1064,7 +1067,7 @@ local development and never commit real values.
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
 | `MUSIC_SEARCH_PROVIDER` | Song search for the Rights Library: `musicbrainz` (default) or `demo` | Unset in production (MusicBrainz); `demo` for local checks and tests, where the public service isn't reachable |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank — demo connector used. Setting both switches every workspace except the public demo to the real one |
-| `REDIS_URL` | BullMQ (Upstash Redis, or any Redis-compatible URL) | Unused — nothing queues jobs yet |
+| `JOB_RUNNER` | `inline` (default, Vercel) or `worker` (own server: Postgres job queue, worker and schedule in the server process) | `inline` on Vercel; `worker` in `deploy/compose.yml` |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
 | `SENTRY_DSN` | Monitoring | Blank — not wired up |
 | `DEMO_MODE` | Forces Demo Mode regardless of connector configuration | `"true"` |
@@ -1088,9 +1091,6 @@ reads as an oversight:
   says which one (see "Music Matches")
 - Stripe going live — built and tested; waiting on a Stripe account, three
   test-mode prices and a webhook destination (`STRIPE_INTEGRATION.md`)
-- Background job queue (`Job`) — BullMQ/Upstash Redis is the chosen
-  approach (see "Open decisions" → Background jobs); no Redis is
-  provisioned yet
 
 **Deliberately not built — would be speculative scope today:**
 - `PlanEntitlement` / `UsageRecord` (billing) — no concrete entitlement or

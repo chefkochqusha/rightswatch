@@ -668,8 +668,9 @@ enum JobStatus {
   RETRYING
 }
 
-// Master Brief §21. One row per BullMQ job for observability/retry-tracking;
-// BullMQ/Redis owns actual queueing, this is the durable record of it.
+// Master Brief §21. One row per background job, and the queue itself:
+// workers claim rows with FOR UPDATE SKIP LOCKED (modules/jobs), so Postgres
+// is the only moving part (BullMQ/Redis was the earlier plan, dropped).
 model Job {
   id          String    @id @default(cuid())
   // The workspace a job works for — a scan is always one workspace's. An
@@ -686,10 +687,19 @@ model Job {
   payloadRef  String? // pointer to the job payload (object storage key or a small Json blob below)
   payload     Json?
   createdAt   DateTime  @default(now())
+  // The job queue (modules/jobs/queue.ts): a QUEUED or RETRYING job is
+  // picked up by a worker once `runAfter` has passed. `lockedAt` is the
+  // worker's heartbeat while it runs; a RUNNING job whose heartbeat stopped
+  // (the process died) goes back to the queue. No Redis needed.
+  runAfter    DateTime  @default(now())
+  maxAttempts Int       @default(3)
+  lockedAt    DateTime?
+  lockedBy    String?
 
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([type, status])
+  @@index([status, runAfter])
   @@index([workspaceId, type, createdAt])
   @@map("jobs")
 }

@@ -35,6 +35,10 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://rightswatch:${POSTGRES_PASSWORD}@db:5432/rightswatch
+      # The background worker runs in this process: queued scans, retries and
+      # the scheduled scans (replaces Vercel Cron and a cron container).
+      JOB_RUNNER: worker
+    stop_grace_period: 30s
     depends_on:
       migrate: { condition: service_completed_successfully }
     # Reached only through Caddy.
@@ -49,19 +53,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [app]
-
-  cron:
-    # Replaces Vercel Cron: calls the scheduled-scan endpoint once a day at 04:30 UTC.
-    image: alpine:3
-    restart: unless-stopped
-    env_file: .env
-    command:
-      - sh
-      - -c
-      - |
-        echo '30 4 * * * wget -qO- --header "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/scans >/proc/1/fd/1 2>&1' > /etc/crontabs/root
-        crond -f -l 8
     depends_on: [app]
 
   backup:

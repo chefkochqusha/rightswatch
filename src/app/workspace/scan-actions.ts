@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireCaseManager } from "@/app/_lib/authorize";
-import { runWorkspaceScan } from "@/app/_lib/workspace-scan-store";
+import { startWorkspaceScan } from "@/app/_lib/scan-queue";
 
 /**
  * "Run scan" (Brief §50) for the caller's workspace — the ANALYST tier and
@@ -23,25 +23,28 @@ export type ScanActionState =
       failedCreators: number;
       skippedOverLimit: number;
     }
+  | { status: "queued"; alreadyQueued: boolean }
   | { status: "error"; message: string };
 
 export async function runScanAction(_prev: ScanActionState, _formData: FormData): Promise<ScanActionState> {
   const session = await requireCaseManager();
-  const result = await runWorkspaceScan(session.workspace.id, session.user.id);
+  const started = await startWorkspaceScan(session.workspace.id, session.user.id);
   // The whole layout: a scan can open cases, and each one adds to the
   // sidebar's unread-notification badge.
   revalidatePath("/workspace", "layout");
 
-  if (!result.ok) {
+  if (started.kind === "refused") {
     return {
       status: "error",
       message:
-        result.error === "NO_PLAN"
+        started.error === "NO_PLAN"
           ? "Choose a plan to start monitoring. Every plan starts with a free trial."
           : "Add a creator to your watchlist first. A scan checks the creators you monitor.",
     };
   }
-  const payload = result.job.payload;
+  if (started.kind === "queued") return { status: "queued", alreadyQueued: started.alreadyQueued };
+  if (!started.result.ok) return { status: "error", message: "The scan couldn't start." };
+  const payload = started.result.job.payload;
   return {
     status: "done",
     creators: payload?.creatorsTotal ?? 0,

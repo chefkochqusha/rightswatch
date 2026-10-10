@@ -4,6 +4,8 @@ import { getBillingStore } from "./billing-store";
 import { getConnectorMode } from "./connector-mode";
 import { DEMO_WORKSPACE_SLUG } from "./demo-access";
 import { getJobStore } from "./job-store";
+import { getJobRunnerMode } from "./job-runner";
+import { queueWorkspaceScan } from "./scan-queue";
 import { runWorkspaceScan } from "./workspace-scan-store";
 
 export type ScheduledScanSummary = DueScanSummary & {
@@ -22,6 +24,9 @@ export type ScheduledScanSummary = DueScanSummary & {
  * - The public demo workspace is never scanned again after it is filled.
  * - Workspaces run one at a time, and no new one starts after the time
  *   budget; the rest are still due on the next run.
+ * - **With the worker** (`job-runner.ts`) a due scan is queued instead of
+ *   run here, once: a workspace whose scan is still waiting or running
+ *   isn't queued again.
  */
 export async function runDueScans(now: Date = new Date(), budgetMs = 200_000): Promise<ScheduledScanSummary> {
   if (getConnectorMode() !== "REAL") return { workspaces: 0, scanned: 0, notDue: 0, failed: 0, deferred: 0, skipped: "DEMO_CONNECTOR" };
@@ -41,7 +46,10 @@ export async function runDueScans(now: Date = new Date(), budgetMs = 200_000): P
       const recent = await jobs.findRecent(workspaceId, SCAN_JOB_TYPE, 5);
       return recent.find((job) => job.status === "COMPLETED")?.completedAt ?? null;
     },
-    scan: async (workspaceId) => (await runWorkspaceScan(workspaceId, null)).ok,
+    scan:
+      getJobRunnerMode() === "worker"
+        ? async (workspaceId) => (await queueWorkspaceScan(workspaceId, null)).kind === "queued"
+        : async (workspaceId) => (await runWorkspaceScan(workspaceId, null)).ok,
     now,
     deadline: Date.now() + budgetMs,
     onError: (workspaceId, error) => console.error(`Scheduled scan failed for workspace ${workspaceId}:`, error),
