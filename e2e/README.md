@@ -15,3 +15,8 @@ E2E_RECOGNITION=1 npm run test:e2e
 Without the recognition service, leave out `E2E_RECOGNITION`: the
 recognition checks are skipped. A Chromium that Playwright didn't install
 can be named with `PW_CHROMIUM_PATH`.
+
+`accessibility.spec.ts` runs axe-core (WCAG 2.1 A/AA rules) on the public
+pages and the demo workspace, in light and dark mode. It needs no recognition
+service. Machine checks find contrast, names and labels; a keyboard and
+screen-reader pass by a person is still on `RELEASE_CHECKLIST.md`.

@@ -74,7 +74,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         <div className="mt-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.02em]">@{creator.handle}</h1>
+              <h1 className="font-display text-[2rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{creator.handle}</h1>
               {!creator.removedAt && <CreatorStatusBadge status={creator.status} />}
             </div>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] text-t2">

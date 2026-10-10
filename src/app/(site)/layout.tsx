@@ -1,4 +1,3 @@
-import "@fontsource-variable/bricolage-grotesque/opsz.css";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { MotionProvider } from "@/components/marketing/motion-provider";

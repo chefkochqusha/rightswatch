@@ -27,8 +27,8 @@ export function AuthShell({
           <span className="text-[0.9375rem] font-semibold text-tx">{BRAND.name}</span>
         </Link>
 
-        <div className="rounded-lg border border-line bg-surface p-6">
-          <h1 className="text-xl font-semibold tracking-tight text-tx">{title}</h1>
+        <div className="rounded-[1.25rem] border border-line bg-surface p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.12)] sm:p-8">
+          <h1 className="font-display text-[1.625rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-tx">{title}</h1>
           <p className="mt-1 text-sm text-t2">{subtitle}</p>
           <div className="mt-6">{children}</div>
         </div>

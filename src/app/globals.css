@@ -15,8 +15,8 @@
   --tx: #1d1d1f; /* primary text */
   --t2: #66666b; /* secondary text */
   --ln: rgba(0, 0, 0, 0.09); /* hairline borders */
-  --ac: #0068d0; /* accent / primary action */
-  --acs: #0071e3; /* accent, hovered */
+  --ac: #1f3dff; /* accent / primary action: the brand blue (`--color-ultra`), 6.6:1 on white */
+  --acs: #1530d6; /* accent, hovered */
   --acf: #fff; /* text on an accent fill */
   --hv: rgba(0, 0, 0, 0.045); /* hover fill */
 
@@ -39,9 +39,9 @@
     --tx: #f5f5f7;
     --t2: #a1a1a6;
     --ln: rgba(255, 255, 255, 0.13);
-    --ac: #2997ff;
-    --acs: #47a6ff;
-    --acf: #001428;
+    --ac: #7d8cff; /* the brand blue lightened to read on black (7:1) */
+    --acs: #9aa6ff;
+    --acf: #00063a;
     --hv: rgba(255, 255, 255, 0.07);
 
     --gn: #5fd383;
@@ -100,7 +100,7 @@ body {
 
 ::selection {
   background: var(--ac);
-  color: #fff;
+  color: var(--acf);
 }
 
 :focus-visible {

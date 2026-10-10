@@ -29,7 +29,7 @@ export default async function NotificationsPage() {
     <div>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+          <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">Notifications</h1>
           <p className="mt-1 text-sm text-t2">
             {unreadCount > 0
               ? `${unreadCount} unread`

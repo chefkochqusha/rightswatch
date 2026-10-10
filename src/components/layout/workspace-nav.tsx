@@ -44,8 +44,10 @@ function NavList({ items, pathname }: { items: WorkspaceNavItem[]; pathname: str
             <Link
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center justify-between gap-2 rounded-[0.625rem] px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                active ? "bg-surface text-tx ring-1 ring-line" : "text-t2 hover:bg-hover hover:text-tx"
+              className={`relative flex items-center justify-between gap-2 rounded-[0.625rem] px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                active
+                  ? "bg-surface text-tx ring-1 ring-line before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent"
+                  : "text-t2 hover:bg-hover hover:text-tx"
               }`}
             >
               {item.label}

@@ -256,6 +256,11 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   per-request script nonce, every page renders per request. Re-check it in the
   browser console after adding any third-party script, font or embed (Stripe
   Checkout redirects are already allowed).
+- [ ] **Accessibility by hand** (axe passes in CI for the public pages and the
+  demo workspace, light and dark: `e2e/accessibility.spec.ts`). Still needed
+  once: the whole flow with only a keyboard and with VoiceOver, signup to
+  closing a case. B2B-only keeps the BFSG out of scope, but customers' public
+  bodies and large companies ask for it.
 - [ ] **Security re-check before real customer data**: `SECURITY.md` has the
   audit and what is still open (shared rate limits, `SESSION_SECRET` as
   Sensitive, dev/prod separation, the Prisma and lint-tool advisories, logins in

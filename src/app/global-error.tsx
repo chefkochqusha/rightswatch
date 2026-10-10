@@ -35,7 +35,7 @@ export default function GlobalError({
         <main>
         <title>Something went wrong — Bekvor</title>
         <p className="text-sm font-semibold text-t2">Error</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Something went wrong</h1>
+        <h1 className="mt-2 font-display text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em]">Something went wrong</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-t2">
           That&rsquo;s on us — the app hit an unexpected error. Trying again usually fixes it.
         </p>

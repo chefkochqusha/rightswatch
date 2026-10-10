@@ -128,7 +128,7 @@ export default async function SongPage({ params, searchParams }: PageProps<"/wor
             className="h-32 w-32 shrink-0 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] sm:h-40 sm:w-40"
           />
           <div className="min-w-0">
-            <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.02em] text-tx sm:text-[2.5rem]">{track.title}</h1>
+            <h1 className="font-display text-[2rem] leading-[1.05] font-extrabold tracking-[-0.03em] text-tx sm:text-[2.5rem]">{track.title}</h1>
             <p className="mt-1 text-[1.0625rem] text-tx/80">{track.artist ?? "Unknown artist"}</p>
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.8125rem] text-t2">
               {facts.map((fact) => (

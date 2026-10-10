@@ -51,7 +51,7 @@ Tailwind theme colors (`@theme inline`) so components use `bg-surface`,
 | `--tx` | `text-tx` | `#1d1d1f` | `#f5f5f7` | Primary text |
 | `--t2` | `text-t2` | `#6e6e73` | `#a1a1a6` | Secondary text |
 | `--ln` | `border-line` | `rgba(0,0,0,.09)` | `rgba(255,255,255,.13)` | Hairline borders |
-| `--ac` | `text-accent` / `bg-accent` | `#0071e3` | `#2997ff` | Accent — text links, the focus ring, and text-selection highlight |
+| `--ac` | `text-accent` / `bg-accent` | `#1f3dff` | `#7d8cff` | Accent: the brand blue (the logo's, `bg-ultra`). Primary buttons, text links, switches, the focus ring, the active nav marker, text selection. 6.6:1 on white; the dark value is lightened to 7:1 on black, since the pure brand blue reads poorly there |
 | `--hv` | `bg-hover` | `rgba(0,0,0,.045)` | `rgba(255,255,255,.07)` | Hover fill |
 
 Dark mode is automatic (`@media (prefers-color-scheme: dark)`), not a manual
@@ -86,8 +86,13 @@ Inter, ui-sans-serif, system-ui, sans-serif
 ```
 
 Real SF Pro for the MacBook-using customer the product targets, Inter as the
-web-safe fallback elsewhere. No bundled webfont download — nothing to fetch,
-nothing to flash unstyled while it loads.
+web-safe fallback elsewhere.
+
+Titles use the landing page's display face, Bricolage Grotesque (variable,
+self-hosted through `@fontsource-variable`, loaded once in the root layout;
+`font-display`), extra bold and tightly tracked, so the app and the site read
+as one product. Only titles: body text, tables and forms stay on the system
+stack.
 
 The real app's implemented type scale is a small, consistent set of
 Tailwind utility combinations, reused as-is on every page rather than each
@@ -95,8 +100,8 @@ page inventing its own sizes:
 
 | Role | Classes | Used for |
 |---|---|---|
-| Page title | `PageHeader`: `text-[2rem] leading-[1.1] font-semibold tracking-[-0.02em]`, description `text-[0.9375rem] text-t2` | "Overview", "Creators", a creator's "@handle" — Brief §28's tight leading and negative tracking for large type. Pages not yet moved to `PageHeader` still use `text-2xl font-semibold tracking-tight` |
-| Auth card title | `text-xl font-semibold tracking-tight` | Login / signup card heading |
+| Page title | `PageHeader`: `font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]`, description `text-[0.9375rem] text-t2` | "Overview", "Creators", a creator's "@handle" (2rem on detail pages). Pages not yet moved to `PageHeader` use the same classes; error and not-found pages 1.75rem |
+| Auth card title | `font-display text-[1.625rem] leading-[1.1] font-extrabold tracking-[-0.03em]` | Login / signup card heading |
 | Section title | `text-[1.0625rem] font-semibold tracking-[-0.01em]` | A section's own heading, e.g. "Music matches", "Add a creator" (older sections: `text-sm font-semibold`) |
 | Body / primary | `text-sm text-tx` (default color) | Table cells, row primary text |
 | Secondary / caption | `text-sm text-t2` or `text-[0.8125rem] text-t2` | Subtitles, helper text, timestamps |
@@ -117,7 +122,7 @@ prototype's `h1` rule is the reference to match, not a size to invent fresh.
 **The workspace sidebar** (`app/workspace/layout.tsx`,
 `components/layout/workspace-nav.tsx`) — the authenticated app's chrome,
 the prototype's layout carried over: a `15.5rem` sidebar on `bg-surface-2`
-(sticky, full height) beside the content column. The RW mark and the
+(sticky, full height) beside the content column. The logo mark (`LogoMark`) and the
 "Bekvor" wordmark (sentence case, not tracked capitals) sit at the
 top; below them the sections in Brief
 §6's order (Overview, Creators, Music Matches, Cases, Rights Library,
@@ -125,7 +130,8 @@ Reports, Team, Billing, Settings), then a second group (Notifications with
 its unread-count pill, `bg-review-bg text-review`, capped at "99+"; Audit
 log). A section appears only once its page exists — no dead navigation
 (Brief §63). Links are `rounded-[0.625rem] px-3 py-2 text-sm font-medium`;
-the active one is `bg-surface text-tx ring-1 ring-line` with
+the active one is `bg-surface text-tx ring-1 ring-line` plus a 3px
+`bg-accent` marker on its left edge, with
 `aria-current="page"`, the rest `text-t2 hover:bg-hover hover:text-tx`. A
 detail page lights up the section it belongs to (an item's page lights up
 the list it came from).

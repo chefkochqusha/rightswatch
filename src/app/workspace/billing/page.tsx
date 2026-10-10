@@ -44,7 +44,7 @@ export default async function BillingPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
+      <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">Billing</h1>
       <p className="mt-1 text-sm text-t2">
         {subscription && !isCanceled
           ? "Manage your plan and subscription."

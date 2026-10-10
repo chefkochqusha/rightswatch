@@ -73,7 +73,7 @@ export default async function WorkspaceItemDetailPage({
 
       <div className="mt-4 mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">@{item.creatorUsername}</h1>
+          <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{item.creatorUsername}</h1>
           <p className="mt-1 text-sm text-t2">
             {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
             {dateFormatter.format(item.content.publishedAt)}

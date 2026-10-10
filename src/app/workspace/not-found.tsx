@@ -10,7 +10,7 @@ export default function WorkspaceNotFound() {
   return (
     <div className="py-16 text-center">
       <p className="text-sm font-semibold text-t2">404</p>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-tx">Not found</h1>
+      <h1 className="mt-2 font-display text-[1.75rem] leading-[1.1] font-extrabold tracking-[-0.03em] text-tx">Not found</h1>
       <p className="mx-auto mt-2 max-w-md text-sm text-t2">
         This item doesn&rsquo;t exist in your workspace, or it was removed.
       </p>

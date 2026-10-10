@@ -46,7 +46,7 @@ export default async function TeamPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
+      <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">Team</h1>
       <p className="mt-1 text-sm text-t2">Everyone with access to {session.workspace.name}.</p>
 
       {canInvite && (

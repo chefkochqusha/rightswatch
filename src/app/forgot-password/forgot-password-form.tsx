@@ -28,7 +28,7 @@ export function ForgotPasswordForm() {
   return (
     <form action={formAction} className="space-y-4">
       <FormField label="Email" name="email" type="email" placeholder="jane@acme.com" autoComplete="email" />
-      <button type="submit" disabled={pending} className="w-full rounded-full bg-tx px-4 py-2.5 text-sm font-medium text-bg transition hover:opacity-90 disabled:opacity-60">
+      <button type="submit" disabled={pending} className="h-11 w-full rounded-full bg-accent px-4 text-[0.9375rem] font-medium text-accent-fg transition-[transform,background-color] duration-100 ease-out hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60">
         {pending ? "Sending…" : "Send reset link"}
       </button>
     </form>
