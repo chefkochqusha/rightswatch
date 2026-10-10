@@ -3,16 +3,18 @@
 The way off Vercel: one server in the EU running the app, Postgres, HTTPS,
 the daily scan and encrypted nightly backups in Docker. Prepared 2026-10-08.
 The standalone build was tested locally (pages, signup, invites, login,
-account deletion), but **the Docker images themselves have not been built
-yet**: there was no Docker engine in the development environment. Expect one
-small fix on the first `docker compose up`.
+account deletion; on 2026-10-10 also the worker, uploads and own recognition
+against a real Postgres and the recognition service), but **the Docker images
+themselves have not been built yet**: Docker Hub is blocked in the development
+environment. Expect one small fix on the first `docker compose up`.
 
 ## What it replaces
 
 | Today (Vercel/Neon) | Own server (`deploy/`) |
 |---|---|
 | Vercel functions, US company | `app`: Next.js standalone build (`Dockerfile`) |
-| Vercel Cron, daily | `cron`: calls `/api/cron/scans` at 04:30 UTC with `CRON_SECRET` |
+| Vercel Cron, daily | Nothing extra: the worker in the `app` process (`JOB_RUNNER=worker`) runs queued jobs from Postgres and queues the scheduled scans itself |
+| AudD (paid, per post) | `recognizer`: own song recognition (`services/recognizer`), private network only, plus an `uploads` volume for files waiting to be read |
 | Neon Postgres | `db`: Postgres 17, reachable only from the other containers |
 | Neon history window | `backup`: nightly `pg_dump`, encrypted with an age public key, kept 14 days |
 | Vercel HTTPS and edge | `caddy`: automatic Let's Encrypt certificates, compression, 10 MB body limit |
@@ -25,7 +27,8 @@ small fix on the first `docker compose up`.
    recognition will need the CPU later. Sign the provider's DPA (AVV).
 2. **The domain** (once the name is settled), with an A record pointing at
    the server.
-3. **An age key pair** for backups, made on your own computer: `age-keygen -o key.txt`.
+3. **`RECOGNIZER_TOKEN`** in `deploy/.env`: any long random string (`openssl rand -hex 32`).
+4. **An age key pair** for backups, made on your own computer: `age-keygen -o key.txt`.
    The public key (`age1…`) goes on the server; `key.txt` stays offline (a
    password manager or USB stick). Without it the backups can't be read, by
    anyone.

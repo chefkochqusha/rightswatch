@@ -18,6 +18,7 @@ import { RunScanButton } from "@/components/scans/run-scan-button";
 import { ScanInProgress } from "@/components/scans/scan-in-progress";
 import { getJobStore } from "@/app/_lib/job-store";
 import { SCAN_JOB_TYPE } from "@/modules/jobs";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 
 export const metadata = {
   title: "Overview — Bekvor",
@@ -74,6 +75,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
 
   const now = new Date();
   const isDemo = dataModeFor(session.workspace) === "DEMO";
+  const canAddPosts = session.workspace.slug !== DEMO_WORKSPACE_SLUG;
   const displayNames = new Map(creators.map((creator) => [creator.id, creator.displayName]));
   const trackById = new Map(tracks.map((track) => [track.id, track]));
   const openCases = cases.filter((c) => c.status === "OPEN" || c.status === "IN_PROGRESS").length;
@@ -135,7 +137,18 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
             ? `${session.workspace.name} isn't monitoring anyone yet.`
             : `What Bekvor found across the ${monitored.length === 1 ? "creator" : `${monitored.length} creators`} ${session.workspace.name} monitors.`
         }
-        actions={canManage && allowance.cap > 0 && monitored.length > 0 ? <RunScanButton creatorCount={Math.min(monitored.length, allowance.cap)} /> : undefined}
+        actions={
+          canManage && (creators.length > 0 || (allowance.cap > 0 && monitored.length > 0)) ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {canAddPosts && creators.length > 0 && (
+                <Link href="/workspace/posts/new" className={buttonStyles("secondary")}>
+                  Add a post
+                </Link>
+              )}
+              {allowance.cap > 0 && monitored.length > 0 && <RunScanButton creatorCount={Math.min(monitored.length, allowance.cap)} />}
+            </div>
+          ) : undefined
+        }
       />
 
       {pendingScan && <ScanInProgress running={pendingScan.status === "RUNNING"} retrying={pendingScan.status === "RETRYING"} />}
@@ -250,7 +263,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
                 filter === "nosong"
                   ? "Posts where no song could be identified would be listed here."
                   : matched.length === 0 && unidentified.length > 0
-                    ? "Scans found paid posts, but no song was identified in them. Open one and say which of your songs it uses, and the rights check runs."
+                    ? "There are paid posts, but no song is identified in them yet. Open one and say which of your songs it uses, or upload its audio where that's offered, and the rights check runs."
                     : matched.length === 0
                       ? "Once a scan finds commercial posts by the creators you monitor, they show up here as a feed, newest first, with what the rights check says about each one."
                       : "Try another filter, or pick a different song."
@@ -258,7 +271,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
             >
               {filter !== "nosong" && matched.length === 0 && unidentified.length > 0 && (
                 <Link href={feedHref({ show: "nosong", song: null })} className={buttonStyles("primary", "md")}>
-                  See the {unidentified.length} posts
+                  {unidentified.length === 1 ? "See the post" : `See the ${unidentified.length} posts`}
                 </Link>
               )}
             </EmptyState>

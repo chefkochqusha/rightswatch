@@ -92,6 +92,8 @@ model Workspace {
   connectors    Connector[]
   auditLogs     AuditLog[]
   jobs          Job[]
+  fingerprints  TrackFingerprint[]
+  audioChecks   AudioCheck[]
   referral      Referral?
 
   @@map("workspaces")
@@ -207,6 +209,7 @@ model Content {
 
   creator           Creator            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   commercialContent CommercialContent?
+  audioChecks       AudioCheck[]
 
   // Idempotency key (Master Brief §22). Per creator — and a Creator is per
   // workspace and platform — not global: two workspaces monitoring the same
@@ -282,6 +285,8 @@ model MusicTrack {
   workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   rightsRecords RightsRecord[]
   musicMatches  MusicMatch[]
+  fingerprint   TrackFingerprint?
+  audioChecks   AudioCheck[]
 
   @@index([workspaceId])
   @@index([workspaceId, inCatalogue])
@@ -774,4 +779,72 @@ model Commission {
 
   @@index([partnerId])
   @@map("commissions")
+}
+
+// Own song recognition (services/recognizer). A catalogue song's acoustic
+// fingerprint, made from a recording the workspace uploaded. The recording
+// itself is deleted as soon as the fingerprint exists: only this compact
+// list of landmark hashes is kept, which can't be played back. Kept here
+// rather than in the recognition service so the nightly backup covers it.
+model TrackFingerprint {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  musicTrackId   String   @unique
+  algorithm      String // e.g. "bekvor-lp-1"; a new algorithm needs new uploads
+  data           Bytes
+  durationSec    Float
+  hashCount      Int
+  sourceFileName String?
+  sourceSha256   String
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  musicTrack MusicTrack @relation(fields: [musicTrackId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("track_fingerprints")
+}
+
+enum AudioCheckStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum AudioCheckOutcome {
+  MATCH // sure enough to identify the post's song automatically
+  CANDIDATE // a likely song: a person confirms it or picks another
+  NO_MATCH // none of the workspace's fingerprinted songs
+}
+
+// One check of a post's audio against the workspace's fingerprinted songs:
+// someone uploaded the post's video or sound. The file is deleted when the
+// check ends; this row keeps what was found and why.
+model AudioCheck {
+  id            String             @id @default(cuid())
+  workspaceId   String
+  contentId     String
+  jobId         String?
+  status        AudioCheckStatus   @default(QUEUED)
+  outcome       AudioCheckOutcome?
+  musicTrackId  String?
+  confidence    Float?
+  // the recognition service's evidence: scores, windows, speed, pitch
+  details       Json?
+  fileName      String?
+  durationSec   Float?
+  error         String?
+  requestedById String?
+  createdAt     DateTime           @default(now())
+  completedAt   DateTime?
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  content    Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  musicTrack MusicTrack? @relation(fields: [musicTrackId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, contentId, createdAt])
+  @@map("audio_checks")
 }

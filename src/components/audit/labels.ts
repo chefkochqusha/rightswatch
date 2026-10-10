@@ -24,6 +24,11 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "creator.removed": "Removed a creator from the watchlist",
   "creator.updated": "Updated a creator's details",
   "post.song_identified": "Identified the song in a post",
+  "post.added": "Added a post by hand",
+  "post.audio_checked": "Checked a post's audio",
+  "post.song_recognised": "Bekvor recognised the song in a post",
+  "song.reference_audio_added": "Added reference audio to a song",
+  "song.reference_audio_removed": "Removed a song's reference audio",
   "song.added": "Added a song to the catalogue",
   "song.removed": "Took a song out of the catalogue",
   "song.updated": "Updated a song's catalogue details",
@@ -59,6 +64,8 @@ const SONG_ACTION_TEMPLATES: Partial<Record<string, (title: string) => string>> 
   "rights.added": (title) => `Added a rights record to “${title}”`,
   "rights.updated": (title) => `Changed a rights record on “${title}”`,
   "rights.removed": (title) => `Deleted a rights record from “${title}”`,
+  "song.reference_audio_added": (title) => `Added reference audio to “${title}”`,
+  "song.reference_audio_removed": (title) => `Removed the reference audio of “${title}”`,
 };
 
 export function getSongActionLabel(action: string, title: string | null): string {

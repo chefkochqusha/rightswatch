@@ -10,6 +10,6 @@
  */
 export type JobRunnerMode = "inline" | "worker";
 
-export function getJobRunnerMode(env: NodeJS.ProcessEnv = process.env): JobRunnerMode {
+export function getJobRunnerMode(env: Record<string, string | undefined> = process.env): JobRunnerMode {
   return env.JOB_RUNNER === "worker" ? "worker" : "inline";
 }

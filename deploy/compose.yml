@@ -38,10 +38,28 @@ services:
       # The background worker runs in this process: queued scans, retries and
       # the scheduled scans (replaces Vercel Cron and a cron container).
       JOB_RUNNER: worker
+      # Own song recognition (replaces AudD): the service below, and a disk for
+      # uploads while they wait to be read (deleted after reading).
+      RECOGNIZER_URL: http://recognizer:8090
+      RECOGNIZER_TOKEN: ${RECOGNIZER_TOKEN:?set RECOGNIZER_TOKEN in deploy/.env}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
     stop_grace_period: 30s
     depends_on:
       migrate: { condition: service_completed_successfully }
     # Reached only through Caddy.
+
+  recognizer:
+    # Bekvor's own song recognition (services/recognizer). Reached only by the
+    # app over the private network; keeps nothing on disk.
+    build: { context: ../services/recognizer }
+    restart: unless-stopped
+    environment:
+      RECOGNIZER_TOKEN: ${RECOGNIZER_TOKEN:?set RECOGNIZER_TOKEN in deploy/.env}
+    # Matching is CPU work; leave headroom for the app and the database.
+    cpus: ${RECOGNIZER_CPUS:-2}
+    mem_limit: ${RECOGNIZER_MEMORY:-2g}
 
   caddy:
     image: caddy:2-alpine
@@ -72,5 +90,6 @@ services:
 
 volumes:
   pgdata:
+  uploads:
   caddy_data:
   caddy_config:

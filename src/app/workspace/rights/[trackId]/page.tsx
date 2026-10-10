@@ -24,6 +24,9 @@ import type { TrackSource } from "@/modules/catalog";
 import { RightsRecords, type RightsRecordView } from "./rights-records";
 import { SongDetailsForm } from "./song-details-form";
 import { addKnownSongAction, removeSongAction } from "../actions";
+import { ReferenceAudio } from "@/components/recognition/reference-audio";
+import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 
 export async function generateMetadata({ params }: PageProps<"/workspace/rights/[trackId]">): Promise<Metadata> {
   const { trackId } = await params;
@@ -178,6 +181,10 @@ export default async function SongPage({ params, searchParams }: PageProps<"/wor
             canManage={canManage}
           />
         </section>
+      )}
+
+      {track.inCatalogue && isOwnRecognitionEnabled() && (
+        <ReferenceAudio workspaceId={workspaceId} trackId={track.id} canManage={canManage && session.workspace.slug !== DEMO_WORKSPACE_SLUG} />
       )}
 
       <section aria-labelledby="posts">

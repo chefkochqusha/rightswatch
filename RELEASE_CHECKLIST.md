@@ -121,6 +121,36 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   (`STRIPE_INTEGRATION.md`, step 6). Payout of commissions is manual for now:
   monthly bank transfer from €50.
 
+## Own server and own song recognition (added 2026-10-10)
+
+- [ ] **First real deploy of `deploy/compose.yml`.** The images (app,
+  recognizer) and the Caddy config could not be built or checked in the
+  development environment (Docker Hub is blocked there); the same processes
+  were tested directly: Postgres, the recognition service, the app with the
+  worker, uploads, matching and the job queue. Expect small fixes on the first
+  `docker compose up`.
+- [ ] **Round 2 with real music**: 20–50 real songs and 5–10 real TikTok posts
+  that use some of them; re-run `services/recognizer/calibrate.py` on them and
+  set `RECOGNITION_MATCH_RATIO` / `RECOGNITION_CANDIDATE_RATIO` /
+  `RECOGNITION_MIN_SCORE`. Only then decide on `RECOGNITION_AUTO_IDENTIFY`.
+- [ ] **Patent check** (patent attorney): landmark-pair audio matching
+  (US6990453, US7627477 and European equivalents) before paying customers rely
+  on own recognition.
+- [ ] **DSA duties for uploads** (lawyer): reporting address or form for illegal
+  content (Art. 16) and contact point (Art. 11/12) on the imprint; upload rules
+  in the terms (Art. 14). See `LEGAL_DE.md`.
+- [ ] **Terms and AVV for uploads** (lawyer): customer warrants rights in the
+  recordings it uploads and licenses Bekvor to process them for fingerprints;
+  post videos (creators' personal data) processed on the customer's behalf and
+  deleted after the check; privacy policy to mention both.
+- [ ] **TikTok terms on fetching post audio** (lawyer): until clarified, post
+  audio comes only from the customer's own upload; nothing is downloaded from
+  TikTok.
+- [ ] **Server size**: the recognizer uses about 1 CPU-second per 30 s post with
+  30 songs; set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY` to the server (default 2
+  CPUs, 2 GB) and watch it with the first customers.
+- [ ] **`RECOGNIZER_TOKEN`**: a long random value in `deploy/.env`, never in git.
+
 ## Services & credentials
 
 - [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is

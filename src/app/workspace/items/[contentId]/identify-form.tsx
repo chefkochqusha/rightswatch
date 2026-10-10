@@ -4,20 +4,29 @@ import { useActionState } from "react";
 import { identifySongAction, type IdentifyFormState } from "./identify-actions";
 
 /** Pick which of the library's songs a post uses. */
-export function IdentifyForm({ contentId, songs }: { contentId: string; songs: { id: string; label: string }[] }) {
+export function IdentifyForm({
+  contentId,
+  songs,
+  defaultTrackId = "",
+}: {
+  contentId: string;
+  songs: { id: string; label: string }[];
+  /** Preselected, e.g. the song an audio check suggested. */
+  defaultTrackId?: string;
+}) {
   const [state, action, pending] = useActionState(identifySongAction, {} as IdentifyFormState);
 
   return (
     <form action={action} className="mt-4 flex flex-wrap items-end gap-3">
       <input type="hidden" name="contentId" value={contentId} />
       <div className="min-w-56 flex-1">
-        <label htmlFor="trackId" className="block text-[0.8125rem] font-medium text-tx">
+        <label htmlFor={`trackId-${defaultTrackId || "pick"}`} className="block text-[0.8125rem] font-medium text-tx">
           Song in this post
         </label>
         <select
-          id="trackId"
+          id={`trackId-${defaultTrackId || "pick"}`}
           name="trackId"
-          defaultValue=""
+          defaultValue={defaultTrackId}
           className="mt-1 block h-10 w-full rounded-lg border border-line bg-bg px-3 text-sm text-tx"
         >
           <option value="" disabled>

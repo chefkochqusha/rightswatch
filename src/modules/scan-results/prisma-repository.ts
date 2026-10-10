@@ -4,8 +4,8 @@ import type { NormalizedCommercialContent, Platform } from "../connectors/types"
 import type { NormalizedMusicMatch } from "../music/types";
 import type { RightsAssessmentReason, RightsAssessmentResult, RightsAssessmentStatus } from "../rights-engine/types";
 import { findSameTrack, normalizeIsrc } from "../catalog/identity";
-import { IDENTIFICATION_NOT_COMPLETED } from "./types";
-import type { ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
+import { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
+import type { IdentificationSource, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
 
 /**
  * Scan results in Postgres (see `types.ts` for the chain and the contract).
@@ -168,7 +168,9 @@ export class PrismaScanResultRepository implements ScanResultRepository {
     externalContentId: string;
     track: { id: string; title: string; artist: string | null; isrc: string | null };
     assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+    source?: IdentificationSource;
   }): Promise<StoredScanItem | null> {
+    const source = input.source ?? MANUAL_IDENTIFICATION;
     const prisma = getPrisma();
     const row = await prisma.content.findFirst({
       where: { externalContentId: input.externalContentId, creator: { workspaceId: input.workspaceId } },
@@ -184,9 +186,9 @@ export class PrismaScanResultRepository implements ScanResultRepository {
       title: input.track.title,
       artist: input.track.artist ?? "",
       isrc: input.track.isrc,
-      confidence: 1,
-      provider: "manual",
-      manual: true,
+      confidence: source.confidence,
+      provider: source.provider,
+      manual: source.manual,
     };
     const assessment = await input.assess({
       content: toContent(row, row.commercialContent),
@@ -203,11 +205,11 @@ export class PrismaScanResultRepository implements ScanResultRepository {
           commercialContentId_musicTrackId_provider: {
             commercialContentId: row.commercialContent!.id,
             musicTrackId: track.id,
-            provider: "manual",
+            provider: source.provider,
           },
         },
-        create: { commercialContentId: row.commercialContent!.id, musicTrackId: track.id, provider: "manual", confidence: 1, manual: true },
-        update: { confidence: 1, manual: true, matchedAt: new Date() },
+        create: { commercialContentId: row.commercialContent!.id, musicTrackId: track.id, provider: source.provider, confidence: source.confidence, manual: source.manual },
+        update: { confidence: source.confidence, manual: source.manual, matchedAt: new Date() },
       });
       await tx.rightsAssessment.upsert({
         where: { musicMatchId: match.id },

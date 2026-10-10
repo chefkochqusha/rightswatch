@@ -8,7 +8,7 @@ legal pages, cookies, emails, AI or uploads**, and add new rules here first.
 Engineering notes, not legal advice: the lawyer and the tax advisor have the
 last word.
 
-Last checked: 2026-10-09 (product name changed to Bekvor; trademark and company search still open, see RELEASE_CHECKLIST.md).
+Last checked: 2026-10-10 (uploads for own song recognition: DSA hosting duties, copyright, GDPR; earlier: product name changed to Bekvor).
 
 ## Applies now
 
@@ -25,6 +25,9 @@ Last checked: 2026-10-09 (product name changed to Bekvor; trademark and company 
 
 | **Partner programme: advertising labels and liability** (UWG § 5a, § 8 (2)) | — | Partners must label links as advertising ("Werbung"/"Anzeige"); a merchant can be liable for its affiliates' violations within its own programme. The draft terms require the label and forbid spam and fake reviews; breaking them ends the partnership | Built; lawyer to review `/partner-terms` |
 | **Referral tracking without consent banner** (TDDDG § 25) | — | The partner code travels in the address and the signup form only; no cookie or local storage is set | Built (verified: no referral cookie) |
+| **Uploads make Bekvor a hosting service** (Digital Services Act, Art. 3(g)(iii), 11–17) | 17 Feb 2024 | Customers upload song recordings and post videos (own recognition, only on our own server). Storing them makes Bekvor a hosting service, whatever its size: points of contact for authorities and users (Art. 11, 12), content rules in the terms (Art. 14), an electronic way for anyone to report illegal content (Art. 16) and reasons when something is restricted (Art. 17). The yearly transparency report (Art. 15) does not apply to micro and small enterprises (Art. 15(2)). Uploads are never shown to anyone else and are deleted after reading, which keeps the practical risk low but doesn't remove the duties | Built: private uploads, deleted after reading, type and size checks. To do before the upload features go live: a reporting address or form (Art. 16) and contact point (Art. 11/12) on the imprint, and upload rules in the terms (Art. 14), lawyer |
+| **Copyright in uploaded recordings** (UrhG § 16, § 44b) | — | Reading a song to make a fingerprint copies it. Allowed when the customer holds the rights or is authorised; the upload form says so ("Only upload songs you hold the rights to or are authorised to manage"). Bekvor keeps only the fingerprint, not the recording. Whether § 44b (text and data mining) also covers analysing post videos a customer uploads is for the lawyer | Built: notice at the upload, recording deleted after reading. To do: rights warranty and licence to process in the terms (lawyer) |
+| **Post videos contain personal data** (GDPR Art. 6, 28) | — | A post video shows the creator (face, voice). Bekvor processes it on the customer's behalf to check the music, as a processor: it must be in the AVV, with deletion after the check. Bekvor keeps the result (song, score), not the video | Built: deleted after the check, result only. To do: AVV and privacy policy mention it (lawyer) |
 | **Price display for discounts** (PAngV) | — | The price rules (e.g. the 30-day lowest price for price reductions) protect consumers; Bekvor sells to businesses only. The loyalty and yearly discounts are stated as fixed terms next to the prices | Lawyer to confirm the B2B exemption and the wording |
 
 ## Coming
@@ -50,3 +53,6 @@ credit, EUDR, CBAM. These matter for a shop selling physical goods.
 - Händlerbund, changes in 2026: https://www.haendlerbund.de/de/ratgeber/recht/gesetzesaenderungen-2026
 - IHK Nürnberg, Widerrufsbutton: https://www.ihk-nuernberg.de/meldungen/details/widerrufsbutton-wird-pflicht
 - AI Act Art. 50: https://artificialintelligenceact.eu/article/50/
+- DSA duties by provider type and size (YPOG): https://www.ypog.law/en/insight/digital-services-act
+- DSA Art. 15(2), small-enterprise exemption: https://www.springlex.eu/en/packages/dsa/dsa-regulation/article-15/
+- DSA Art. 16, notice and action: https://presencis.com/regulations/dsa/article-16/

@@ -1,3 +1,4 @@
+import { getPrisma } from "@/lib/prisma-client";
 import { getAuditStore } from "./audit-store";
 import { getAuthStore } from "./auth-store";
 import { getBillingStore } from "./billing-store";
@@ -59,13 +60,26 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     if (user) members.push({ id: user.id, email: user.email, name: user.name, role: m.role, joinedAt: m.createdAt });
   }
 
-  const [workspace, creators, catalogue, rights, report, subscription] = await Promise.all([
+  const [workspace, creators, catalogue, rights, report, subscription, fingerprints, audioChecks] = await Promise.all([
     auth.workspaces.findById(workspaceId),
     getCreatorStore().creators.findForWorkspace(workspaceId),
     getLibraryStore().catalog.findCatalogue(workspaceId),
     getLibraryStore().rights.findForWorkspace(workspaceId),
     loadReportData(session.workspace, "all", now),
     getBillingStore().subscriptions.findByWorkspaceId(workspaceId),
+    getPrisma().trackFingerprint.findMany({
+      where: { workspaceId },
+      select: { musicTrackId: true, algorithm: true, durationSec: true, hashCount: true, sourceFileName: true, createdAt: true, updatedAt: true },
+    }),
+    getPrisma().audioCheck.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true, status: true, outcome: true, musicTrackId: true, confidence: true, details: true, fileName: true,
+        durationSec: true, error: true, requestedById: true, createdAt: true, completedAt: true,
+        content: { select: { externalContentId: true } },
+      },
+    }),
   ]);
   const plan = subscription ? await getBillingStore().plans.findById(subscription.planId) : null;
 
@@ -76,6 +90,8 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     creators,
     songs: catalogue,
     rightsRecords: rights,
+    referenceAudio: fingerprints.map((f) => ({ ...f, songId: f.musicTrackId, musicTrackId: undefined })),
+    audioChecks: audioChecks.map(({ content, ...check }) => ({ ...check, post: content.externalContentId })),
     detections: rowsToRecords(report.rows()),
     cases: cases.map((c) => ({ ...c, notes: notesByCase.find((entry) => entry.caseId === c.id)?.notes ?? [] })),
     activityLog: auditEntries,

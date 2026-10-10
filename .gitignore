@@ -50,3 +50,4 @@ next-env.d.ts
 
 # self-hosting backups
 deploy/backups/
+__pycache__/

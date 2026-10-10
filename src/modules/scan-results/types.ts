@@ -121,8 +121,19 @@ export interface ScanResultRepository {
     externalContentId: string;
     track: { id: string; title: string; artist: string | null; isrc: string | null };
     assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+    /** Who identified it. Default: a person (`manual`, full confidence).
+     *  Own recognition passes `{ provider: "bekvor", confidence, manual: false }`. */
+    source?: IdentificationSource;
   }): Promise<StoredScanItem | null>;
 }
+
+export interface IdentificationSource {
+  provider: string;
+  confidence: number;
+  manual: boolean;
+}
+
+export const MANUAL_IDENTIFICATION: IdentificationSource = { provider: "manual", confidence: 1, manual: true };
 
 /** A post a song was identified in, as `reassessTrack` hands it over. */
 export interface TrackMatchForAssessment extends CreatorContext {

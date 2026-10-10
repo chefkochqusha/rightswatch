@@ -1,5 +1,5 @@
-export type { ScanItemInput, StoredScanItem, ScanResultRepository, TrackMatchForAssessment } from "./types";
-export { IDENTIFICATION_NOT_COMPLETED } from "./types";
+export type { IdentificationSource, ScanItemInput, StoredScanItem, ScanResultRepository, TrackMatchForAssessment } from "./types";
+export { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
 export { summarizeSongMatches } from "./song-summary";
 export type { SongMatchSummary } from "./song-summary";
 export { InMemoryScanResultRepository } from "./in-memory-repository";

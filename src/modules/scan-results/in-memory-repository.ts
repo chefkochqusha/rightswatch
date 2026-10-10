@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { NormalizedMusicMatch } from "../music/types";
 import type { RightsAssessmentResult } from "../rights-engine/types";
-import { IDENTIFICATION_NOT_COMPLETED } from "./types";
-import type { ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
+import { IDENTIFICATION_NOT_COMPLETED, MANUAL_IDENTIFICATION } from "./types";
+import type { IdentificationSource, ScanItemInput, ScanResultRepository, StoredScanItem, TrackMatchForAssessment } from "./types";
 
 /**
  * The same contract as `PrismaScanResultRepository`, for tests: idempotent
@@ -82,7 +82,9 @@ export class InMemoryScanResultRepository implements ScanResultRepository {
     externalContentId: string;
     track: { id: string; title: string; artist: string | null; isrc: string | null };
     assess: (match: TrackMatchForAssessment) => Promise<RightsAssessmentResult>;
+    source?: IdentificationSource;
   }): Promise<StoredScanItem | null> {
+    const source = input.source ?? MANUAL_IDENTIFICATION;
     const stored = this.itemsOf(input.workspaceId);
     const existing = stored.get(input.externalContentId);
     if (!existing) return null;
@@ -92,9 +94,9 @@ export class InMemoryScanResultRepository implements ScanResultRepository {
       title: input.track.title,
       artist: input.track.artist ?? "",
       isrc: input.track.isrc,
-      confidence: 1,
-      provider: "manual",
-      manual: true,
+      confidence: source.confidence,
+      provider: source.provider,
+      manual: source.manual,
     };
     const { creatorId, creatorExternalId, creatorUsername, content } = existing;
     const assessment = await input.assess({ creatorId, creatorExternalId, creatorUsername, content, musicMatch });

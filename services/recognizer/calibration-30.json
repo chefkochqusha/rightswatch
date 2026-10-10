@@ -1,0 +1,6887 @@
+[
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 4044.61,
+   "nextScore": 718.8,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.22
+  },
+  "windows": 3,
+  "ms": 938
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 3765.08,
+   "nextScore": 788.62,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.26
+  },
+  "windows": 3,
+  "ms": 894
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 1650.42,
+   "nextScore": 816.81,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.52
+  },
+  "windows": 3,
+  "ms": 909
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-13",
+   "score": 300.08,
+   "nextScore": 227.41,
+   "windowsWon": 3,
+   "speed": 0.825,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.6
+  },
+  "windows": 3,
+  "ms": 839
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-13",
+   "score": 291.87,
+   "nextScore": 173.55,
+   "windowsWon": 2,
+   "speed": 0.825,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.6
+  },
+  "windows": 3,
+  "ms": 788
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 1312.14,
+   "nextScore": 749.93,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.86
+  },
+  "windows": 3,
+  "ms": 934
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 684.2,
+   "nextScore": 382.05,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 29.92
+  },
+  "windows": 3,
+  "ms": 850
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-26",
+   "score": 477.41,
+   "nextScore": 358.59,
+   "windowsWon": 0,
+   "speed": 0.857,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 69.22
+  },
+  "windows": 3,
+  "ms": 837
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 977.18,
+   "nextScore": 605.43,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.49
+  },
+  "windows": 3,
+  "ms": 858
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 834.3,
+   "nextScore": 553.06,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 29.89
+  },
+  "windows": 3,
+  "ms": 901
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 199.09,
+   "nextScore": 148.95,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 29.86
+  },
+  "windows": 3,
+  "ms": 831
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-1",
+  "top": {
+   "trackId": "song-1",
+   "score": 413.33,
+   "nextScore": 257.37,
+   "windowsWon": 1,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.86
+  },
+  "windows": 3,
+  "ms": 859
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 5918.09,
+   "nextScore": 269.6,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.13
+  },
+  "windows": 5,
+  "ms": 1321
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 5148.18,
+   "nextScore": 292.6,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.1
+  },
+  "windows": 5,
+  "ms": 1220
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 879.63,
+   "nextScore": 260.89,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.1
+  },
+  "windows": 5,
+  "ms": 1266
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 965.26,
+   "nextScore": 140.52,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.1
+  },
+  "windows": 5,
+  "ms": 1087
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 561.13,
+   "nextScore": 149.11,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.13
+  },
+  "windows": 5,
+  "ms": 1029
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 2088.27,
+   "nextScore": 170.47,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.06
+  },
+  "windows": 5,
+  "ms": 1383
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 1053.69,
+   "nextScore": 420.45,
+   "windowsWon": 5,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 4.16
+  },
+  "windows": 5,
+  "ms": 1145
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 272.76,
+   "nextScore": 124.09,
+   "windowsWon": 5,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 4.29
+  },
+  "windows": 5,
+  "ms": 1079
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 1132.1,
+   "nextScore": 682.61,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.06
+  },
+  "windows": 5,
+  "ms": 1081
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 1420.96,
+   "nextScore": 117.82,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 4.1
+  },
+  "windows": 5,
+  "ms": 1113
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-30",
+   "score": 336.64,
+   "nextScore": 288.21,
+   "windowsWon": 1,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 1.57
+  },
+  "windows": 5,
+  "ms": 945
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-2",
+  "top": {
+   "trackId": "song-2",
+   "score": 609.45,
+   "nextScore": 160.05,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.1
+  },
+  "windows": 5,
+  "ms": 1100
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 3473.58,
+   "nextScore": 472.67,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.38
+  },
+  "windows": 3,
+  "ms": 841
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 2874.59,
+   "nextScore": 528.83,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.38
+  },
+  "windows": 3,
+  "ms": 835
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 493.56,
+   "nextScore": 320.47,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.98
+  },
+  "windows": 3,
+  "ms": 887
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 393.91,
+   "nextScore": 235.89,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.95
+  },
+  "windows": 3,
+  "ms": 707
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 321.52,
+   "nextScore": 200.78,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.44
+  },
+  "windows": 3,
+  "ms": 662
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 1244.28,
+   "nextScore": 400.32,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.35
+  },
+  "windows": 3,
+  "ms": 767
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 840.4,
+   "nextScore": 742.07,
+   "windowsWon": 2,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 52.42
+  },
+  "windows": 3,
+  "ms": 793
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 260.85,
+   "nextScore": 89.79,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 29.57
+  },
+  "windows": 3,
+  "ms": 841
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 762.38,
+   "nextScore": 579.98,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.35
+  },
+  "windows": 3,
+  "ms": 900
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 679.96,
+   "nextScore": 185.97,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 52.35
+  },
+  "windows": 3,
+  "ms": 896
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-23",
+   "score": 170.75,
+   "nextScore": 123.46,
+   "windowsWon": 1,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.3
+  },
+  "windows": 3,
+  "ms": 796
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-3",
+  "top": {
+   "trackId": "song-3",
+   "score": 231.05,
+   "nextScore": 77.77,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.35
+  },
+  "windows": 3,
+  "ms": 661
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 3116.95,
+   "nextScore": 147.46,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 879
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 2554.21,
+   "nextScore": 210.1,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.24
+  },
+  "windows": 3,
+  "ms": 829
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 1742.34,
+   "nextScore": 186.76,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.24
+  },
+  "windows": 3,
+  "ms": 806
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 721.02,
+   "nextScore": 115.42,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 584
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 495.64,
+   "nextScore": 102.01,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 591
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 1270.15,
+   "nextScore": 204.73,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 772
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 1116.67,
+   "nextScore": 118.35,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 3,
+  "ms": 673
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 412.2,
+   "nextScore": 156.71,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 10.37
+  },
+  "windows": 3,
+  "ms": 679
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 1183.07,
+   "nextScore": 142.04,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 671
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 837.6,
+   "nextScore": 183.22,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 10.24
+  },
+  "windows": 3,
+  "ms": 845
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-28",
+   "score": 187.22,
+   "nextScore": 186.42,
+   "windowsWon": 1,
+   "speed": 1.248,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 7.17
+  },
+  "windows": 3,
+  "ms": 633
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-4",
+  "top": {
+   "trackId": "song-4",
+   "score": 848.77,
+   "nextScore": 126.08,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 3,
+  "ms": 611
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 13184.72,
+   "nextScore": 132.1,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.9
+  },
+  "windows": 7,
+  "ms": 1425
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 6323.88,
+   "nextScore": 117.07,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.87
+  },
+  "windows": 7,
+  "ms": 1505
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 805.04,
+   "nextScore": 118.69,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.9
+  },
+  "windows": 7,
+  "ms": 1536
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 355.6,
+   "nextScore": 125.46,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.9
+  },
+  "windows": 7,
+  "ms": 1231
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 199.15,
+   "nextScore": 102.23,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.9
+  },
+  "windows": 7,
+  "ms": 1198
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 2147.61,
+   "nextScore": 105.88,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.87
+  },
+  "windows": 7,
+  "ms": 1507
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 1073.62,
+   "nextScore": 450.45,
+   "windowsWon": 7,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 19.97
+  },
+  "windows": 7,
+  "ms": 1427
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 470.01,
+   "nextScore": 140.48,
+   "windowsWon": 7,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 19.97
+  },
+  "windows": 7,
+  "ms": 1321
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 976.93,
+   "nextScore": 134.6,
+   "windowsWon": 7,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.87
+  },
+  "windows": 7,
+  "ms": 1409
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 1609.95,
+   "nextScore": 204.47,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 19.87
+  },
+  "windows": 7,
+  "ms": 1356
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 81.76,
+   "nextScore": 78.41,
+   "windowsWon": 0,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 19.87
+  },
+  "windows": 7,
+  "ms": 1205
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-5",
+  "top": {
+   "trackId": "song-5",
+   "score": 885.38,
+   "nextScore": 87.34,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.9
+  },
+  "windows": 7,
+  "ms": 1359
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 11525.3,
+   "nextScore": 360.12,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.53
+  },
+  "windows": 4,
+  "ms": 1033
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 5401.11,
+   "nextScore": 235.14,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.53
+  },
+  "windows": 4,
+  "ms": 1054
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 966.66,
+   "nextScore": 206.96,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.53
+  },
+  "windows": 4,
+  "ms": 1150
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 846.9,
+   "nextScore": 125.25,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4,
+  "ms": 860
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 483.55,
+   "nextScore": 169.8,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.53
+  },
+  "windows": 4,
+  "ms": 805
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 2048.81,
+   "nextScore": 230.91,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4,
+  "ms": 1057
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 594.17,
+   "nextScore": 509.3,
+   "windowsWon": 4,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 26.56
+  },
+  "windows": 4,
+  "ms": 929
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 248.9,
+   "nextScore": 178.9,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 26.59
+  },
+  "windows": 4,
+  "ms": 864
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 703.18,
+   "nextScore": 124.15,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4,
+  "ms": 975
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 978.69,
+   "nextScore": 333.58,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4,
+  "ms": 917
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-16",
+   "score": 352.66,
+   "nextScore": 174.94,
+   "windowsWon": 3,
+   "speed": 1.179,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.08
+  },
+  "windows": 4,
+  "ms": 866
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-6",
+  "top": {
+   "trackId": "song-6",
+   "score": 330.84,
+   "nextScore": 184.71,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4,
+  "ms": 904
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 4887.61,
+   "nextScore": 329.08,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.06
+  },
+  "windows": 6,
+  "ms": 1363
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 3941.03,
+   "nextScore": 371.69,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 37.06
+  },
+  "windows": 6,
+  "ms": 1347
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 2367.25,
+   "nextScore": 300.28,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.06
+  },
+  "windows": 6,
+  "ms": 1451
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 1506.15,
+   "nextScore": 182.81,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.06
+  },
+  "windows": 6,
+  "ms": 1088
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 1097.14,
+   "nextScore": 162.24,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 29.06
+  },
+  "windows": 6,
+  "ms": 1061
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 2138.52,
+   "nextScore": 269.26,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 13.02
+  },
+  "windows": 6,
+  "ms": 1393
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 1887.99,
+   "nextScore": 227.92,
+   "windowsWon": 6,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 13.09
+  },
+  "windows": 6,
+  "ms": 1187
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-1",
+   "score": 474.49,
+   "nextScore": 327.17,
+   "windowsWon": 2,
+   "speed": 0.907,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.75
+  },
+  "windows": 6,
+  "ms": 1090
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 1365.95,
+   "nextScore": 294.0,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.99
+  },
+  "windows": 6,
+  "ms": 1305
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 1650.96,
+   "nextScore": 286.71,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 13.02
+  },
+  "windows": 6,
+  "ms": 1150
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 274.6,
+   "nextScore": 246.73,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.02
+  },
+  "windows": 6,
+  "ms": 1037
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-7",
+  "top": {
+   "trackId": "song-7",
+   "score": 653.25,
+   "nextScore": 329.28,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -3.01
+  },
+  "windows": 6,
+  "ms": 1011
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 1741.44,
+   "nextScore": 251.48,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.15
+  },
+  "windows": 3,
+  "ms": 825
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 1734.95,
+   "nextScore": 252.68,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.18
+  },
+  "windows": 3,
+  "ms": 862
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 756.04,
+   "nextScore": 462.19,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 54.78
+  },
+  "windows": 3,
+  "ms": 878
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 617.45,
+   "nextScore": 273.64,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 25.95
+  },
+  "windows": 3,
+  "ms": 769
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 584.65,
+   "nextScore": 263.83,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 25.95
+  },
+  "windows": 3,
+  "ms": 679
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 718.24,
+   "nextScore": 116.24,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.15
+  },
+  "windows": 3,
+  "ms": 825
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 488.94,
+   "nextScore": 284.85,
+   "windowsWon": 2,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 45.22
+  },
+  "windows": 3,
+  "ms": 713
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 343.46,
+   "nextScore": 246.62,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 45.22
+  },
+  "windows": 3,
+  "ms": 664
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 588.11,
+   "nextScore": 323.11,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.15
+  },
+  "windows": 3,
+  "ms": 742
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 725.12,
+   "nextScore": 122.18,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 45.15
+  },
+  "windows": 3,
+  "ms": 783
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-7",
+   "score": 445.42,
+   "nextScore": 191.66,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 53.66
+  },
+  "windows": 3,
+  "ms": 655
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-8",
+  "top": {
+   "trackId": "song-8",
+   "score": 328.36,
+   "nextScore": 157.8,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -12.48
+  },
+  "windows": 3,
+  "ms": 686
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 3849.59,
+   "nextScore": 400.18,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 49.76
+  },
+  "windows": 6,
+  "ms": 1325
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 3318.79,
+   "nextScore": 393.84,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 49.73
+  },
+  "windows": 6,
+  "ms": 1362
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 1480.8,
+   "nextScore": 516.65,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 49.73
+  },
+  "windows": 6,
+  "ms": 1443
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 759.46,
+   "nextScore": 191.35,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 49.7
+  },
+  "windows": 6,
+  "ms": 1071
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 559.74,
+   "nextScore": 150.42,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 49.73
+  },
+  "windows": 6,
+  "ms": 1070
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 2326.25,
+   "nextScore": 292.94,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 21.54
+  },
+  "windows": 6,
+  "ms": 1342
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 1818.8,
+   "nextScore": 429.02,
+   "windowsWon": 6,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 21.6
+  },
+  "windows": 6,
+  "ms": 1230
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 425.79,
+   "nextScore": 294.95,
+   "windowsWon": 6,
+   "speed": 0.857,
+   "pitchSemitones": -2.5,
+   "songOffsetSec": 70.75
+  },
+  "windows": 6,
+  "ms": 1214
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 1815.66,
+   "nextScore": 213.89,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 21.5
+  },
+  "windows": 6,
+  "ms": 1085
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 1068.03,
+   "nextScore": 267.21,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 21.54
+  },
+  "windows": 6,
+  "ms": 1154
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 156.18,
+   "nextScore": 127.57,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 21.54
+  },
+  "windows": 6,
+  "ms": 1181
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-9",
+  "top": {
+   "trackId": "song-9",
+   "score": 938.54,
+   "nextScore": 284.92,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -20.7
+  },
+  "windows": 6,
+  "ms": 1044
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 7256.49,
+   "nextScore": 977.25,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 40.54
+  },
+  "windows": 6,
+  "ms": 1444
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 6107.52,
+   "nextScore": 899.57,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 40.54
+  },
+  "windows": 6,
+  "ms": 1476
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 2505.44,
+   "nextScore": 640.77,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 0.0
+  },
+  "windows": 6,
+  "ms": 1489
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 2328.56,
+   "nextScore": 393.77,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 0.0
+  },
+  "windows": 6,
+  "ms": 1274
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 1342.42,
+   "nextScore": 354.2,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 0.0
+  },
+  "windows": 6,
+  "ms": 1230
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 2366.11,
+   "nextScore": 610.67,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.26
+  },
+  "windows": 6,
+  "ms": 1522
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 1770.31,
+   "nextScore": 295.85,
+   "windowsWon": 6,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 20.32
+  },
+  "windows": 6,
+  "ms": 1371
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-28",
+   "score": 313.56,
+   "nextScore": 307.16,
+   "windowsWon": 0,
+   "speed": 0.89,
+   "pitchSemitones": -2.0,
+   "songOffsetSec": -10.56
+  },
+  "windows": 6,
+  "ms": 1150
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 1789.36,
+   "nextScore": 196.1,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.22
+  },
+  "windows": 6,
+  "ms": 1278
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 1692.52,
+   "nextScore": 205.58,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 20.26
+  },
+  "windows": 6,
+  "ms": 1333
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 458.12,
+   "nextScore": 188.19,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 15.17
+  },
+  "windows": 6,
+  "ms": 1215
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-10",
+  "top": {
+   "trackId": "song-10",
+   "score": 1130.44,
+   "nextScore": 321.26,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 40.54
+  },
+  "windows": 6,
+  "ms": 1317
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 5637.45,
+   "nextScore": 2441.27,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.32
+  },
+  "windows": 7,
+  "ms": 1765
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 5196.67,
+   "nextScore": 2177.55,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.32
+  },
+  "windows": 7,
+  "ms": 1891
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 1646.83,
+   "nextScore": 817.76,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.42
+  },
+  "windows": 7,
+  "ms": 1812
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 645.19,
+   "nextScore": 382.93,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.46
+  },
+  "windows": 7,
+  "ms": 1308
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 523.88,
+   "nextScore": 282.77,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.42
+  },
+  "windows": 7,
+  "ms": 1205
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 2879.78,
+   "nextScore": 1256.97,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.32
+  },
+  "windows": 7,
+  "ms": 1676
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 1372.55,
+   "nextScore": 385.61,
+   "windowsWon": 7,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 8.42
+  },
+  "windows": 7,
+  "ms": 1539
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 274.98,
+   "nextScore": 125.47,
+   "windowsWon": 7,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 8.51
+  },
+  "windows": 7,
+  "ms": 1342
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 1588.66,
+   "nextScore": 578.77,
+   "windowsWon": 7,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.29
+  },
+  "windows": 7,
+  "ms": 1488
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 1733.97,
+   "nextScore": 187.83,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 8.32
+  },
+  "windows": 7,
+  "ms": 1609
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 156.35,
+   "nextScore": 108.36,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -11.1
+  },
+  "windows": 7,
+  "ms": 1304
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-11",
+  "top": {
+   "trackId": "song-11",
+   "score": 472.59,
+   "nextScore": 259.69,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.32
+  },
+  "windows": 7,
+  "ms": 1300
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 3576.42,
+   "nextScore": 270.57,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.34
+  },
+  "windows": 5,
+  "ms": 1245
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 3082.17,
+   "nextScore": 313.76,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.37
+  },
+  "windows": 5,
+  "ms": 1260
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 431.41,
+   "nextScore": 327.91,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.48
+  },
+  "windows": 5,
+  "ms": 1272
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 538.09,
+   "nextScore": 125.39,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.48
+  },
+  "windows": 5,
+  "ms": 986
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 344.11,
+   "nextScore": 125.26,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.7
+  },
+  "windows": 5,
+  "ms": 919
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 1329.1,
+   "nextScore": 228.1,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.34
+  },
+  "windows": 5,
+  "ms": 1175
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 637.64,
+   "nextScore": 423.14,
+   "windowsWon": 5,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 22.4
+  },
+  "windows": 5,
+  "ms": 1106
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 311.11,
+   "nextScore": 132.56,
+   "windowsWon": 5,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 22.59
+  },
+  "windows": 5,
+  "ms": 1048
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 936.13,
+   "nextScore": 441.12,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.34
+  },
+  "windows": 5,
+  "ms": 1241
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 1822.72,
+   "nextScore": 302.15,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 22.34
+  },
+  "windows": 5,
+  "ms": 1203
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-28",
+   "score": 233.32,
+   "nextScore": 200.48,
+   "windowsWon": 1,
+   "speed": 0.841,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.61
+  },
+  "windows": 5,
+  "ms": 954
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-12",
+  "top": {
+   "trackId": "song-12",
+   "score": 726.61,
+   "nextScore": 135.09,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -8.03
+  },
+  "windows": 5,
+  "ms": 984
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 5257.85,
+   "nextScore": 556.13,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.53
+  },
+  "windows": 4,
+  "ms": 1087
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 4363.0,
+   "nextScore": 456.16,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 2.27
+  },
+  "windows": 4,
+  "ms": 1141
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 3096.95,
+   "nextScore": 394.81,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 2.27
+  },
+  "windows": 4,
+  "ms": 1029
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 733.8,
+   "nextScore": 138.76,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.5
+  },
+  "windows": 4,
+  "ms": 882
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 518.18,
+   "nextScore": 156.94,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 51.71
+  },
+  "windows": 4,
+  "ms": 799
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 2338.41,
+   "nextScore": 370.23,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.5
+  },
+  "windows": 4,
+  "ms": 1041
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 1568.78,
+   "nextScore": 249.05,
+   "windowsWon": 4,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 30.56
+  },
+  "windows": 4,
+  "ms": 911
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 420.31,
+   "nextScore": 291.25,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 30.72
+  },
+  "windows": 4,
+  "ms": 916
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 1100.68,
+   "nextScore": 215.33,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.5
+  },
+  "windows": 4,
+  "ms": 813
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 912.11,
+   "nextScore": 418.2,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 30.5
+  },
+  "windows": 4,
+  "ms": 903
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 142.94,
+   "nextScore": 103.08,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 30.5
+  },
+  "windows": 4,
+  "ms": 766
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-13",
+  "top": {
+   "trackId": "song-13",
+   "score": 710.08,
+   "nextScore": 254.71,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -18.94
+  },
+  "windows": 4,
+  "ms": 769
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 9537.59,
+   "nextScore": 221.38,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 1035
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 4220.12,
+   "nextScore": 212.89,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 1143
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 1571.61,
+   "nextScore": 201.03,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 1145
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 258.92,
+   "nextScore": 123.67,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 826
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 135.37,
+   "nextScore": 106.44,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.36
+  },
+  "windows": 4,
+  "ms": 804
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 1457.3,
+   "nextScore": 146.12,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 991
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 620.9,
+   "nextScore": 264.27,
+   "windowsWon": 4,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 43.42
+  },
+  "windows": 4,
+  "ms": 938
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 489.93,
+   "nextScore": 288.07,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 43.46
+  },
+  "windows": 4,
+  "ms": 971
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 672.54,
+   "nextScore": 84.6,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.36
+  },
+  "windows": 4,
+  "ms": 933
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 391.58,
+   "nextScore": 129.75,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 883
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 85.43,
+   "nextScore": 85.11,
+   "windowsWon": 1,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 786
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-14",
+  "top": {
+   "trackId": "song-14",
+   "score": 294.34,
+   "nextScore": 182.4,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.39
+  },
+  "windows": 4,
+  "ms": 815
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 6418.62,
+   "nextScore": 281.98,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.82
+  },
+  "windows": 6,
+  "ms": 1500
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 4705.7,
+   "nextScore": 215.19,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.82
+  },
+  "windows": 6,
+  "ms": 1438
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-17",
+   "score": 601.06,
+   "nextScore": 289.97,
+   "windowsWon": 6,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.16
+  },
+  "windows": 6,
+  "ms": 1577
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-17",
+   "score": 142.3,
+   "nextScore": 121.2,
+   "windowsWon": 0,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.02
+  },
+  "windows": 6,
+  "ms": 1174
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-17",
+   "score": 112.75,
+   "nextScore": 88.93,
+   "windowsWon": 0,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 16.99
+  },
+  "windows": 6,
+  "ms": 1323
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 1836.88,
+   "nextScore": 173.53,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.82
+  },
+  "windows": 6,
+  "ms": 1605
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 672.43,
+   "nextScore": 276.22,
+   "windowsWon": 6,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 6.91
+  },
+  "windows": 6,
+  "ms": 1604
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-21",
+   "score": 379.39,
+   "nextScore": 375.94,
+   "windowsWon": 2,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.21
+  },
+  "windows": 6,
+  "ms": 1435
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 874.88,
+   "nextScore": 104.77,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.78
+  },
+  "windows": 6,
+  "ms": 1252
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-15",
+   "score": 663.92,
+   "nextScore": 176.97,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 6.85
+  },
+  "windows": 6,
+  "ms": 1267
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-21",
+   "score": 83.71,
+   "nextScore": 81.48,
+   "windowsWon": 0,
+   "speed": 1.136,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -6.11
+  },
+  "windows": 6,
+  "ms": 1120
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-15",
+  "top": {
+   "trackId": "song-17",
+   "score": 368.48,
+   "nextScore": 355.16,
+   "windowsWon": 3,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 38.4
+  },
+  "windows": 6,
+  "ms": 1262
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 5200.65,
+   "nextScore": 1769.17,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.59
+  },
+  "windows": 5,
+  "ms": 1203
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 4234.01,
+   "nextScore": 1528.94,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.59
+  },
+  "windows": 5,
+  "ms": 1251
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 2056.77,
+   "nextScore": 807.85,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.62
+  },
+  "windows": 5,
+  "ms": 1207
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 750.04,
+   "nextScore": 293.72,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.56
+  },
+  "windows": 5,
+  "ms": 915
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 565.77,
+   "nextScore": 221.82,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.56
+  },
+  "windows": 5,
+  "ms": 967
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 1675.54,
+   "nextScore": 536.74,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.85
+  },
+  "windows": 5,
+  "ms": 1258
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 1184.29,
+   "nextScore": 318.18,
+   "windowsWon": 5,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 14.91
+  },
+  "windows": 5,
+  "ms": 1064
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 284.27,
+   "nextScore": 247.65,
+   "windowsWon": 5,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 14.98
+  },
+  "windows": 5,
+  "ms": 1189
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 874.1,
+   "nextScore": 124.68,
+   "windowsWon": 5,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.85
+  },
+  "windows": 5,
+  "ms": 992
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-16",
+   "score": 1203.87,
+   "nextScore": 435.54,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 14.88
+  },
+  "windows": 5,
+  "ms": 1107
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-5",
+   "score": 103.53,
+   "nextScore": 101.76,
+   "windowsWon": 1,
+   "speed": 0.825,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -2.11
+  },
+  "windows": 5,
+  "ms": 843
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-16",
+  "top": {
+   "trackId": "song-22",
+   "score": 281.9,
+   "nextScore": 245.22,
+   "windowsWon": 3,
+   "speed": 1.136,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 2.66
+  },
+  "windows": 5,
+  "ms": 937
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 8755.73,
+   "nextScore": 306.5,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.54
+  },
+  "windows": 3,
+  "ms": 696
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 4485.41,
+   "nextScore": 276.48,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.54
+  },
+  "windows": 3,
+  "ms": 733
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 1429.0,
+   "nextScore": 329.6,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.54
+  },
+  "windows": 3,
+  "ms": 758
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 943.77,
+   "nextScore": 191.72,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.51
+  },
+  "windows": 3,
+  "ms": 638
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 649.81,
+   "nextScore": 139.53,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.54
+  },
+  "windows": 3,
+  "ms": 668
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 1958.98,
+   "nextScore": 256.02,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.51
+  },
+  "windows": 3,
+  "ms": 734
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 1033.79,
+   "nextScore": 244.14,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 52.58
+  },
+  "windows": 3,
+  "ms": 648
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 196.6,
+   "nextScore": 116.68,
+   "windowsWon": 3,
+   "speed": 0.857,
+   "pitchSemitones": -2.5,
+   "songOffsetSec": 52.45
+  },
+  "windows": 3,
+  "ms": 701
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 1010.85,
+   "nextScore": 179.68,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.51
+  },
+  "windows": 3,
+  "ms": 624
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 736.12,
+   "nextScore": 131.79,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 52.51
+  },
+  "windows": 3,
+  "ms": 664
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-10",
+   "score": 267.86,
+   "nextScore": 183.53,
+   "windowsWon": 2,
+   "speed": 1.136,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.64
+  },
+  "windows": 3,
+  "ms": 602
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-17",
+  "top": {
+   "trackId": "song-17",
+   "score": 1440.02,
+   "nextScore": 173.66,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 52.51
+  },
+  "windows": 3,
+  "ms": 696
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 7677.54,
+   "nextScore": 229.7,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 1172
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 4793.62,
+   "nextScore": 233.23,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 1152
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 452.94,
+   "nextScore": 176.98,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 1048
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 499.54,
+   "nextScore": 98.16,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 829
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 291.36,
+   "nextScore": 70.6,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 852
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 1285.19,
+   "nextScore": 185.1,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 1134
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 912.74,
+   "nextScore": 161.2,
+   "windowsWon": 5,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 9.54
+  },
+  "windows": 5,
+  "ms": 947
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 283.27,
+   "nextScore": 143.14,
+   "windowsWon": 5,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 9.63
+  },
+  "windows": 5,
+  "ms": 890
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 731.61,
+   "nextScore": 125.12,
+   "windowsWon": 5,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.47
+  },
+  "windows": 5,
+  "ms": 980
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 714.38,
+   "nextScore": 90.91,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 9.5
+  },
+  "windows": 5,
+  "ms": 1117
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-9",
+   "score": 62.77,
+   "nextScore": 62.47,
+   "windowsWon": 2,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 23.1
+  },
+  "windows": 5,
+  "ms": 871
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-18",
+  "top": {
+   "trackId": "song-18",
+   "score": 441.2,
+   "nextScore": 89.13,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.5
+  },
+  "windows": 5,
+  "ms": 1146
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 13513.64,
+   "nextScore": 413.87,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1311
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 8785.64,
+   "nextScore": 401.99,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1281
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1687.49,
+   "nextScore": 392.33,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.3
+  },
+  "windows": 6,
+  "ms": 1370
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1067.71,
+   "nextScore": 294.43,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1086
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 674.29,
+   "nextScore": 244.26,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.3
+  },
+  "windows": 6,
+  "ms": 1135
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1743.26,
+   "nextScore": 327.7,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1283
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1164.51,
+   "nextScore": 634.27,
+   "windowsWon": 1,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 10.34
+  },
+  "windows": 6,
+  "ms": 1157
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 401.31,
+   "nextScore": 389.61,
+   "windowsWon": 6,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 10.43
+  },
+  "windows": 6,
+  "ms": 1036
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1546.37,
+   "nextScore": 269.77,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1146
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 1093.54,
+   "nextScore": 226.75,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1174
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-4",
+   "score": 255.51,
+   "nextScore": 212.06,
+   "windowsWon": 5,
+   "speed": 0.907,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 36.48
+  },
+  "windows": 6,
+  "ms": 1117
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-19",
+  "top": {
+   "trackId": "song-19",
+   "score": 672.38,
+   "nextScore": 285.28,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.27
+  },
+  "windows": 6,
+  "ms": 1036
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 4170.2,
+   "nextScore": 348.36,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.25
+  },
+  "windows": 7,
+  "ms": 1653
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 2948.75,
+   "nextScore": 409.41,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1535
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 429.71,
+   "nextScore": 429.33,
+   "windowsWon": 1,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1612
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 508.32,
+   "nextScore": 216.73,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1443
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 288.19,
+   "nextScore": 216.62,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1180
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 1529.82,
+   "nextScore": 434.8,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1634
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 964.94,
+   "nextScore": 580.36,
+   "windowsWon": 7,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 9.28
+  },
+  "windows": 7,
+  "ms": 1468
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 491.12,
+   "nextScore": 222.62,
+   "windowsWon": 7,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 9.28
+  },
+  "windows": 7,
+  "ms": 1170
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 2581.86,
+   "nextScore": 220.24,
+   "windowsWon": 7,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.18
+  },
+  "windows": 7,
+  "ms": 1397
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 1689.3,
+   "nextScore": 134.28,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1366
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-6",
+   "score": 300.03,
+   "nextScore": 267.58,
+   "windowsWon": 6,
+   "speed": 1.015,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 33.18
+  },
+  "windows": 7,
+  "ms": 1405
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-20",
+  "top": {
+   "trackId": "song-20",
+   "score": 429.95,
+   "nextScore": 318.69,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.22
+  },
+  "windows": 7,
+  "ms": 1267
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 4681.11,
+   "nextScore": 767.69,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.43
+  },
+  "windows": 3,
+  "ms": 685
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 3290.22,
+   "nextScore": 741.52,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.4
+  },
+  "windows": 3,
+  "ms": 697
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-1",
+   "score": 1055.56,
+   "nextScore": 807.46,
+   "windowsWon": 1,
+   "speed": 1.157,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 63.81
+  },
+  "windows": 3,
+  "ms": 769
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 922.63,
+   "nextScore": 744.68,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.4
+  },
+  "windows": 3,
+  "ms": 554
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-1",
+   "score": 596.03,
+   "nextScore": 523.92,
+   "windowsWon": 1,
+   "speed": 1.157,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 63.81
+  },
+  "windows": 3,
+  "ms": 534
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 1075.07,
+   "nextScore": 188.87,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.43
+  },
+  "windows": 3,
+  "ms": 678
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 699.93,
+   "nextScore": 231.83,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 14.46
+  },
+  "windows": 3,
+  "ms": 597
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 232.65,
+   "nextScore": 179.7,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 14.56
+  },
+  "windows": 3,
+  "ms": 656
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 589.07,
+   "nextScore": 119.72,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.4
+  },
+  "windows": 3,
+  "ms": 656
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 416.79,
+   "nextScore": 141.34,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 14.4
+  },
+  "windows": 3,
+  "ms": 724
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 124.22,
+   "nextScore": 95.62,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 14.4
+  },
+  "windows": 3,
+  "ms": 601
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-21",
+  "top": {
+   "trackId": "song-21",
+   "score": 412.82,
+   "nextScore": 302.13,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 14.43
+  },
+  "windows": 3,
+  "ms": 589
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 10149.88,
+   "nextScore": 402.91,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 1081
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 6581.16,
+   "nextScore": 452.62,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.93
+  },
+  "windows": 4,
+  "ms": 1036
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 1722.4,
+   "nextScore": 418.25,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 1056
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 758.8,
+   "nextScore": 317.29,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 900
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 519.22,
+   "nextScore": 249.85,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.93
+  },
+  "windows": 4,
+  "ms": 856
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 1242.42,
+   "nextScore": 437.5,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 1120
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 785.95,
+   "nextScore": 729.05,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 24.96
+  },
+  "windows": 4,
+  "ms": 944
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 480.65,
+   "nextScore": 301.54,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 25.09
+  },
+  "windows": 4,
+  "ms": 824
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 964.68,
+   "nextScore": 256.51,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 932
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 1238.82,
+   "nextScore": 227.1,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 24.93
+  },
+  "windows": 4,
+  "ms": 885
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 136.06,
+   "nextScore": 121.55,
+   "windowsWon": 1,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 802
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-22",
+  "top": {
+   "trackId": "song-22",
+   "score": 549.22,
+   "nextScore": 182.98,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 24.9
+  },
+  "windows": 4,
+  "ms": 998
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 15134.73,
+   "nextScore": 588.52,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.88
+  },
+  "windows": 7,
+  "ms": 1779
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 9744.33,
+   "nextScore": 500.61,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.91
+  },
+  "windows": 7,
+  "ms": 1558
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 3096.21,
+   "nextScore": 313.52,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.91
+  },
+  "windows": 7,
+  "ms": 1608
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 1267.52,
+   "nextScore": 200.77,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.91
+  },
+  "windows": 7,
+  "ms": 1208
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 788.22,
+   "nextScore": 184.24,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.91
+  },
+  "windows": 7,
+  "ms": 1377
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 3577.02,
+   "nextScore": 395.56,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.88
+  },
+  "windows": 7,
+  "ms": 1749
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 3101.84,
+   "nextScore": 360.39,
+   "windowsWon": 7,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 22.98
+  },
+  "windows": 7,
+  "ms": 1512
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 513.96,
+   "nextScore": 278.71,
+   "windowsWon": 7,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 22.98
+  },
+  "windows": 7,
+  "ms": 1615
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 2803.84,
+   "nextScore": 271.17,
+   "windowsWon": 7,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.88
+  },
+  "windows": 7,
+  "ms": 1568
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 1900.46,
+   "nextScore": 221.5,
+   "windowsWon": 7,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 22.88
+  },
+  "windows": 7,
+  "ms": 1583
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-10",
+   "score": 331.0,
+   "nextScore": 242.18,
+   "windowsWon": 1,
+   "speed": 1.054,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.89
+  },
+  "windows": 7,
+  "ms": 1344
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-23",
+  "top": {
+   "trackId": "song-23",
+   "score": 2157.47,
+   "nextScore": 292.36,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.91
+  },
+  "windows": 7,
+  "ms": 1297
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 3970.28,
+   "nextScore": 1435.26,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.14
+  },
+  "windows": 4,
+  "ms": 1393
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 3261.67,
+   "nextScore": 1168.79,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.14
+  },
+  "windows": 4,
+  "ms": 1314
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 958.07,
+   "nextScore": 556.81,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.11
+  },
+  "windows": 4,
+  "ms": 1254
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 1154.06,
+   "nextScore": 635.55,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.11
+  },
+  "windows": 4,
+  "ms": 940
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 955.03,
+   "nextScore": 582.63,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.11
+  },
+  "windows": 4,
+  "ms": 843
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 1443.23,
+   "nextScore": 754.16,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 3.78
+  },
+  "windows": 4,
+  "ms": 1148
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 742.6,
+   "nextScore": 426.31,
+   "windowsWon": 4,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 3.84
+  },
+  "windows": 4,
+  "ms": 956
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 245.72,
+   "nextScore": 148.01,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 3.9
+  },
+  "windows": 4,
+  "ms": 929
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-16",
+   "score": 831.39,
+   "nextScore": 814.13,
+   "windowsWon": 0,
+   "speed": 1.034,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.13
+  },
+  "windows": 4,
+  "ms": 908
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-24",
+   "score": 929.05,
+   "nextScore": 411.12,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 3.78
+  },
+  "windows": 4,
+  "ms": 1212
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-16",
+   "score": 108.22,
+   "nextScore": 106.5,
+   "windowsWon": 0,
+   "speed": 1.034,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.5
+  },
+  "windows": 4,
+  "ms": 804
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-24",
+  "top": {
+   "trackId": "song-16",
+   "score": 278.91,
+   "nextScore": 246.7,
+   "windowsWon": 1,
+   "speed": 0.857,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 44.8
+  },
+  "windows": 4,
+  "ms": 830
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 6187.48,
+   "nextScore": 358.3,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.62
+  },
+  "windows": 3,
+  "ms": 869
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 4929.04,
+   "nextScore": 325.9,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.62
+  },
+  "windows": 3,
+  "ms": 914
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 750.78,
+   "nextScore": 153.64,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.62
+  },
+  "windows": 3,
+  "ms": 962
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 374.4,
+   "nextScore": 112.49,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.58
+  },
+  "windows": 3,
+  "ms": 675
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 281.45,
+   "nextScore": 94.33,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.58
+  },
+  "windows": 3,
+  "ms": 628
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 1193.75,
+   "nextScore": 143.32,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.58
+  },
+  "windows": 3,
+  "ms": 886
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 908.9,
+   "nextScore": 156.47,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 55.65
+  },
+  "windows": 3,
+  "ms": 857
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 410.63,
+   "nextScore": 281.06,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 55.71
+  },
+  "windows": 3,
+  "ms": 841
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 1131.66,
+   "nextScore": 179.97,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.58
+  },
+  "windows": 3,
+  "ms": 900
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 1083.78,
+   "nextScore": 304.77,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 55.62
+  },
+  "windows": 3,
+  "ms": 997
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-11",
+   "score": 150.04,
+   "nextScore": 130.07,
+   "windowsWon": 2,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 65.38
+  },
+  "windows": 3,
+  "ms": 662
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-25",
+  "top": {
+   "trackId": "song-25",
+   "score": 546.03,
+   "nextScore": 168.62,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 55.62
+  },
+  "windows": 3,
+  "ms": 735
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 4964.13,
+   "nextScore": 236.94,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 1146
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 3733.69,
+   "nextScore": 403.13,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 1145
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 1567.12,
+   "nextScore": 382.02,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 58.72
+  },
+  "windows": 5,
+  "ms": 1236
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 831.94,
+   "nextScore": 140.48,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 968
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 516.3,
+   "nextScore": 126.3,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 41.41
+  },
+  "windows": 5,
+  "ms": 911
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 1761.52,
+   "nextScore": 287.79,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 1190
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 1042.94,
+   "nextScore": 519.38,
+   "windowsWon": 5,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 32.8
+  },
+  "windows": 5,
+  "ms": 1096
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 322.07,
+   "nextScore": 202.44,
+   "windowsWon": 5,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 32.96
+  },
+  "windows": 5,
+  "ms": 934
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 1291.36,
+   "nextScore": 336.2,
+   "windowsWon": 5,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 1093
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 1425.6,
+   "nextScore": 944.81,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 32.74
+  },
+  "windows": 5,
+  "ms": 1079
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-13",
+   "score": 330.48,
+   "nextScore": 212.59,
+   "windowsWon": 4,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 9.06
+  },
+  "windows": 5,
+  "ms": 1026
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-26",
+  "top": {
+   "trackId": "song-26",
+   "score": 440.89,
+   "nextScore": 255.58,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 58.69
+  },
+  "windows": 5,
+  "ms": 863
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 3202.78,
+   "nextScore": 1462.65,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.9
+  },
+  "windows": 3,
+  "ms": 761
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 2470.06,
+   "nextScore": 1335.84,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.0
+  },
+  "windows": 3,
+  "ms": 765
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 814.44,
+   "nextScore": 689.5,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.0
+  },
+  "windows": 3,
+  "ms": 793
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 889.61,
+   "nextScore": 407.04,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.0
+  },
+  "windows": 3,
+  "ms": 640
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 418.0,
+   "nextScore": 245.54,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.9
+  },
+  "windows": 3,
+  "ms": 669
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 1561.71,
+   "nextScore": 525.9,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.9
+  },
+  "windows": 3,
+  "ms": 735
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 1024.46,
+   "nextScore": 237.62,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 4.96
+  },
+  "windows": 3,
+  "ms": 647
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 254.86,
+   "nextScore": 156.91,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 5.06
+  },
+  "windows": 3,
+  "ms": 646
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 783.86,
+   "nextScore": 198.77,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 4.9
+  },
+  "windows": 3,
+  "ms": 723
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 654.66,
+   "nextScore": 139.56,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 4.9
+  },
+  "windows": 3,
+  "ms": 673
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-10",
+   "score": 251.49,
+   "nextScore": 161.24,
+   "windowsWon": 3,
+   "speed": 1.054,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 60.06
+  },
+  "windows": 3,
+  "ms": 634
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-27",
+  "top": {
+   "trackId": "song-27",
+   "score": 709.75,
+   "nextScore": 325.59,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.42
+  },
+  "windows": 3,
+  "ms": 648
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 9265.26,
+   "nextScore": 799.9,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1502
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 7653.15,
+   "nextScore": 619.95,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1537
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 3516.1,
+   "nextScore": 564.19,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -0.38
+  },
+  "windows": 6,
+  "ms": 1569
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 591.06,
+   "nextScore": 124.06,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1194
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 334.9,
+   "nextScore": 108.54,
+   "windowsWon": 5,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1122
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 3703.78,
+   "nextScore": 429.36,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1564
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 1900.32,
+   "nextScore": 405.02,
+   "windowsWon": 6,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 20.99
+  },
+  "windows": 6,
+  "ms": 1186
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 390.39,
+   "nextScore": 166.61,
+   "windowsWon": 6,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 20.99
+  },
+  "windows": 6,
+  "ms": 1250
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 1895.12,
+   "nextScore": 458.11,
+   "windowsWon": 6,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.9
+  },
+  "windows": 6,
+  "ms": 1438
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 1539.93,
+   "nextScore": 107.09,
+   "windowsWon": 6,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 20.93
+  },
+  "windows": 6,
+  "ms": 1363
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 135.52,
+   "nextScore": 120.74,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 3.0,
+   "songOffsetSec": 20.9
+  },
+  "windows": 6,
+  "ms": 1164
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-28",
+  "top": {
+   "trackId": "song-28",
+   "score": 1357.11,
+   "nextScore": 624.77,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.75
+  },
+  "windows": 6,
+  "ms": 1131
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 3177.21,
+   "nextScore": 359.38,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 41.82
+  },
+  "windows": 4,
+  "ms": 999
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 2642.25,
+   "nextScore": 326.25,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 41.82
+  },
+  "windows": 4,
+  "ms": 1174
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 722.65,
+   "nextScore": 214.07,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 41.82
+  },
+  "windows": 4,
+  "ms": 1165
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-5",
+   "score": 96.77,
+   "nextScore": 76.37,
+   "windowsWon": 3,
+   "speed": 0.78,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 41.54
+  },
+  "windows": 4,
+  "ms": 917
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-5",
+   "score": 82.42,
+   "nextScore": 58.78,
+   "windowsWon": 3,
+   "speed": 1.271,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 27.55
+  },
+  "windows": 4,
+  "ms": 817
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 1231.5,
+   "nextScore": 195.85,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 18.21
+  },
+  "windows": 4,
+  "ms": 1198
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 976.04,
+   "nextScore": 243.33,
+   "windowsWon": 4,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 18.27
+  },
+  "windows": 4,
+  "ms": 1111
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 492.81,
+   "nextScore": 187.11,
+   "windowsWon": 4,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 18.4
+  },
+  "windows": 4,
+  "ms": 1091
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 1287.66,
+   "nextScore": 257.97,
+   "windowsWon": 4,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 18.21
+  },
+  "windows": 4,
+  "ms": 1104
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 1269.69,
+   "nextScore": 124.97,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 18.21
+  },
+  "windows": 4,
+  "ms": 1019
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-17",
+   "score": 59.37,
+   "nextScore": 56.69,
+   "windowsWon": 1,
+   "speed": 0.78,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 64.74
+  },
+  "windows": 4,
+  "ms": 748
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-29",
+  "top": {
+   "trackId": "song-29",
+   "score": 170.93,
+   "nextScore": 144.84,
+   "windowsWon": 1,
+   "speed": 0.996,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 18.34
+  },
+  "windows": 4,
+  "ms": 746
+ },
+ {
+  "kind": "positive",
+  "variant": "clean",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 4812.25,
+   "nextScore": 1222.52,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.51
+  },
+  "windows": 3,
+  "ms": 997
+ },
+ {
+  "kind": "positive",
+  "variant": "aac 64k",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 3586.64,
+   "nextScore": 1182.13,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.51
+  },
+  "windows": 3,
+  "ms": 974
+ },
+ {
+  "kind": "positive",
+  "variant": "noise 10dB",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 799.74,
+   "nextScore": 487.5,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.75
+  },
+  "windows": 3,
+  "ms": 882
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -6dB)",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 523.22,
+   "nextScore": 360.1,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.51
+  },
+  "windows": 3,
+  "ms": 708
+ },
+ {
+  "kind": "positive",
+  "variant": "voice over (music -12dB)",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 435.77,
+   "nextScore": 274.69,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.72
+  },
+  "windows": 3,
+  "ms": 579
+ },
+ {
+  "kind": "positive",
+  "variant": "phone + room",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 1431.79,
+   "nextScore": 1020.31,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.48
+  },
+  "windows": 3,
+  "ms": 827
+ },
+ {
+  "kind": "positive",
+  "variant": "sped up 1.25x",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 960.53,
+   "nextScore": 328.31,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 4.0,
+   "songOffsetSec": 12.54
+  },
+  "windows": 3,
+  "ms": 748
+ },
+ {
+  "kind": "positive",
+  "variant": "slowed 0.85x",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 247.03,
+   "nextScore": 121.92,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 12.58
+  },
+  "windows": 3,
+  "ms": 660
+ },
+ {
+  "kind": "positive",
+  "variant": "tempo 1.2x pitch kept",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 930.79,
+   "nextScore": 411.7,
+   "windowsWon": 3,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.48
+  },
+  "windows": 3,
+  "ms": 756
+ },
+ {
+  "kind": "positive",
+  "variant": "pitch -3 st",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 871.31,
+   "nextScore": 223.85,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 12.51
+  },
+  "windows": 3,
+  "ms": 765
+ },
+ {
+  "kind": "positive",
+  "variant": "worst: 1.2x + voice + phone + aac",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-10",
+   "score": 175.68,
+   "nextScore": 169.83,
+   "windowsWon": 1,
+   "speed": 0.795,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.51
+  },
+  "windows": 3,
+  "ms": 572
+ },
+ {
+  "kind": "positive",
+  "variant": "song only in 2nd half",
+  "truth": "song-30",
+  "top": {
+   "trackId": "song-30",
+   "score": 257.96,
+   "nextScore": 105.29,
+   "windowsWon": 2,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 12.51
+  },
+  "windows": 3,
+  "ms": 640
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-29",
+   "score": 279.59,
+   "nextScore": 203.11,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": -2.0,
+   "songOffsetSec": 35.84
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-9",
+   "score": 62.47,
+   "nextScore": 60.65,
+   "windowsWon": 0,
+   "speed": 1.32,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.29
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 361.25,
+   "nextScore": 355.27,
+   "windowsWon": 0,
+   "speed": 0.841,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 23.07
+  },
+  "windows": 2
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 56.59,
+   "nextScore": 49.72,
+   "windowsWon": 1,
+   "speed": 0.795,
+   "pitchSemitones": -4.0,
+   "songOffsetSec": 66.08
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-3",
+   "score": 71.36,
+   "nextScore": 68.9,
+   "windowsWon": 0,
+   "speed": 0.825,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 13.98
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-30",
+   "score": 177.87,
+   "nextScore": 169.61,
+   "windowsWon": 1,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 17.02
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-8",
+   "score": 243.98,
+   "nextScore": 176.47,
+   "windowsWon": 4,
+   "speed": 0.941,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -3.26
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-14",
+   "score": 361.8,
+   "nextScore": 308.2,
+   "windowsWon": 1,
+   "speed": 0.841,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 13.76
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 100.94,
+   "nextScore": 80.45,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -4.0,
+   "songOffsetSec": -8.42
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 135.34,
+   "nextScore": 100.91,
+   "windowsWon": 1,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -9.82
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-6",
+   "score": 334.67,
+   "nextScore": 217.43,
+   "windowsWon": 4,
+   "speed": 0.941,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.15
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-26",
+   "score": 161.86,
+   "nextScore": 123.0,
+   "windowsWon": 2,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 48.48
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-24",
+   "score": 313.08,
+   "nextScore": 310.25,
+   "windowsWon": 0,
+   "speed": 1.295,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -3.81
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-11",
+   "score": 90.78,
+   "nextScore": 67.24,
+   "windowsWon": 2,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 37.06
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-13",
+   "score": 77.33,
+   "nextScore": 68.82,
+   "windowsWon": 2,
+   "speed": 1.015,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -15.46
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-25",
+   "score": 268.04,
+   "nextScore": 252.86,
+   "windowsWon": 2,
+   "speed": 1.179,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -1.6
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 212.92,
+   "nextScore": 206.91,
+   "windowsWon": 1,
+   "speed": 0.907,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 56.64
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-26",
+   "score": 453.9,
+   "nextScore": 309.19,
+   "windowsWon": 4,
+   "speed": 1.136,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 22.5
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 61.14,
+   "nextScore": 52.17,
+   "windowsWon": 2,
+   "speed": 1.295,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -1.15
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 95.23,
+   "nextScore": 67.37,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": -3.0,
+   "songOffsetSec": 1.38
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-30",
+   "score": 565.02,
+   "nextScore": 372.55,
+   "windowsWon": 2,
+   "speed": 0.89,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 11.97
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-30",
+   "score": 177.2,
+   "nextScore": 147.72,
+   "windowsWon": 0,
+   "speed": 0.89,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 6.85
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-11",
+   "score": 351.8,
+   "nextScore": 290.58,
+   "windowsWon": 1,
+   "speed": 1.157,
+   "pitchSemitones": 2.5,
+   "songOffsetSec": 1.89
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-18",
+   "score": 77.92,
+   "nextScore": 65.61,
+   "windowsWon": 1,
+   "speed": 0.841,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 39.52
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 79.38,
+   "nextScore": 76.75,
+   "windowsWon": 1,
+   "speed": 1.32,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 39.52
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-2",
+   "score": 457.64,
+   "nextScore": 325.01,
+   "windowsWon": 2,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 8.48
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-2",
+   "score": 233.78,
+   "nextScore": 158.52,
+   "windowsWon": 3,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.58
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-6",
+   "score": 334.95,
+   "nextScore": 297.46,
+   "windowsWon": 1,
+   "speed": 0.977,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 19.78
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-13",
+   "score": 106.85,
+   "nextScore": 99.9,
+   "windowsWon": 3,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 33.25
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 85.47,
+   "nextScore": 83.88,
+   "windowsWon": 1,
+   "speed": 1.115,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 44.83
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 258.6,
+   "nextScore": 221.2,
+   "windowsWon": 1,
+   "speed": 0.959,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -1.7
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 227.08,
+   "nextScore": 139.86,
+   "windowsWon": 2,
+   "speed": 0.959,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 32.1
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-21",
+   "score": 465.95,
+   "nextScore": 291.97,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 20.32
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 47.68,
+   "nextScore": 43.07,
+   "windowsWon": 2,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 17.82
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 91.96,
+   "nextScore": 66.42,
+   "windowsWon": 2,
+   "speed": 0.907,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -4.29
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-1",
+   "score": 390.66,
+   "nextScore": 386.63,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 44.45
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 391.8,
+   "nextScore": 238.52,
+   "windowsWon": 2,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 10.02
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 251.33,
+   "nextScore": 237.21,
+   "windowsWon": 2,
+   "speed": 1.179,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 1.41
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-6",
+   "score": 48.59,
+   "nextScore": 48.08,
+   "windowsWon": 1,
+   "speed": 1.074,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 39.65
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 77.63,
+   "nextScore": 65.92,
+   "windowsWon": 2,
+   "speed": 1.32,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -8.77
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 1886.68,
+   "nextScore": 224.83,
+   "windowsWon": 4,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 56.29
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 345.73,
+   "nextScore": 135.32,
+   "windowsWon": 4,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 63.04
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-26",
+   "score": 635.03,
+   "nextScore": 243.88,
+   "windowsWon": 3,
+   "speed": 1.248,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 28.77
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-18",
+   "score": 50.2,
+   "nextScore": 49.2,
+   "windowsWon": 0,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.82
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-21",
+   "score": 88.12,
+   "nextScore": 79.61,
+   "windowsWon": 1,
+   "speed": 1.094,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.53
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-11",
+   "score": 253.0,
+   "nextScore": 251.38,
+   "windowsWon": 3,
+   "speed": 1.094,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 42.05
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-1",
+   "score": 82.78,
+   "nextScore": 75.37,
+   "windowsWon": 1,
+   "speed": 1.054,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 33.34
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 174.36,
+   "nextScore": 165.16,
+   "windowsWon": 2,
+   "speed": 0.795,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.78
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-25",
+   "score": 57.94,
+   "nextScore": 57.16,
+   "windowsWon": 1,
+   "speed": 1.054,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 40.48
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 107.74,
+   "nextScore": 102.46,
+   "windowsWon": 1,
+   "speed": 0.795,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 50.91
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-1",
+   "score": 503.92,
+   "nextScore": 304.41,
+   "windowsWon": 1,
+   "speed": 0.924,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 0.19
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-7",
+   "score": 288.43,
+   "nextScore": 273.96,
+   "windowsWon": 2,
+   "speed": 0.857,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 16.35
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-9",
+   "score": 453.66,
+   "nextScore": 277.41,
+   "windowsWon": 4,
+   "speed": 0.907,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 53.09
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 61.63,
+   "nextScore": 60.06,
+   "windowsWon": 2,
+   "speed": 1.034,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 59.78
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 97.26,
+   "nextScore": 89.28,
+   "windowsWon": 1,
+   "speed": 1.115,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 60.16
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-4",
+   "score": 1370.88,
+   "nextScore": 502.35,
+   "windowsWon": 6,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 30.18
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-4",
+   "score": 512.05,
+   "nextScore": 177.13,
+   "windowsWon": 6,
+   "speed": 0.81,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 2.98
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-6",
+   "score": 429.84,
+   "nextScore": 386.33,
+   "windowsWon": 1,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 1.63
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-29",
+   "score": 89.95,
+   "nextScore": 76.38,
+   "windowsWon": 2,
+   "speed": 1.094,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -8.16
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-16",
+   "score": 94.55,
+   "nextScore": 92.26,
+   "windowsWon": 0,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 43.74
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-13",
+   "score": 1292.71,
+   "nextScore": 968.2,
+   "windowsWon": 0,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 25.34
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-13",
+   "score": 594.29,
+   "nextScore": 253.15,
+   "windowsWon": 4,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 25.34
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 533.6,
+   "nextScore": 503.94,
+   "windowsWon": 2,
+   "speed": 1.157,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 57.95
+  },
+  "windows": 3
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-29",
+   "score": 86.51,
+   "nextScore": 73.06,
+   "windowsWon": 1,
+   "speed": 1.202,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 26.5
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 105.67,
+   "nextScore": 82.4,
+   "windowsWon": 2,
+   "speed": 0.78,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 37.02
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-19",
+   "score": 463.95,
+   "nextScore": 396.4,
+   "windowsWon": 0,
+   "speed": 1.224,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 39.65
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-21",
+   "score": 269.54,
+   "nextScore": 238.76,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 45.12
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-28",
+   "score": 431.19,
+   "nextScore": 384.65,
+   "windowsWon": 2,
+   "speed": 1.157,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 27.62
+  },
+  "windows": 5
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 109.18,
+   "nextScore": 62.4,
+   "windowsWon": 3,
+   "speed": 1.0,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 33.76
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 104.28,
+   "nextScore": 75.77,
+   "windowsWon": 4,
+   "speed": 0.873,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 25.31
+  },
+  "windows": 6
+ },
+ {
+  "kind": "negative",
+  "variant": "other song",
+  "truth": null,
+  "top": {
+   "trackId": "song-23",
+   "score": 279.99,
+   "nextScore": 216.59,
+   "windowsWon": 3,
+   "speed": 0.959,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 27.94
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song + voice",
+  "truth": null,
+  "top": {
+   "trackId": "song-10",
+   "score": 323.02,
+   "nextScore": 218.61,
+   "windowsWon": 3,
+   "speed": 0.841,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 66.69
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "other song sped up",
+  "truth": null,
+  "top": {
+   "trackId": "song-14",
+   "score": 257.33,
+   "nextScore": 187.76,
+   "windowsWon": 4,
+   "speed": 1.074,
+   "pitchSemitones": 1.0,
+   "songOffsetSec": 60.1
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "voice only",
+  "truth": null,
+  "top": {
+   "trackId": "song-28",
+   "score": 60.04,
+   "nextScore": 46.74,
+   "windowsWon": 1,
+   "speed": 1.157,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": -19.58
+  },
+  "windows": 4
+ },
+ {
+  "kind": "negative",
+  "variant": "noise only",
+  "truth": null,
+  "top": {
+   "trackId": "song-5",
+   "score": 111.78,
+   "nextScore": 57.62,
+   "windowsWon": 2,
+   "speed": 1.054,
+   "pitchSemitones": 0.0,
+   "songOffsetSec": 7.9
+  },
+  "windows": 4
+ }
+]

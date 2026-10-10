@@ -830,6 +830,53 @@ posts that use it. TikTok's Commercial Content API gives no music data
 (Brief §4), so this is built from what the music provider identified, not
 from TikTok.
 
+## Own song recognition and manual posts
+
+Built 2026-10-10 to make Bekvor work end to end without paid or foreign
+services. Only on our own server: it needs `RECOGNIZER_URL`,
+`RECOGNIZER_TOKEN`, `UPLOAD_DIR` and `JOB_RUNNER=worker`
+(`app/_lib/own-recognition.ts`); on Vercel the UI for it doesn't appear.
+
+- **Recognition service** (`services/recognizer`, Python, own code): makes a
+  song's fingerprint and finds catalogue songs in a post's audio, also when
+  sped up, slowed, pitch-shifted or under a voice. Stateless; the app stores
+  fingerprints (`TrackFingerprint`) and sends a workspace's index when its
+  version (`catalogueVersion`) changes. Calibration and limits:
+  `services/recognizer/README.md`.
+- **Reference audio** (song page → "Reference audio"): an analyst uploads a
+  recording; `POST /api/uploads/track-audio/{trackId}` streams it to the
+  upload disk and queues `fingerprint_track`; the worker gets the
+  fingerprint, stores it and deletes the recording. Only catalogue songs are
+  searched.
+- **Checking a post's audio** (post page → "Check the post's audio"):
+  `POST /api/uploads/post-audio/{contentId}` creates an `AudioCheck` and
+  queues `audio_check`; the worker matches, `decideRecognition`
+  (`modules/recognition`) turns the evidence into MATCH / CANDIDATE /
+  NO_MATCH with a reason and a match strength, and the file is deleted. The
+  post page refreshes itself while a check runs. A MATCH or CANDIDATE is
+  shown with the song preselected in the identify form: a person confirms,
+  then the rights check runs and a case opens if needed (the same path as
+  identifying by hand). `RECOGNITION_AUTO_IDENTIFY=true` lets a MATCH
+  identify the song itself (provider `bekvor`); off by default, because the
+  synthetic calibration had one look-alike judged a sure match and an
+  automatic identification can't be undone yet.
+- **Uploads** (`app/_lib/upload-request.ts`, `modules/storage`): same-site
+  only, analyst and up, not the demo, rate- and queue-limited, size-limited
+  while streaming, type checked from the first bytes. Details in
+  `SECURITY.md`; legal side in `LEGAL_DE.md`.
+- **Adding a post by hand** (`/workspace/posts/new`, everywhere incl. Vercel):
+  a creator from the watchlist, the post's TikTok link, date, brands,
+  country. Stored like a scan result with no song yet
+  (`modules/connectors/manual-post.ts`), keyed by TikTok's own video id, so a
+  later API scan updates the same post rather than adding a second one. With
+  this, the product works before TikTok API access exists.
+- **Not built:** fetching a post's audio automatically from TikTok. Whether
+  TikTok's terms allow downloading videos for analysis is open
+  (`RELEASE_CHECKLIST.md`); until then the audio comes from the customer.
+  Also not built: undoing an identification, and telling the recognition
+  service to forget a deleted workspace's index (it drops out of its memory
+  cache on its own).
+
 ## Case management
 
 (Brief §43)

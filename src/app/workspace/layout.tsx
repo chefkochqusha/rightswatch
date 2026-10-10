@@ -10,6 +10,7 @@ import { VerifyEmailBanner } from "@/components/layout/verify-email-banner";
 import { WorkspaceNav } from "@/components/layout/workspace-nav";
 import type { WorkspaceNavItem } from "@/components/layout/nav-active";
 import { ROLE_LABELS } from "@/components/team/labels";
+import { BRAND } from "@/lib/brand";
 
 // The app, the public demo included, stays out of search results.
 export const metadata = { robots: { index: false, follow: false } };
@@ -72,9 +73,9 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
               aria-hidden="true"
               className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg"
             >
-              RW
+              {BRAND.mark}
             </span>
-            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">Bekvor</span>
+            <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">{BRAND.name}</span>
           </Link>
           <WorkspaceNav primary={primary} secondary={secondary} />
         </aside>

@@ -3,9 +3,20 @@
 	encode zstd gzip
 	# Caddy replaces any X-Forwarded-For a client sends with the real address,
 	# which the app's rate limits rely on.
-	reverse_proxy app:3000
-	request_body {
-		max_size 10MB
+	# Song recordings and post videos (own recognition) may be large; the app
+	# checks each upload's size, type and sender itself. Everything else: 10 MB.
+	@uploads path /api/uploads/*
+	handle @uploads {
+		request_body {
+			max_size 210MB
+		}
+		reverse_proxy app:3000
+	}
+	handle {
+		request_body {
+			max_size 10MB
+		}
+		reverse_proxy app:3000
 	}
 	log {
 		output stdout

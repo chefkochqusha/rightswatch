@@ -9,6 +9,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { CasePanel } from "./case-panel";
 import { IdentifyForm } from "./identify-form";
+import { PostAudioCheck } from "@/components/recognition/post-audio-check";
+import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
+import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
@@ -47,14 +50,19 @@ export async function generateMetadata({
  */
 export default async function WorkspaceItemDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ contentId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { contentId } = await params;
+  const justAdded = (await searchParams).added === "1";
   const session = await requireSession();
   const item = await getWorkspaceScanItem(session.workspace.id, contentId);
   if (!item) notFound();
   const catalogue = item.kind === "ASSESSED" ? [] : await getLibraryStore().catalog.findCatalogue(session.workspace.id);
+  const songOptions = catalogue.map((track) => ({ id: track.id, label: track.artist ? `${track.title} — ${track.artist}` : track.title }));
+  const showAudioCheck = isOwnRecognitionEnabled() && session.workspace.slug !== DEMO_WORKSPACE_SLUG;
 
   return (
     <div>
@@ -72,6 +80,12 @@ export default async function WorkspaceItemDetailPage({
         </div>
         {item.kind === "ASSESSED" && <StatusBadge status={item.assessment.status} />}
       </div>
+
+      {justAdded && (item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR") && (
+        <p role="status" className="mb-4 rounded-[0.875rem] border border-line bg-surface px-4 py-3 text-sm">
+          Post added. Next, say which of your songs it uses{showAudioCheck ? ", or upload its audio below" : ""}.
+        </p>
+      )}
 
       <AssessmentSummary item={item} />
 
@@ -96,10 +110,7 @@ export default async function WorkspaceItemDetailPage({
               {item.kind !== "OTHER_MUSIC" && "If you know which of your songs it uses, say so and the rights check runs."}
             </p>
             {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length > 0 && (
-              <IdentifyForm
-                contentId={contentId}
-                songs={catalogue.map((track) => ({ id: track.id, label: track.artist ? `${track.title} — ${track.artist}` : track.title }))}
-              />
+              <IdentifyForm contentId={contentId} songs={songOptions} />
             )}
             {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length === 0 && (
               <p className="mt-3 text-sm text-t2">
@@ -109,6 +120,16 @@ export default async function WorkspaceItemDetailPage({
           </section>
         )}
       </div>
+
+      {showAudioCheck && (
+        <PostAudioCheck
+          workspaceId={session.workspace.id}
+          externalContentId={contentId}
+          canManage={canManageCases(session.role)}
+          needsSong={item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR"}
+          catalogue={songOptions}
+        />
+      )}
     </div>
   );
 }

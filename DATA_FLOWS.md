@@ -17,8 +17,11 @@ This is an engineering inventory, not legal advice.
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |
 | Request logs (IP address, URL, time) | Visitors, members | Vercel (platform logs) | Operation, abuse defence |
 | Partner code, which workspaces signed up through it, commissions (amount, invoice id, payout date) | Partners (members who joined the programme) | Postgres | Partner programme payouts and bookkeeping |
+| Song fingerprints (landmark hashes, not playable), file name, length | The customer | Postgres | Own song recognition (our own server only) |
+| Uploaded song recordings and post videos/sounds | The customer; post videos show creators (face, voice) | Upload disk on our own server (`UPLOAD_DIR`), **only until read**: deleted after the fingerprint or the check, at the latest after 24 hours | Own song recognition |
+| Audio-check results (song, match strength, the service's scores) | The customer | Postgres | Suggestions on the post, audit trail |
 
-Not held: card numbers (Stripe), uploaded files (there are no uploads),
+Not held: card numbers (Stripe), uploaded files after they are read,
 analytics or advertising identifiers (none), keystroke or session recordings
 (none). The only cookie is the session cookie, which the login needs.
 
@@ -32,6 +35,7 @@ analytics or advertising identifiers (none), keystroke or session recordings
 | **Resend** (email) | Recipient address and the text of reset and confirmation emails | Once configured | Nothing is sent today. DPA to confirm |
 | **TikTok** Commercial Content API | The creator usernames on a watchlist | Each scan, once keys exist | Terms for commercial monitoring and storing the data are an open question (checklist) |
 | **AudD** | The video link of each post to identify; AudD downloads the video from TikTok | Each scan, once the token exists | At most 200 posts per scan (`AUDD_MAX_POSTS_PER_SCAN`), https links only. AudD's terms and its data handling to check; the creators' videos are third-party content |
+| **Recognition service** (`services/recognizer`, our own) | Uploaded audio, a workspace's fingerprints | Each upload | Runs on our own server on the private network; keeps nothing on disk. Not a third party |
 | **MusicBrainz** | The text a member types into song search, sent by our server (not the member's browser) | Song search | Public data service. Searches are not linked to a member on their side |
 | **Cover Art Archive** (Internet Archive) | A release id | Cover art | Fetched by our server, so no member IP address goes there |
 
