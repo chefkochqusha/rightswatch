@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { FormField } from "@/components/ui/form-field";
+import { buttonStyles } from "@/components/ui/button";
 import { inviteTeammateAction, type InviteTeammateFormState } from "./actions";
 
 const initialState: InviteTeammateFormState = {};
@@ -95,7 +96,7 @@ export function InviteForm() {
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-full bg-tx px-4 py-2 text-sm font-medium text-bg hover:opacity-90 disabled:opacity-60 sm:mt-6"
+          className={`${buttonStyles("primary")} sm:mt-6`}
         >
           {pending ? "Sending…" : "Send invite"}
         </button>

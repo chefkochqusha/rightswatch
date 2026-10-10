@@ -166,6 +166,25 @@ export class InMemoryMembershipRepository implements MembershipRepository {
   async findForWorkspace(workspaceId: string): Promise<MembershipRecord[]> {
     return Array.from(this.byId.values()).filter((m) => m.workspaceId === workspaceId);
   }
+
+  async updateRole(userId: string, workspaceId: string, role: Exclude<Role, "OWNER">): Promise<void> {
+    const membership = await this.findForUserAndWorkspace(userId, workspaceId);
+    if (!membership) throw new Error("No such membership.");
+    this.byId.set(membership.id, { ...membership, role });
+  }
+
+  async remove(userId: string, workspaceId: string): Promise<void> {
+    const membership = await this.findForUserAndWorkspace(userId, workspaceId);
+    if (membership) this.byId.delete(membership.id);
+  }
+
+  async transferOwnership(workspaceId: string, fromUserId: string, toUserId: string): Promise<void> {
+    const from = await this.findForUserAndWorkspace(fromUserId, workspaceId);
+    const to = await this.findForUserAndWorkspace(toUserId, workspaceId);
+    if (!from || !to || from.role !== "OWNER") throw new Error("Can't transfer ownership.");
+    this.byId.set(from.id, { ...from, role: "ADMIN" });
+    this.byId.set(to.id, { ...to, role: "OWNER" });
+  }
 }
 
 /**

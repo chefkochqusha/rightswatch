@@ -4,6 +4,7 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { ROLE_LABELS } from "@/components/team/labels";
 import type { MembershipRecord, UserRecord } from "@/modules/auth";
 import { InviteForm } from "./invite-form";
+import { RemoveMember, RoleControl, TransferOwnership } from "./member-controls";
 import { getPlanLimits } from "@/app/_lib/plan-limits";
 
 export const metadata = {
@@ -42,6 +43,9 @@ export default async function TeamPage() {
   members.sort((a, b) => a.membership.createdAt.getTime() - b.membership.createdAt.getTime());
 
   const canInvite = session.role === "OWNER" || session.role === "ADMIN";
+  const admins = members
+    .filter(({ membership, user }) => membership.role === "ADMIN" && user.id !== session.user.id)
+    .map(({ user }) => ({ userId: user.id, label: user.name ? `${user.name} (${user.email})` : user.email }));
   const limits = await getPlanLimits(session.workspace.id);
 
   return (
@@ -77,6 +81,7 @@ export default async function TeamPage() {
                 <th className="px-5 py-3 font-medium">Email</th>
                 <th className="px-5 py-3 font-medium">Role</th>
                 <th className="px-5 py-3 font-medium">Joined</th>
+                {canInvite && <th className="px-5 py-3 font-medium"><span className="sr-only">Manage</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -91,16 +96,42 @@ export default async function TeamPage() {
                   <td className="px-5 py-3.5 align-top text-t2">
                     {session.workspace.slug === DEMO_WORKSPACE_SLUG ? "Hidden in the demo" : user.email}
                   </td>
-                  <td className="px-5 py-3.5 align-top text-t2">{ROLE_LABELS[membership.role]}</td>
+                  <td className="px-5 py-3.5 align-top text-t2">
+                    {canInvite && membership.role !== "OWNER" && user.id !== session.user.id ? (
+                      <RoleControl userId={user.id} role={membership.role} label={user.name ?? user.email} />
+                    ) : (
+                      ROLE_LABELS[membership.role]
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 align-top whitespace-nowrap text-t2">
                     {dateFormatter.format(membership.createdAt)}
                   </td>
+                  {canInvite && (
+                    <td className="px-5 py-3.5 text-right align-top">
+                      {membership.role !== "OWNER" && user.id !== session.user.id && <RemoveMember userId={user.id} label={user.name ?? user.email} />}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      {session.role === "OWNER" && session.workspace.slug !== DEMO_WORKSPACE_SLUG && (
+        <section className="mt-6 rounded-lg border border-line bg-surface p-5">
+          <h2 className="text-sm font-semibold">Hand over the workspace</h2>
+          <p className="mt-1 text-[0.8125rem] text-t2">
+            Make an admin the owner, for example when you leave the company. You stay on as an admin; the new owner can then change your role or
+            remove you. Only the owner can delete the workspace or hand it over.
+          </p>
+          {admins.length > 0 ? (
+            <TransferOwnership admins={admins} />
+          ) : (
+            <p className="mt-3 text-[0.8125rem] text-t2">Nobody to hand it to yet: make a member an admin first.</p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

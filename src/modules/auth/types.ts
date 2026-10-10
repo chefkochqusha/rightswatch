@@ -133,4 +133,13 @@ export interface MembershipRepository {
   ): Promise<MembershipRecord | null>;
   /** All memberships on a workspace — the member list for `/workspace/team`. */
   findForWorkspace(workspaceId: string): Promise<MembershipRecord[]>;
+  /** Sets one member's role. Never used to make an owner (`transferOwnership`). */
+  updateRole(userId: string, workspaceId: string, role: Exclude<Role, "OWNER">): Promise<void>;
+  /** Removes one membership; the account stays (it may belong elsewhere too). */
+  remove(userId: string, workspaceId: string): Promise<void>;
+  /**
+   * Makes `toUserId` the owner and `fromUserId` an admin, in one write: a
+   * workspace is never without an owner, nor with two.
+   */
+  transferOwnership(workspaceId: string, fromUserId: string, toUserId: string): Promise<void>;
 }

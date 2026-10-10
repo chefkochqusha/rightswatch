@@ -15,6 +15,8 @@ export { changePassword } from "./change-password";
 export { deleteWorkspace } from "./delete-workspace";
 export { deleteOwnAccount } from "./delete-account";
 export type { DeleteAccountResult } from "./delete-account";
+export { changeMemberRole, removeMember, transferOwnership, MANAGEABLE_ROLES } from "./manage-members";
+export type { ManageableRole, ManageMemberError, ManageMemberResult, TransferOwnershipResult } from "./manage-members";
 export type { DeleteWorkspaceResult } from "./delete-workspace";
 export { sendEmailVerification, verifyEmail } from "./email-verification";
 export type { SendVerificationResult, VerifyEmailResult } from "./email-verification";

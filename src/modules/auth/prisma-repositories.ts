@@ -246,6 +246,27 @@ export class PrismaMembershipRepository implements MembershipRepository {
     const rows = await getPrisma().membership.findMany({ where: { workspaceId } });
     return rows.map(mapMembership);
   }
+
+  async updateRole(userId: string, workspaceId: string, role: Exclude<Role, "OWNER">): Promise<void> {
+    // Never touches an owner's row, even if a caller got that wrong.
+    const result = await getPrisma().membership.updateMany({
+      where: { userId, workspaceId, role: { not: "OWNER" } },
+      data: { role: toPrismaRole(role) },
+    });
+    if (result.count !== 1) throw new Error("No such membership, or it's the owner's.");
+  }
+
+  async remove(userId: string, workspaceId: string): Promise<void> {
+    await getPrisma().membership.deleteMany({ where: { userId, workspaceId, role: { not: "OWNER" } } });
+  }
+
+  async transferOwnership(workspaceId: string, fromUserId: string, toUserId: string): Promise<void> {
+    await getPrisma().$transaction(async (tx) => {
+      const demoted = await tx.membership.updateMany({ where: { workspaceId, userId: fromUserId, role: "OWNER" }, data: { role: "ADMIN" } });
+      const promoted = await tx.membership.updateMany({ where: { workspaceId, userId: toUserId, role: { not: "OWNER" } }, data: { role: "OWNER" } });
+      if (demoted.count !== 1 || promoted.count !== 1) throw new Error("Can't transfer ownership.");
+    });
+  }
 }
 
 function mapUser(row: {

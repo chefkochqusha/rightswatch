@@ -95,7 +95,7 @@ are needed. As far as checked on 2026-10-06:
 |---|---|
 | Access, portability | Settings → "Download your data": owners and admins get the whole workspace as JSON, every member gets their own account data. Each download is in the activity log |
 | Deletion of a workspace | Settings → "Delete workspace" (owner): removes the workspace, all its data and every member's account |
-| Deletion of one member's account | Settings → "Delete my account" (every member except the owner, with their password). Notes and activity stay with the workspace without the name. An owner deletes the workspace, or ownership is moved first (by hand for now) |
+| Deletion of one member's account | Settings → "Delete my account" (every member except the owner, with their password), or an owner or admin removes them on the Team page (their login is erased; also ends their sessions). Notes and activity stay with the workspace without the name. An owner first hands the workspace to an admin (Team → "Hand over the workspace", with their password) or deletes the workspace |
 | Deletion of a creator's data | Removing a creator takes them off the watchlist; their posts stay in the history. A creator who asks to be erased is handled by hand through the customer (controller) |
 | Correction | Members edit creators, songs and rights records in the product |
 
