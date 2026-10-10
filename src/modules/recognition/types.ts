@@ -19,6 +19,12 @@ export interface RecognitionCandidate {
   pitchSemitones: number;
   /** Where in the song the post's audio starts. */
   songOffsetSec: number;
+  /**
+   * Second check: share of the post's melody that matches the song's at
+   * the alignment found (0–1). `null` when it couldn't be checked (a
+   * fingerprint made before this check existed, or too little melody).
+   */
+  melodyAgreement?: number | null;
 }
 
 export interface RecognitionMatchResult {
@@ -64,4 +70,6 @@ export interface RecognitionThresholds {
   minWindowShare: number;
   /** Small next-best scores are raised to this before dividing. */
   ratioFloor: number;
+  /** Melody agreement needed for an automatic match (the second check). */
+  minMelodyAgreement: number;
 }

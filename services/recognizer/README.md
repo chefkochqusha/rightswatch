@@ -62,6 +62,32 @@ score 60, half the windows):
 - Speed: about 1 s per 20–45 s post on one core with 30 songs (1.9 s at most).
   Fingerprinting a 90 s song: about 1 s.
 
+## Second check: the melody (2026-10-10)
+
+Landmark votes can be fooled by a different song with the same chords and
+instruments (the one wrong MATCH above). So every candidate also gets a
+`melodyAgreement`: the strongest tonal band above ~320 Hz per frame (the
+melody line), compared between post and song at the alignment the landmarks
+found, within a quarter tone, octave errors forgiven. The song's melody line
+is stored in its fingerprint (format `bekvor-lp-1+mel1`; older fingerprints
+still match, but without this check, so their songs can only be suggested
+until the recording is uploaded again).
+
+Experiment (15 catalogue songs × 7 edits, 45 posts of other songs): an
+automatic MATCH now also needs melody agreement ≥ 0.7.
+
+| | Sure matches kept | Sure matches turned into suggestions |
+|---|---|---|
+| Clean / tempo 1.2× | 14 / 9 | 0 / 0 |
+| Pitch −3 st / slowed 0.85× | 6 / 2 | 6 / 1 |
+| Sped up 1.25× | 1 | 6 |
+| Voice-over −6 / −12 dB | 0 / 0 | 9 / 6 |
+| **Other songs that passed the landmark rule** | **0** | 2 (now suggestions) |
+
+So: no false automatic match left in the test set; the price is that
+voice-overs and strong speed-ups become suggestions a person confirms, which
+is the safe direction. `RECOGNITION_MIN_MELODY` changes the 0.7.
+
 **Round 2 with real music is still needed** (20–50 real songs and some real
 TikTok posts): re-run the calibration on them and set the thresholds through
 `RECOGNITION_MATCH_RATIO`, `RECOGNITION_CANDIDATE_RATIO` and

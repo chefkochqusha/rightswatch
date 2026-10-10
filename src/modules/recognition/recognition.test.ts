@@ -11,7 +11,7 @@ function result(top: Partial<RecognitionCandidate> | null, windows = 4): Recogni
     durationSec: 30,
     windows,
     candidates: top
-      ? [{ trackId: "t1", score: 500, nextScore: 50, windowsWon: windows, speed: 1, pitchSemitones: 0, songOffsetSec: 12, ...top }]
+      ? [{ trackId: "t1", score: 500, nextScore: 50, windowsWon: windows, speed: 1, pitchSemitones: 0, songOffsetSec: 12, melodyAgreement: 0.9, ...top }]
       : [],
   };
 }
@@ -23,6 +23,16 @@ describe("decideRecognition", () => {
     assert.equal(d.trackId, "t1");
     assert.equal(d.confidence, 0.9);
     assert.match(d.reason, /10\.0× the next/);
+    assert.match(d.reason, /melody agrees \(90 %\)/);
+  });
+
+  it("only suggests a song whose melody doesn't agree, or couldn't be compared", () => {
+    const low = decideRecognition(result({ melodyAgreement: 0.4 }));
+    assert.equal(low.outcome, "CANDIDATE");
+    assert.match(low.reason, /melody agrees only 40 %/);
+    const none = decideRecognition(result({ melodyAgreement: null }));
+    assert.equal(none.outcome, "CANDIDATE");
+    assert.match(none.reason, /couldn't be compared/);
   });
 
   it("only suggests a song that is ahead but not by much", () => {
@@ -57,6 +67,7 @@ describe("decideRecognition", () => {
 
   it("reads thresholds from the environment, within sane bounds", () => {
     assert.deepEqual(thresholdsFromEnv({}), DEFAULT_THRESHOLDS);
+    assert.equal(thresholdsFromEnv({ RECOGNITION_MIN_MELODY: "5" }).minMelodyAgreement, 1);
     const t = thresholdsFromEnv({ RECOGNITION_MATCH_RATIO: "4", RECOGNITION_CANDIDATE_RATIO: "9", RECOGNITION_MIN_SCORE: "-1" });
     assert.equal(t.matchRatio, 4);
     assert.equal(t.candidateRatio, 4, "never above the match ratio");

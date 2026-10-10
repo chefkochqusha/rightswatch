@@ -112,10 +112,8 @@ def _log_matrix() -> np.ndarray:
 LOGM = _log_matrix()
 
 
-def peaks(y: np.ndarray, per_sec: int = PEAKS_PER_SEC) -> np.ndarray:
-    """Spectral peaks of mono audio at FS, as float (frame, logbin) rows, by time."""
-    if len(y) < NFFT:
-        return np.zeros((0, 2))
+def _tonal_bands(y: np.ndarray) -> np.ndarray:
+    """Log-frequency band energies (NLOG x frames) of the tonal part of the audio."""
     _, _, Z = stft(y.astype(np.float64), fs=FS, nperseg=NFFT, noverlap=NFFT - HOP, boundary=None, padded=False)
     M = np.abs(Z)
     # Keep tonal content (melody, chords, bass), drop drums: songs built from
@@ -123,7 +121,14 @@ def peaks(y: np.ndarray, per_sec: int = PEAKS_PER_SEC) -> np.ndarray:
     H = median_filter(M, size=(1, 17))
     P = median_filter(M, size=(17, 1))
     M = M * (H ** 2 / (H ** 2 + P ** 2 + 1e-12))
-    S = np.log(LOGM @ M + 1e-6)
+    return LOGM @ M
+
+
+def peaks(y: np.ndarray, per_sec: int = PEAKS_PER_SEC, bands: np.ndarray | None = None) -> np.ndarray:
+    """Spectral peaks of mono audio at FS, as float (frame, logbin) rows, by time."""
+    if len(y) < NFFT:
+        return np.zeros((0, 2))
+    S = np.log((bands if bands is not None else _tonal_bands(y)) + 1e-6)
     S -= np.median(S, axis=1, keepdims=True)  # whiten per band
     local = maximum_filter(S, size=(7, 9)) == S
     cand = np.argwhere(local & (S > 0.5))  # (freq, frame)
@@ -140,6 +145,44 @@ def peaks(y: np.ndarray, per_sec: int = PEAKS_PER_SEC) -> np.ndarray:
     sel = cand[rank < per_sec]
     out = np.stack([sel[:, 1], sel[:, 0]], axis=1).astype(np.float64)  # (t, f)
     return out[np.argsort(out[:, 0], kind="stable")]
+
+
+# ------------------------------------------------------- melody (2nd check)
+#
+# Landmark votes can be fooled by a different song with the same chords and
+# instruments. The second check compares the melody line: the strongest
+# tonal band above ~320 Hz in each frame, as a quarter-tone index, 255 where
+# the frame is too quiet. At the alignment the landmarks found, how often do
+# post and song agree within a quarter tone (octave errors forgiven)?
+
+MELODY_LO = 2 * BPO  # two octaves above FMIN
+UNVOICED = 255
+
+
+def melody(bands: np.ndarray) -> np.ndarray:
+    band = bands[MELODY_LO:NLOG]
+    if band.shape[1] == 0:
+        return np.zeros(0, np.uint8)
+    idx = np.argmax(band, axis=0) + MELODY_LO
+    energy = band.max(axis=0)
+    voiced = energy > np.percentile(energy, 40)
+    return np.where(voiced, idx, UNVOICED).astype(np.uint8)
+
+
+def melody_agreement(query: np.ndarray, ref: np.ndarray, speed: float, shift: int, offset: float) -> float | None:
+    """Share of voiced frames where post and song name the same pitch class
+    (within a quarter tone), at the alignment found; None with too little to compare."""
+    t = np.arange(len(query))
+    rt = np.round(t * speed + offset).astype(np.int64)
+    ok = (query != UNVOICED) & (rt >= 0) & (rt < len(ref))
+    q = query[ok].astype(np.int64) - shift
+    r = ref[rt[ok]].astype(np.int64)
+    both = r != UNVOICED
+    q, r = q[both], r[both]
+    if len(q) < 20:
+        return None
+    distance = np.abs(((q - r) + BPO // 2) % BPO - BPO // 2)
+    return float(np.mean(distance <= 1))
 
 
 def pair_hashes(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -168,33 +211,49 @@ def pair_hashes(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return hashes[order].astype(np.int32), t[a][order].astype(np.int32)
 
 
+FORMAT_WITH_MELODY = ALGORITHM + "+mel1"
+
+
 @dataclass
 class Fingerprint:
     hashes: np.ndarray  # int32
     times: np.ndarray  # int32, frames
     duration_sec: float
+    melody: np.ndarray | None = None  # uint8 per frame; None in fingerprints made before the melody check
 
     def to_bytes(self) -> bytes:
         header = np.array([len(self.hashes)], dtype="<u4").tobytes() + np.array([self.duration_sec], dtype="<f4").tobytes()
         body = self.hashes.astype("<i4").tobytes() + self.times.astype("<i4").tobytes()
-        return ALGORITHM.encode() + b"\n" + zlib.compress(header + body, 6)
+        if self.melody is None:
+            return ALGORITHM.encode() + b"\n" + zlib.compress(header + body, 6)
+        mel = np.array([len(self.melody)], dtype="<u4").tobytes() + self.melody.astype(np.uint8).tobytes()
+        return FORMAT_WITH_MELODY.encode() + b"\n" + zlib.compress(header + body + mel, 6)
 
     @staticmethod
     def from_bytes(data: bytes) -> "Fingerprint":
         name, _, packed = data.partition(b"\n")
-        if name.decode() != ALGORITHM:
-            raise ValueError(f"Fingerprint made with {name.decode()!r}, this is {ALGORITHM}.")
+        fmt = name.decode()
+        if fmt not in (ALGORITHM, FORMAT_WITH_MELODY):
+            raise ValueError(f"Fingerprint made with {fmt!r}, this is {ALGORITHM}.")
         raw = zlib.decompress(packed)
         n = int(np.frombuffer(raw[:4], dtype="<u4")[0])
         duration = float(np.frombuffer(raw[4:8], dtype="<f4")[0])
         hashes = np.frombuffer(raw[8:8 + 4 * n], dtype="<i4").astype(np.int32)
         times = np.frombuffer(raw[8 + 4 * n:8 + 8 * n], dtype="<i4").astype(np.int32)
-        return Fingerprint(hashes, times, duration)
+        mel = None
+        if fmt == FORMAT_WITH_MELODY:
+            at = 8 + 8 * n
+            m = int(np.frombuffer(raw[at:at + 4], dtype="<u4")[0])
+            mel = np.frombuffer(raw[at + 4:at + 4 + m], dtype=np.uint8).copy()
+        return Fingerprint(hashes, times, duration, mel)
 
 
 def fingerprint(y: np.ndarray) -> Fingerprint:
-    h, t = pair_hashes(peaks(y))
-    return Fingerprint(h, t, len(y) / FS)
+    if len(y) < NFFT:
+        return Fingerprint(np.zeros(0, np.int32), np.zeros(0, np.int32), len(y) / FS, np.zeros(0, np.uint8))
+    bands = _tonal_bands(y)
+    h, t = pair_hashes(peaks(y, bands=bands))
+    return Fingerprint(h, t, len(y) / FS, melody(bands))
 
 
 # ------------------------------------------------------------------ the index
@@ -204,6 +263,7 @@ class Index:
 
     def __init__(self, tracks: list[tuple[str, Fingerprint]]):
         self.ids = [track_id for track_id, _ in tracks]
+        self.melodies = [fp.melody for _, fp in tracks]
         if not tracks:
             self.H = np.zeros(0, np.int32)
             self.S = self.T = self.W = np.zeros(0)
@@ -303,7 +363,9 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     evidence a decision needs: score, the next song's score, how many
     windows of the post each song wins, and the speed/pitch it was found at."""
     duration = len(y) / FS
-    pk = peaks(y)
+    bands = _tonal_bands(y) if len(y) >= NFFT else None
+    pk = peaks(y, bands=bands) if bands is not None else np.zeros((0, 2))
+    query_melody = melody(bands) if bands is not None else np.zeros(0, np.uint8)
     result = {"algorithm": ALGORITHM, "durationSec": round(duration, 2), "peaks": int(len(pk)), "windows": 0, "candidates": []}
     if len(index.ids) == 0 or len(pk) < 10:
         return result
@@ -343,5 +405,15 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
             "speed": round(s, 3),
             "pitchSemitones": round(k / 2, 1),
             "songOffsetSec": round(off * FRAME_SEC, 2),
+            # 2nd check: do the melody lines agree at this alignment? None when the
+            # song's fingerprint predates the melody check, or too little to compare.
+            "melodyAgreement": (
+                None if index.melodies[i] is None
+                else _round(melody_agreement(query_melody, index.melodies[i], s, k, off))
+            ),
         })
     return result
+
+
+def _round(value: float | None) -> float | None:
+    return None if value is None else round(value, 3)

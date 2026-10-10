@@ -48,6 +48,14 @@ class FingerprintTest(unittest.TestCase):
         self.assertAlmostEqual(f.duration_sec, g.duration_sec, places=2)
         self.assertGreater(len(f.hashes), 1000)
 
+    def test_round_trip_keeps_the_melody_and_reads_old_fingerprints(self):
+        f = fp.fingerprint(to_fs(SONGS["t2"][: SR * 20]))
+        self.assertIsNotNone(f.melody)
+        g = fp.Fingerprint.from_bytes(f.to_bytes())
+        self.assertTrue(np.array_equal(f.melody, g.melody))
+        old = fp.Fingerprint(f.hashes, f.times, f.duration_sec, None)
+        self.assertIsNone(fp.Fingerprint.from_bytes(old.to_bytes()).melody)
+
     def test_refuses_other_algorithm(self):
         with self.assertRaises(ValueError):
             fp.Fingerprint.from_bytes(b"other-1\n" + b"x")
@@ -76,6 +84,7 @@ class MatchTest(unittest.TestCase):
         self.assertGreater(top["score"], 3 * top["nextScore"])
         self.assertEqual(top["windowsWon"], r["windows"])
         self.assertAlmostEqual(top["songOffsetSec"], 30, delta=0.5)
+        self.assertGreater(top["melodyAgreement"], 0.8, "the melody line agrees at the found alignment")
 
     def test_finds_a_sped_up_song(self):
         clip = SONGS["t2"][SR * 20: SR * 50]
@@ -84,6 +93,7 @@ class MatchTest(unittest.TestCase):
         self.assertEqual(top["trackId"], "t2")
         self.assertAlmostEqual(top["speed"], 1.25, delta=0.03)
         self.assertGreater(top["pitchSemitones"], 3)
+        self.assertIsNotNone(top["melodyAgreement"])
 
     def test_voice_only_scores_low(self):
         r = fp.match(self.index, to_fs(make_voice(5, 25)))

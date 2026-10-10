@@ -17,6 +17,11 @@ export const DEFAULT_THRESHOLDS: RecognitionThresholds = {
   minScore: 60,
   minWindowShare: 0.5,
   ratioFloor: 20,
+  // Melody check (`services/recognizer/README.md`): at 0.7 none of the
+  // synthetic look-alikes that passed the landmark rule passed it, while
+  // clean, compressed, time-stretched and pitched uses did; voice-overs often
+  // don't, and stay suggestions.
+  minMelodyAgreement: 0.7,
 };
 
 export function thresholdsFromEnv(env: Record<string, string | undefined> = process.env): RecognitionThresholds {
@@ -31,6 +36,7 @@ export function thresholdsFromEnv(env: Record<string, string | undefined> = proc
     // a suggestion never needs more evidence than a match
     candidateRatio: Math.min(num(env.RECOGNITION_CANDIDATE_RATIO, DEFAULT_THRESHOLDS.candidateRatio, 1.05), matchRatio),
     minScore: num(env.RECOGNITION_MIN_SCORE, DEFAULT_THRESHOLDS.minScore, 0),
+    minMelodyAgreement: Math.min(num(env.RECOGNITION_MIN_MELODY, DEFAULT_THRESHOLDS.minMelodyAgreement, 0), 1),
   };
 }
 
@@ -52,13 +58,22 @@ export function decideRecognition(result: RecognitionMatchResult, t: Recognition
   const windowShare = result.windows > 0 ? top.windowsWon / result.windows : 0;
   const edits = describeEdits(top.speed, top.pitchSemitones);
 
-  if (ratio >= t.matchRatio && windowShare >= t.minWindowShare) {
+  const melody = top.melodyAgreement ?? null;
+  const strongLandmarks = ratio >= t.matchRatio && windowShare >= t.minWindowShare;
+  if (strongLandmarks && melody !== null && melody >= t.minMelodyAgreement) {
     return {
       outcome: "MATCH",
       trackId: top.trackId,
       confidence,
-      reason: `Clearly ahead of every other song (${ratio.toFixed(1)}× the next), in ${top.windowsWon} of ${result.windows} parts of the post${edits}.`,
+      reason: `Clearly ahead of every other song (${ratio.toFixed(1)}× the next), in ${top.windowsWon} of ${result.windows} parts of the post, and the melody agrees (${Math.round(melody * 100)} %)${edits}.`,
     };
+  }
+  if (strongLandmarks) {
+    const why =
+      melody === null
+        ? "the melody couldn't be compared (upload the song's recording again to enable that check, or the post has too little melody)"
+        : `but the melody agrees only ${Math.round(melody * 100)} % (a voice-over or a similar-sounding song can cause that)`;
+    return { outcome: "CANDIDATE", trackId: top.trackId, confidence, reason: `Clearly ahead of every other song (${ratio.toFixed(1)}× the next), ${why}${edits}. Please confirm.` };
   }
   if (ratio >= t.candidateRatio) {
     const why =

@@ -23,7 +23,7 @@ test("reference audio, a post's video, a recognised song, confirmed into a case"
 
   await addPost(page, "7301234567890123456");
   await page.locator('input[type="file"]').setInputFiles(path.join(AUDIO_DIR, "post.mp4"));
-  await expect(page.getByText(/Song recognised: Golden Hour/)).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/(Song recognised|Possible match): Golden Hour/)).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText(/sped up to 1\.1\d×/)).toBeVisible();
 
   const audioSection = page.locator("section", { has: page.locator("#audio-check") });
