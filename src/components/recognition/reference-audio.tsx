@@ -5,6 +5,7 @@ import { removeReferenceAudioAction } from "@/app/workspace/rights/recognition-a
 import { MEDIA_FORMAT_LABEL } from "@/modules/recognition";
 import { FileUpload } from "@/components/uploads/file-upload";
 import { AutoRefresh } from "@/components/ui/auto-refresh";
+import { getPlanLimits } from "@/app/_lib/plan-limits";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
@@ -19,14 +20,17 @@ function minutes(seconds: number): string {
  * rendered on our own server, where recognition is set up.
  */
 export async function ReferenceAudio({ workspaceId, trackId, canManage }: { workspaceId: string; trackId: string; canManage: boolean }) {
-  const [summary, lastJob] = await Promise.all([
+  const [summary, lastJob, limits, used] = await Promise.all([
     findFingerprintSummary(workspaceId, trackId),
     getPrisma().job.findFirst({
       where: { workspaceId, type: FINGERPRINT_TRACK_JOB, payload: { path: ["trackId"], equals: trackId } },
       orderBy: { createdAt: "desc" },
       select: { status: true, error: true, createdAt: true },
     }),
+    getPlanLimits(workspaceId),
+    getPrisma().trackFingerprint.count({ where: { workspaceId } }),
   ]);
+  const full = !summary && used >= limits.referenceSongCap;
   const working = lastJob && ["QUEUED", "RUNNING", "RETRYING"].includes(lastJob.status);
   const failed = lastJob?.status === "FAILED" && (!summary || lastJob.createdAt > summary.updatedAt);
 
@@ -66,7 +70,17 @@ export async function ReferenceAudio({ workspaceId, trackId, canManage }: { work
         )}
       </div>
 
-      {canManage && !working && (
+      <p className="mt-2 text-[0.8125rem] text-t2">
+        {limits.planName
+          ? `${used.toLocaleString("en-US")} of ${limits.referenceSongCap.toLocaleString("en-US")} songs with reference audio on ${limits.planName}.`
+          : "Choose a plan to add reference audio."}
+      </p>
+
+      {canManage && !working && full && limits.planName && (
+        <p className="mt-2 text-[0.8125rem] text-t2">All are used. Remove one from another song, or move to a bigger plan in Billing.</p>
+      )}
+
+      {canManage && !working && !full && (
         <>
           <FileUpload
             endpoint={`/api/uploads/track-audio/${encodeURIComponent(trackId)}`}

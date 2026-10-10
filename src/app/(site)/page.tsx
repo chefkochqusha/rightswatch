@@ -134,9 +134,10 @@ export default function LandingPage() {
       <Channels />
 
       <Pricing
+        salesEmail={process.env.SALES_EMAIL?.trim() || null}
         terms={
           <p>
-            For businesses. Prices are per month and net of tax. The trial lasts 14 days and needs no card. Monthly billing renews until you cancel and
+            For businesses only; prices are per month, plus VAT. The trial lasts 14 days and needs no card. Monthly billing renews until you cancel and
             gets cheaper the longer you stay: −{LOYALTY.firstStepPercent} % from month {LOYALTY.firstStepMonth}, then {LOYALTY.stepPercent} % more each
             month, up to −{LOYALTY.maxPercent} % from month {monthOfMaxDiscount()}. Yearly billing is −{LOYALTY.annualPercent} % from the start. You can
             cancel in the app at any time.

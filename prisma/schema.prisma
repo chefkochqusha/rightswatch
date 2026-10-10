@@ -532,6 +532,7 @@ model NotificationPreference {
 // ---------------------------------------------------------------------------
 
 enum PlanTier {
+  SOLO
   STARTER
   GROWTH
   AGENCY
@@ -556,6 +557,8 @@ model Plan {
   priceCents  Int
   creatorCap  Int
   scanCadence String // "daily" | "every_6h" | "configurable" — backend config, never hardcoded in the UI (§23)
+  seatCap          Int      @default(3) // members, the owner included
+  referenceSongCap Int      @default(200) // songs with reference audio (own recognition)
   createdAt   DateTime @default(now())
 
   entitlements  PlanEntitlement[]

@@ -9,6 +9,7 @@ import { inviteEmail } from "@/modules/email";
 import { getAppBaseUrl, getEmailSender } from "@/app/_lib/email";
 import { ROLE_LABELS } from "@/components/team/labels";
 import { log } from "@/app/_lib/log";
+import { seatCheck } from "@/app/_lib/plan-limits";
 
 export interface InviteTeammateFormState {
   fieldErrors?: Partial<Record<"email" | "role", string>>;
@@ -29,6 +30,8 @@ export async function inviteTeammateAction(
   const role = String(formData.get("role") ?? "") as Role;
 
   const session = await requireWorkspaceManager();
+  const seats = await seatCheck(session.workspace.id);
+  if (!seats.ok) return { formError: seats.message };
   const result = await inviteTeammate(
     {
       workspaceId: session.workspace.id,

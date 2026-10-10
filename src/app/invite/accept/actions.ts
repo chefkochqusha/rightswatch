@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { acceptInvite } from "@/modules/auth";
+import { acceptInvite, verifyInviteToken } from "@/modules/auth";
+import { seatCheck } from "@/app/_lib/plan-limits";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getSessionSecret, setSessionCookie } from "@/app/_lib/session-cookie";
 
@@ -29,6 +30,13 @@ export async function acceptInviteAction(
   const token = String(formData.get("token") ?? "");
   const password = String(formData.get("password") ?? "");
   const name = String(formData.get("name") ?? "");
+
+  // The plan's seats may have filled up since the invite was sent.
+  const invite = verifyInviteToken(token, getSessionSecret());
+  if (invite) {
+    const seats = await seatCheck(invite.workspaceId);
+    if (!seats.ok) return { formError: "This workspace has no free seat left. Ask whoever invited you to make room or move to a bigger plan." };
+  }
 
   const store = getAuthStore();
   const result = await acceptInvite(

@@ -14,6 +14,7 @@ import type { PaymentProvider, PlanTier } from "./types";
 const FULL_ENV = {
   STRIPE_SECRET_KEY: "sk_test_123",
   STRIPE_WEBHOOK_SECRET: "whsec_123",
+  STRIPE_PRICE_ID_SOLO: "price_solo",
   STRIPE_PRICE_ID_STARTER: "price_starter",
   STRIPE_PRICE_ID_GROWTH: "price_growth",
   STRIPE_PRICE_ID_AGENCY: "price_agency",
@@ -44,6 +45,7 @@ describe("isStripeConfigured / getPaymentMode", () => {
   test("missingStripeEnvVars names exactly what's left, never values", () => {
     assert.deepEqual(missingStripeEnvVars({ STRIPE_SECRET_KEY: "sk_test_123" }), [
       "STRIPE_WEBHOOK_SECRET",
+      "STRIPE_PRICE_ID_SOLO",
       "STRIPE_PRICE_ID_STARTER",
       "STRIPE_PRICE_ID_GROWTH",
       "STRIPE_PRICE_ID_AGENCY",
@@ -54,6 +56,7 @@ describe("isStripeConfigured / getPaymentMode", () => {
 
 describe("planTierForPriceId", () => {
   test("maps each configured Price id back to its tier", () => {
+    assert.equal(planTierForPriceId("price_solo", FULL_ENV), "SOLO");
     assert.equal(planTierForPriceId("price_starter", FULL_ENV), "STARTER");
     assert.equal(planTierForPriceId("price_growth", FULL_ENV), "GROWTH");
     assert.equal(planTierForPriceId("price_agency", FULL_ENV), "AGENCY");

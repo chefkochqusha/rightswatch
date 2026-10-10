@@ -44,7 +44,12 @@ export type UploadOutcome =
   | { ok: true; session: CurrentSession; upload: StoredUpload; format: MediaFormat; fileName: string | null }
   | { ok: false; response: Response };
 
-export async function receiveUpload(request: NextRequest, maxBytes: number): Promise<UploadOutcome> {
+export async function receiveUpload(
+  request: NextRequest,
+  maxBytes: number,
+  /** Checked before a byte is stored: a reason to refuse (403), or null. */
+  precheck?: (session: CurrentSession) => Promise<string | null>,
+): Promise<UploadOutcome> {
   const refuse = (status: number, error: string, headers: Record<string, string> = {}) => ({
     ok: false as const,
     response: Response.json({ error }, { status, headers: { "Cache-Control": "no-store", ...headers } }),
@@ -60,6 +65,11 @@ export async function receiveUpload(request: NextRequest, maxBytes: number): Pro
   const origin = request.headers.get("origin");
   if (!origin || ![siteOrigin(), request.nextUrl.origin].includes(origin) || request.headers.get(UPLOAD_HEADER) !== "1") {
     return refuse(403, "Uploads only from Bekvor's own pages.");
+  }
+
+  if (precheck) {
+    const reason = await precheck(session);
+    if (reason) return refuse(403, reason);
   }
 
   const wait = spendRequest("upload", session.user.id, { max: 60, windowMs: 3600_000 });

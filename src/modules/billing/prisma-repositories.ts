@@ -146,6 +146,8 @@ function mapPlan(row: {
   priceCents: number;
   creatorCap: number;
   scanCadence: string;
+  seatCap: number;
+  referenceSongCap: number;
 }): PlanRecord {
   return {
     id: row.id,
@@ -154,6 +156,8 @@ function mapPlan(row: {
     priceCents: row.priceCents,
     creatorCap: row.creatorCap,
     scanCadence: row.scanCadence,
+    seatCap: row.seatCap,
+    referenceSongCap: row.referenceSongCap,
   };
 }
 

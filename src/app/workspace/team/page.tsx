@@ -4,6 +4,7 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { ROLE_LABELS } from "@/components/team/labels";
 import type { MembershipRecord, UserRecord } from "@/modules/auth";
 import { InviteForm } from "./invite-form";
+import { getPlanLimits } from "@/app/_lib/plan-limits";
 
 export const metadata = {
   title: "Team — Bekvor",
@@ -41,6 +42,7 @@ export default async function TeamPage() {
   members.sort((a, b) => a.membership.createdAt.getTime() - b.membership.createdAt.getTime());
 
   const canInvite = session.role === "OWNER" || session.role === "ADMIN";
+  const limits = await getPlanLimits(session.workspace.id);
 
   return (
     <div>
@@ -62,7 +64,10 @@ export default async function TeamPage() {
 
       <section className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
         <div className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-semibold">Members ({members.length})</h2>
+          <h2 className="text-sm font-semibold">
+            Members ({members.length}
+            {limits.planName ? ` of ${limits.seatCap} seats on ${limits.planName}` : ""})
+          </h2>
         </div>
         <div className="relative overflow-x-auto">
           <table className="w-full text-left text-sm">

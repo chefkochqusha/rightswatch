@@ -4,6 +4,7 @@ import { getLibraryStore } from "@/app/_lib/library-store";
 import { FINGERPRINT_TRACK_JOB, MAX_SONG_UPLOAD_BYTES, getUploadStore } from "@/app/_lib/own-recognition";
 import type { FingerprintTrackPayload } from "@/app/_lib/recognition-jobs";
 import { receiveUpload } from "@/app/_lib/upload-request";
+import { referenceSongCheck } from "@/app/_lib/plan-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,11 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest, ctx: RouteContext<"/api/uploads/track-audio/[trackId]">): Promise<Response> {
   const { trackId } = await ctx.params;
-  const received = await receiveUpload(request, MAX_SONG_UPLOAD_BYTES);
+  // The plan's song limit is checked before the file is sent on.
+  const received = await receiveUpload(request, MAX_SONG_UPLOAD_BYTES, async (session) => {
+    const allowed = await referenceSongCheck(session.workspace.id, trackId);
+    return allowed.ok ? null : allowed.message;
+  });
   if (!received.ok) return received.response;
   const { session, upload, fileName } = received;
 

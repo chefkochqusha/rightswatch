@@ -23,6 +23,7 @@ import type { BillingInterval, PaymentProvider, PlanTier } from "./types";
  *   is the only state that's never silently wrong.
  */
 export const STRIPE_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
+  SOLO: "STRIPE_PRICE_ID_SOLO",
   STARTER: "STRIPE_PRICE_ID_STARTER",
   GROWTH: "STRIPE_PRICE_ID_GROWTH",
   AGENCY: "STRIPE_PRICE_ID_AGENCY",
@@ -30,6 +31,7 @@ export const STRIPE_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
 
 /** Annual prices (optional): without them, annual billing is refused in Stripe mode with a clear message. */
 export const STRIPE_ANNUAL_PRICE_ID_ENV_VAR: Record<PlanTier, string> = {
+  SOLO: "STRIPE_PRICE_ID_SOLO_ANNUAL",
   STARTER: "STRIPE_PRICE_ID_STARTER_ANNUAL",
   GROWTH: "STRIPE_PRICE_ID_GROWTH_ANNUAL",
   AGENCY: "STRIPE_PRICE_ID_AGENCY_ANNUAL",

@@ -6,12 +6,22 @@ describe("PLAN_CATALOG", () => {
   test("has exactly one plan per tier", () => {
     const tiers = PLAN_CATALOG.map((plan) => plan.tier);
     assert.deepEqual(new Set(tiers).size, tiers.length);
-    assert.deepEqual(new Set(tiers), new Set(["STARTER", "GROWTH", "AGENCY"]));
+    assert.deepEqual(new Set(tiers), new Set(["SOLO", "STARTER", "GROWTH", "AGENCY"]));
   });
 
   test("ids are unique", () => {
     const ids = PLAN_CATALOG.map((plan) => plan.id);
     assert.equal(new Set(ids).size, ids.length);
+  });
+
+  test("every limit grows with the price, plan by plan", () => {
+    const sorted = [...PLAN_CATALOG].sort((a, b) => a.priceCents - b.priceCents);
+    assert.deepEqual(sorted.map((p) => p.tier), ["SOLO", "STARTER", "GROWTH", "AGENCY"]);
+    for (let i = 1; i < sorted.length; i++) {
+      for (const key of ["creatorCap", "seatCap", "referenceSongCap"] as const) {
+        assert.ok(sorted[i][key] > sorted[i - 1][key], `${key} grows from ${sorted[i - 1].tier} to ${sorted[i].tier}`);
+      }
+    }
   });
 
   test("price and creator cap both increase from Starter to Agency", () => {

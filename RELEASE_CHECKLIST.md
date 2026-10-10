@@ -151,6 +151,19 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   CPUs, 2 GB) and watch it with the first customers.
 - [ ] **`RECOGNIZER_TOKEN`**: a long random value in `deploy/.env`, never in git.
 
+## Plans (added 2026-10-10)
+
+- [ ] **Stripe prices for all four plans** (Solo €29, Starter €99, Growth €299,
+  Agency €999; monthly and yearly): `STRIPE_PRICE_ID_SOLO(_ANNUAL)` is new.
+  Stripe switches on only when every monthly price id is set.
+- [ ] **B2B check at checkout**: turn on tax ID collection in Stripe Checkout
+  and require a company name and VAT ID (the BGH asks for a real check, not just
+  a note; `LEGAL_DE.md`).
+- [ ] **`SALES_EMAIL`** for the Enterprise "Talk to us" button (until then the
+  card says to start with Agency). Read at build time.
+- [ ] **Limits per plan** (creators, seats, songs with reference audio) are
+  enforced; review the numbers against real costs after the first customers.
+
 ## Services & credentials
 
 - [ ] **Vercel plan: Pro, before launch** (owner). Vercel's Hobby (free) plan is

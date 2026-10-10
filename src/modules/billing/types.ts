@@ -16,7 +16,7 @@ import type { BillingInterval } from "./loyalty";
 
 export type { BillingInterval };
 
-export type PlanTier = "STARTER" | "GROWTH" | "AGENCY";
+export type PlanTier = "SOLO" | "STARTER" | "GROWTH" | "AGENCY";
 
 export type SubscriptionStatus = "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
 
@@ -29,6 +29,10 @@ export interface PlanRecord {
   /** "daily" | "every_6h" | "configurable" (schema comment's own examples —
    *  backend config, never hardcoded in the UI). */
   scanCadence: string;
+  /** Members the workspace may have, the owner included. */
+  seatCap: number;
+  /** Catalogue songs with reference audio (own recognition). */
+  referenceSongCap: number;
 }
 
 export interface SubscriptionRecord {

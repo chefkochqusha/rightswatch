@@ -51,12 +51,16 @@ async function main() {
         priceCents: plan.priceCents,
         creatorCap: plan.creatorCap,
         scanCadence: plan.scanCadence,
+        seatCap: plan.seatCap,
+        referenceSongCap: plan.referenceSongCap,
       },
       update: {
         name: plan.name,
         priceCents: plan.priceCents,
         creatorCap: plan.creatorCap,
         scanCadence: plan.scanCadence,
+        seatCap: plan.seatCap,
+        referenceSongCap: plan.referenceSongCap,
       },
     });
   }

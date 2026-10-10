@@ -1,5 +1,6 @@
 "use server";
 
+import { getAuthStore } from "@/app/_lib/auth-store";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -15,7 +16,7 @@ import {
 } from "@/modules/billing";
 import type { PlanTier } from "@/modules/billing";
 
-const PLAN_TIERS: PlanTier[] = ["STARTER", "GROWTH", "AGENCY"];
+const PLAN_TIERS: PlanTier[] = ["SOLO", "STARTER", "GROWTH", "AGENCY"];
 
 /**
  * Backs every "Start free trial" / "Switch to this plan" button on the
@@ -41,6 +42,10 @@ export async function choosePlanAction(formData: FormData) {
   const monitored = await getCreatorStore().creators.countMonitored(session.workspace.id);
   if (plan && plan.creatorCap < monitored) {
     throw new Error(`${plan.name} allows ${plan.creatorCap} creators; this workspace monitors ${monitored}.`);
+  }
+  const members = (await getAuthStore().memberships.findForWorkspace(session.workspace.id)).length;
+  if (plan && plan.seatCap < members) {
+    throw new Error(`${plan.name} has ${plan.seatCap} seats; this workspace has ${members} members.`);
   }
 
   await subscribeWorkspace(

@@ -17,7 +17,7 @@ describe("InMemoryPlanRepository", () => {
   test("findAll returns every catalog plan", async () => {
     const repo = new InMemoryPlanRepository();
     const plans = await repo.findAll();
-    assert.equal(plans.length, 3);
+    assert.equal(plans.length, 4);
   });
 });
 

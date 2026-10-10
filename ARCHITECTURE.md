@@ -983,6 +983,14 @@ re-notifies about a case that already existed.
 
 ## Billing
 
+Plans (`modules/billing/plan-catalog.ts`, seeded into `plans`): Solo €29
+(10 creators, 1 seat, 25 songs with reference audio), Starter €99 (50, 3,
+200), Growth €299 (500, 10, 2,000, scans every 6 h), Agency €999 (2,500, 30,
+20,000, own schedule); Enterprise on request (`ENTERPRISE_OFFER`, not
+self-serve). Seats are checked when inviting and when accepting an invite,
+reference songs before an upload is stored (`app/_lib/plan-limits.ts`), and
+a plan switch that wouldn't fit the creators or members is refused.
+
 (Brief §18–20)
 
 `Plan` / `Subscription` are built (Prisma-backed repositories against Neon),

@@ -1,3 +1,4 @@
+import { getAuthStore } from "@/app/_lib/auth-store";
 import { requireSession } from "@/app/_lib/current-user";
 import { canManageWorkspace } from "@/app/_lib/authorize";
 import { getBillingStore } from "@/app/_lib/billing-store";
@@ -38,6 +39,7 @@ export default async function BillingPage() {
   // Brief §20's usage figure: creators monitored right now — what a plan's
   // limit counts (§19), so paused and removed creators don't.
   const trackedCreators = await getCreatorStore().creators.countMonitored(session.workspace.id);
+  const memberCount = (await getAuthStore().memberships.findForWorkspace(session.workspace.id)).length;
   const loyalty = subscription && !isCanceled ? loyaltyStatus(subscription, new Date()) : null;
 
   return (
@@ -166,13 +168,13 @@ export default async function BillingPage() {
         to −{LOYALTY.maxPercent} % from month {monthOfMaxDiscount()}. Cancelling and subscribing again starts at the full price. Yearly billing is −
         {LOYALTY.annualPercent} % from the start, paid for twelve months ahead, and renews every year until you cancel. You can cancel here at any time.
       </p>
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {PLAN_CATALOG.map((plan) => {
           const isCurrentPlan = !isCanceled && currentPlan?.id === plan.id;
           const currentInterval = isCurrentPlan ? subscription?.billingInterval : null;
           // Too small for what's monitored now (Brief §19) — pausing or
           // removing creators first makes room.
-          const tooSmall = !isCurrentPlan && plan.creatorCap < trackedCreators;
+          const tooSmall = !isCurrentPlan && (plan.creatorCap < trackedCreators || plan.seatCap < memberCount);
           const startLabel = subscription && !isCanceled ? "Switch" : "Start free trial";
 
           return (
@@ -202,10 +204,20 @@ export default async function BillingPage() {
                     {SCAN_CADENCE_LABELS[plan.scanCadence] ?? plan.scanCadence}
                   </dd>
                 </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-t2">Team seats</dt>
+                  <dd className="text-tx">{plan.seatCap}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-t2">Songs with reference audio</dt>
+                  <dd className="text-tx">{plan.referenceSongCap.toLocaleString("en-US")}</dd>
+                </div>
               </dl>
               {canManage && tooSmall ? (
                 <p className="mt-5 text-[0.8125rem] text-t2">
-                  You monitor {trackedCreators} creators. Pause or remove some to switch to {plan.name}.
+                  {plan.creatorCap < trackedCreators
+                    ? `You monitor ${trackedCreators} creators. Pause or remove some to switch to ${plan.name}.`
+                    : `Your team has ${memberCount} members; ${plan.name} has ${plan.seatCap} ${plan.seatCap === 1 ? "seat" : "seats"}.`}
                 </p>
               ) : canManage ? (
                 <form action={choosePlanAction} className="mt-5 grid gap-2">

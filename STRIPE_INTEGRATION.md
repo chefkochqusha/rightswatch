@@ -95,6 +95,7 @@ for **Production** (and Preview, if previews should bill through Stripe too):
 |---|---|
 | `STRIPE_SECRET_KEY` | the sandbox secret key, `sk_test_…` |
 | `STRIPE_WEBHOOK_SECRET` | the destination's signing secret, `whsec_…` |
+| `STRIPE_PRICE_ID_SOLO` | `price_…` for Solo (€29) |
 | `STRIPE_PRICE_ID_STARTER` | `price_…` for Starter |
 | `STRIPE_PRICE_ID_GROWTH` | `price_…` for Growth |
 | `STRIPE_PRICE_ID_AGENCY` | `price_…` for Agency |
@@ -111,7 +112,7 @@ latest → Redeploy. From that deployment on, billing runs on Stripe.
 
 - **Yearly prices:** for each plan, add a second, yearly recurring price at
   −30 % (12 × the monthly price × 0.7: Starter €831.60, Growth €2,511.60,
-  Agency €8,391.60) and set `STRIPE_PRICE_ID_STARTER_ANNUAL`,
+  Agency €8,391.60) and set `STRIPE_PRICE_ID_SOLO_ANNUAL`, `STRIPE_PRICE_ID_STARTER_ANNUAL`,
   `STRIPE_PRICE_ID_GROWTH_ANNUAL`, `STRIPE_PRICE_ID_AGENCY_ANNUAL`. Without them
   the yearly buttons fail with a clear error in Stripe mode.
 - **Webhook event:** add `invoice.paid` to the webhook destination. Paid invoices
