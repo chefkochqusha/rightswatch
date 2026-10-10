@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { InMemoryJobRepository } from "./in-memory-repository";
 import { PermanentJobError, processNextJob, retryDelayMs } from "./worker";
 
+/** Minutes from a point an hour ahead, so every job enqueued "now" is due by then. */
+const BASE = Date.now() + 3600_000;
+const at = (minutes: number) => new Date(BASE + minutes * 60_000);
+
 describe("job queue (in memory)", () => {
   it("hands out due jobs oldest first, once each, and only of the asked types", async () => {
     const queue = new InMemoryJobRepository();
@@ -36,20 +40,20 @@ describe("job queue (in memory)", () => {
   it("takes back a job whose worker stopped sending heartbeats", async () => {
     const queue = new InMemoryJobRepository();
     const job = await queue.enqueue({ workspaceId: "w1", type: "scan", payload: null, maxAttempts: 2 });
-    const start = new Date("2026-10-10T10:00:00Z");
+    const start = at(0);
     await queue.claim("dead", ["scan"], start);
 
-    assert.equal(await queue.recoverStale(new Date("2026-10-10T09:59:00Z"), start), 0, "still fresh");
-    await queue.heartbeat(job.id, "dead", new Date("2026-10-10T10:01:00Z"));
-    assert.equal(await queue.recoverStale(new Date("2026-10-10T10:00:30Z"), start), 0, "the heartbeat kept it");
+    assert.equal(await queue.recoverStale(at(-1), start), 0, "still fresh");
+    await queue.heartbeat(job.id, "dead", at(1));
+    assert.equal(await queue.recoverStale(at(0.5), start), 0, "the heartbeat kept it");
 
-    assert.equal(await queue.recoverStale(new Date("2026-10-10T10:10:00Z"), new Date("2026-10-10T10:10:00Z")), 1);
-    const again = await queue.claim("alive", ["scan"], new Date("2026-10-10T10:10:00Z"));
+    assert.equal(await queue.recoverStale(at(10), at(10)), 1);
+    const again = await queue.claim("alive", ["scan"], at(10));
     assert.equal(again?.id, job.id);
     assert.equal(again?.attempts, 2);
 
-    assert.equal(await queue.recoverStale(new Date("2026-10-10T11:00:00Z"), new Date("2026-10-10T11:00:00Z")), 1);
-    assert.equal(await queue.claim("x", ["scan"], new Date("2026-10-10T12:00:00Z")), null, "no tries left: failed for good");
+    assert.equal(await queue.recoverStale(at(60), at(60)), 1);
+    assert.equal(await queue.claim("x", ["scan"], at(120)), null, "no tries left: failed for good");
   });
 });
 
@@ -57,9 +61,9 @@ describe("job queue: lost locks and cut-off inline runs", () => {
   it("doesn't let a worker that lost its job write the outcome", async () => {
     const queue = new InMemoryJobRepository();
     const job = await queue.enqueue({ workspaceId: "w1", type: "scan", payload: null });
-    await queue.claim("slow", ["scan"], new Date("2026-10-10T10:00:00Z"));
-    await queue.recoverStale(new Date("2026-10-10T10:10:00Z"), new Date("2026-10-10T10:10:00Z"));
-    await queue.claim("fresh", ["scan"], new Date("2026-10-10T10:10:00Z"));
+    await queue.claim("slow", ["scan"], at(0));
+    await queue.recoverStale(at(10), at(10));
+    await queue.claim("fresh", ["scan"], at(10));
     assert.equal(await queue.complete(job.id, { by: "slow" }, "slow"), false);
     assert.equal(await queue.complete(job.id, { by: "fresh" }, "fresh"), true);
     assert.deepEqual((await queue.findById("w1", job.id))?.payload, { by: "fresh" });
@@ -95,7 +99,7 @@ describe("processNextJob", () => {
   it("retries a failing job with a growing pause, then fails it for good", async () => {
     const queue = new InMemoryJobRepository();
     const job = await queue.enqueue({ workspaceId: "w1", type: "scan", payload: null, maxAttempts: 2 });
-    let now = new Date("2026-10-10T10:00:00Z");
+    let now = at(0);
     const clock = () => now;
     const handlers = { scan: async () => { throw new Error("TikTok timed out"); } };
 
