@@ -63,6 +63,12 @@ export async function ReferenceAudio({ workspaceId, trackId, canManage }: { work
         ) : (
           <p className="text-t2">No reference audio yet. Posts can still be checked by hand.</p>
         )}
+        {summary && !summary.hasMelody && !working && (
+          <p className="mt-2 text-[0.8125rem] text-t2">
+            Made before Bekvor also compared melodies, so this song can only be suggested for you to confirm, not recognised on its own.
+            {canManage ? " Upload the recording again to add the melody check." : " Someone who manages the catalogue can upload it again to change that."}
+          </p>
+        )}
         {failed && (
           <p role="alert" className="mt-2 text-[0.8125rem] text-mismatch">
             The last upload couldn&apos;t be used: {lastJob!.error ?? "unknown error"}

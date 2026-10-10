@@ -12,13 +12,26 @@ export interface FingerprintSummary {
   sourceFileName: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * Whether the fingerprint carries the melody line (format `bekvor-lp-1+mel1`,
+   * the second check). Older ones still match, but their songs can only be
+   * suggested, never recognised on their own, until the recording is uploaded again.
+   */
+  hasMelody: boolean;
 }
 
+/** The format name a fingerprint's bytes start with (`services/recognizer/bekvor_fp.py`). */
+export const MELODY_FORMAT_PREFIX = "bekvor-lp-1+mel1\n";
+
 export async function findFingerprintSummary(workspaceId: string, trackId: string): Promise<FingerprintSummary | null> {
-  return getPrisma().trackFingerprint.findFirst({
-    where: { workspaceId, musicTrackId: trackId },
-    select: { durationSec: true, sourceFileName: true, createdAt: true, updatedAt: true },
-  });
+  // Only the first bytes are compared, in the database: a fingerprint can be hundreds of kilobytes.
+  const rows = await getPrisma().$queryRaw<FingerprintSummary[]>`
+    SELECT "durationSec", "sourceFileName", "createdAt", "updatedAt",
+           substring("data" from 1 for ${MELODY_FORMAT_PREFIX.length}) = convert_to(${MELODY_FORMAT_PREFIX}, 'UTF8') AS "hasMelody"
+    FROM "track_fingerprints"
+    WHERE "workspaceId" = ${workspaceId} AND "musicTrackId" = ${trackId}
+    LIMIT 1`;
+  return rows[0] ?? null;
 }
 
 /** Track ids with a fingerprint, among these. */
