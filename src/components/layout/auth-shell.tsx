@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BRAND } from "@/lib/brand";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 /**
  * Shared chrome for the signup and login pages — a centered card on the
@@ -22,9 +23,7 @@ export function AuthShell({
     <main className="flex min-h-screen items-center justify-center bg-bg px-6 py-12">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">
-            {BRAND.mark}
-          </span>
+          <LogoMark />
           <span className="text-[0.9375rem] font-semibold text-tx">{BRAND.name}</span>
         </Link>
 

@@ -5,5 +5,6 @@
  */
 export const BRAND = {
   name: "Bekvor",
-  mark: "B",
+  /** The mark's blue (`--ultra`); the mark itself is `components/brand/logo-mark.tsx`. */
+  color: "#1f3dff",
 } as const;

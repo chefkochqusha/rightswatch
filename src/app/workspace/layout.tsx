@@ -11,6 +11,7 @@ import { WorkspaceNav } from "@/components/layout/workspace-nav";
 import type { WorkspaceNavItem } from "@/components/layout/nav-active";
 import { ROLE_LABELS } from "@/components/team/labels";
 import { BRAND } from "@/lib/brand";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 // The app, the public demo included, stays out of search results.
 export const metadata = { robots: { index: false, follow: false } };
@@ -69,12 +70,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
       <div className="border-b border-line bg-surface-2 md:border-r md:border-b-0">
         <aside className="px-4 pt-4 pb-2 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:gap-8 md:overflow-y-auto md:py-6">
           <Link href="/workspace" className="mb-3 flex items-center gap-2.5 px-2 md:mb-0">
-            <span
-              aria-hidden="true"
-              className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg"
-            >
-              {BRAND.mark}
-            </span>
+            <LogoMark />
             <span className="text-[0.9375rem] font-semibold tracking-[-0.01em]">{BRAND.name}</span>
           </Link>
           <WorkspaceNav primary={primary} secondary={secondary} />

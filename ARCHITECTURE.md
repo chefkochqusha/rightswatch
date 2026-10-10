@@ -1186,9 +1186,11 @@ reads as an oversight:
   campaign") — campaigns are real workspace data now, and a rights record
   can be scoped to them, but only the demo data loader creates them and
   signs creators up; a creator's page shows its campaigns read-only
-- A custom favicon / brand mark — `src/app/favicon.ico` is still the
-  default `create-next-app` icon (unmodified since the original scaffold);
-  there's no logo yet to replace it with
+- A proper wordmark and brand guide — the mark exists (a lowercase "b"
+  whose bowl is a record, `components/brand/logo-mark.tsx`, the same
+  drawing as `app/icon.svg`, `app/favicon.ico` and `app/apple-icon.png`),
+  but the name next to it is still set in the page font; the mark should
+  be checked for conflicts with registered marks along with the name
 
 ## Document provenance
 

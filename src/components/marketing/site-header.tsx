@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 const LINKS = [
   { href: "/#how", label: "How it works" },
@@ -15,7 +16,7 @@ export function SiteHeader() {
     <header className="absolute inset-x-0 top-0 z-20">
       <div className="mx-auto flex h-16 max-w-[80rem] items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">{BRAND.mark}</span>
+          <LogoMark />
           <span className="text-[0.9375rem] font-semibold">{BRAND.name}</span>
         </Link>
         <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, type Variants } from "motion/react";
 import { BRAND } from "@/lib/brand";
+import { LogoMark } from "@/components/brand/logo-mark";
 import { DemoButton } from "./demo-button";
 
 /**
@@ -32,7 +33,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
           <motion.div variants={rise} className="lg:col-span-5">
             <p className="flex items-center gap-2.5 text-[0.9375rem] font-semibold">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-tx text-[0.6875rem] font-semibold text-bg">{BRAND.mark}</span>
+              <LogoMark />
               {BRAND.name}
             </p>
             <p className="mt-5 max-w-xs text-[0.875rem] leading-relaxed text-t2">
