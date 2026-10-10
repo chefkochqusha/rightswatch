@@ -103,4 +103,7 @@ window passes (see `BACKUP_RESTORE.md`); say so in the privacy policy.
 ## Keeping this file true
 
 Whenever a feature sends data to a new service, add a row here **before** it
-ships, and add the service to the privacy policy.
+ships, and add the service to the privacy policy: the page
+(`src/app/(site)/privacy/page.tsx`), its German draft
+(`legal/datenschutzerklaerung.md`) and, for customer data, the AVV's
+sub-processor annex (`legal/avv.md`, Annex C).

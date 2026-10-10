@@ -21,9 +21,14 @@ or a business decision at release time, it gets a line here.
   Also: point bekvor.com at the Vercel project, set the production URL and the
   e-mail sender domain (SPF, DKIM, DMARC), and update the User-Agent in
   `musicbrainz.ts` and the artwork route to the new URL.
-- [ ] **Imprint (Impressum) and privacy policy (Datenschutzerklärung)** with
-  real details, legally reviewed. The pages exist with placeholders.
-- [ ] **Terms of service** for paying customers (Stripe asks for a terms URL).
+- [ ] **Legal texts: drafts are in `legal/`** (2026-10-10): imprint, privacy
+  policy, terms (B2B, uploads and DSA, Data Act switching, liability) and the AVV
+  with annexes. `legal/README.md` lists what the owner must supply and nine
+  questions for the lawyer. Owner: set the `IMPRESSUM_*`, `DSA_CONTACT_EMAIL`,
+  `PRIVACY_*` env vars in Vercel (or `deploy/.env`); `/imprint` fills itself,
+  `/privacy` already shows the English draft marked as such. Lawyer: review all
+  four; then a `/terms` page, the terms and AVV accepted at checkout (Stripe
+  asks for a terms URL), and drop the "Draft" line.
 - [ ] **TikTok API terms**: confirm commercial monitoring use is permitted
   (Master Brief §4: access and eligibility are an external dependency to be
   validated, never assumed).
