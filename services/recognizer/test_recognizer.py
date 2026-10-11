@@ -145,12 +145,37 @@ class LargeCatalogueTest(unittest.TestCase):
         top = fp.match(self.index, to_fs(make_song(9)[SR * 20: SR * 45]))["candidates"][0]
         self.assertEqual(top["trackId"], "legacy")
 
+    def test_a_changed_catalogue_reuses_unchanged_shards_and_matches_like_a_fresh_one(self):
+        old = fp.SHARD_SONGS
+        fp.SHARD_SONGS = 1  # one song per shard here, so reuse is visible
+        try:
+            # 5 songs -> 8 shards; ids picked so each song has its own shard
+            # (crc32 % 8: t1 7, t2 5, t3 3, t4 0, s5 1, t5 6)
+            songs = {name: fp.fingerprint(to_fs(x)) for name, x in SONGS.items()}
+            songs["s5"] = fp.fingerprint(to_fs(make_song(11)))
+            before = fp.Index(list(songs.items()), shortlist_from=1)
+            # t4 removed, t5 added, t2 changed (re-uploaded)
+            changed = fp.fingerprint(to_fs(SONGS["t2"][: SR * 50]))
+            after_tracks = [("t1", songs["t1"]), ("t2", changed), ("t3", songs["t3"]), ("s5", songs["s5"]), ("t5", fp.fingerprint(to_fs(make_song(12))))]
+            updated = fp.Index(after_tracks, shortlist_from=1, previous=before)
+            fresh = fp.Index(after_tracks, shortlist_from=1)
+            self.assertEqual(updated.n_shards, 8)
+            self.assertEqual(updated.rebuilt_shards, 2, "only the changed and the new song's shards")
+            self.assertEqual(fresh.rebuilt_shards, 5)
+            self.assertTrue(np.array_equal(updated.df, fresh.df), "rarity counts updated, not recounted")
+            post = to_fs(SONGS["t3"][SR * 20: SR * 45])
+            a, b = fp.match(updated, post), fp.match(fresh, post)
+            self.assertEqual(a["candidates"][0]["trackId"], "t3")
+            self.assertEqual(a["candidates"], b["candidates"])
+        finally:
+            fp.SHARD_SONGS = old
+
     def test_shards_give_the_same_shortlist(self):
         from shortlist import ShardedShortlist, ShortlistIndex
         songs = [fp.fingerprint(to_fs(x)).peaks for x in SONGS.values()]
         post = fp.peaks(to_fs(SONGS["t2"][SR * 15: SR * 40]))
         one = ShortlistIndex(songs).shortlist(post, 3)
-        sharded = ShardedShortlist(songs, shard_size=1).shortlist(post, 3)
+        sharded = ShardedShortlist.build(songs, shard_size=1).shortlist(post, 3)
         self.assertEqual(int(one[0]), int(sharded[0]))
         self.assertEqual(list(SONGS)[int(sharded[0])], "t2")
 

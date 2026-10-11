@@ -18,6 +18,7 @@ Own implementation (numpy/scipy only), so no third-party licence applies.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import tempfile
@@ -227,6 +228,13 @@ class Fingerprint:
         self.duration_sec = duration_sec
         self.melody = melody  # uint8 per frame; None in fingerprints made before the melody check
         self.peaks = peaks  # (frame, logbin) rows by time; None in the older formats
+        self.digest: str | None = None  # of the stored bytes, when read from them
+
+    def key(self) -> str:
+        """Identifies this fingerprint's content (to see what changed between two catalogues)."""
+        if self.digest is None:
+            self.digest = hashlib.sha1(self.to_bytes()).hexdigest()
+        return self.digest
 
     @classmethod
     def from_peaks(cls, pk: np.ndarray, duration_sec: float, melody: np.ndarray | None) -> "Fingerprint":
@@ -261,6 +269,12 @@ class Fingerprint:
 
     @staticmethod
     def from_bytes(data: bytes) -> "Fingerprint":
+        fp = Fingerprint._parse(data)
+        fp.digest = hashlib.sha1(data).hexdigest()
+        return fp
+
+    @staticmethod
+    def _parse(data: bytes) -> "Fingerprint":
         name, _, packed = data.partition(b"\n")
         fmt = name.decode()
         if fmt not in (ALGORITHM, FORMAT_WITH_MELODY, FORMAT_PEAKS):
@@ -298,6 +312,9 @@ def fingerprint(y: np.ndarray) -> Fingerprint:
 
 # ------------------------------------------------------------------ the index
 
+# Songs per shortlist shard (see Index._init_large).
+SHARD_SONGS = int(os.environ.get("RECOGNIZER_SHARD_SONGS", "2000"))
+
 # Largest song x offset table counted densely in `Index.score` (8 bytes each).
 DENSE_LIMIT = 4_000_000
 
@@ -334,16 +351,24 @@ class Index:
     memory stays at a few kilobytes per song instead of ~1 MB.
     """
 
-    def __init__(self, tracks: list[tuple[str, Fingerprint]], shortlist_from: int | None = None, weights: np.ndarray | None = None):
+    def __init__(
+        self,
+        tracks: list[tuple[str, Fingerprint]],
+        shortlist_from: int | None = None,
+        weights: np.ndarray | None = None,
+        previous: "Index | None" = None,
+    ):
         """`weights`: rarity per hash from a larger catalogue (the shortlist
         path passes the whole catalogue's), so a shortlisted subset keeps the
-        catalogue's rarities instead of its own."""
+        catalogue's rarities instead of its own. `previous`: this workspace's
+        index before the change, whose unchanged shards are reused (large
+        catalogues), so a new song doesn't rebuild all 20,000."""
         limit = SHORTLIST_FROM if shortlist_from is None else shortlist_from
         self.ids = [track_id for track_id, _ in tracks]
         self.melodies = [fp.melody for _, fp in tracks]
         self.large = len(tracks) > limit
         if self.large:
-            self._init_large(tracks)
+            self._init_large(tracks, previous if previous is not None and previous.large else None)
             return
         if not tracks:
             self.H = np.zeros(0, np.int32)
@@ -367,10 +392,11 @@ class Index:
         self.W = weights[self.H]
         self.max_t = int(self.T.max()) if len(self.T) else 0
 
-    def _init_large(self, tracks: list[tuple[str, Fingerprint]]) -> None:
-        from shortlist import ShardedShortlist
+    def _init_large(self, tracks: list[tuple[str, Fingerprint]], previous: "Index | None") -> None:
+        from shortlist import ShardedShortlist, ShortlistIndex
 
         self.durations = [fp.duration_sec for _, fp in tracks]
+        self.keys = [(track_id, fp.key()) for track_id, fp in tracks]
         self.peak_t: list[np.ndarray | None] = []
         self.peak_f: list[np.ndarray | None] = []
         # Fingerprints stored before the peak format have no peaks: they can't
@@ -387,19 +413,62 @@ class Index:
                 self.peak_f.append(fp.peaks[:, 1].astype(np.uint8))
                 with_peaks.append(i)
         self.with_peaks = np.array(with_peaks, np.int64)
-        self.shortlist_index = ShardedShortlist(
-            (len(with_peaks), lambda j: np.stack([self.peak_t[with_peaks[j]], self.peak_f[with_peaks[j]]], axis=1).astype(np.float64))
-        )
+
+        # Shards by song id (a stable hash), each with its songs in id order:
+        # adding or changing a song rebuilds its shard only.
+        # a power of two, so the shard count (and with it every song's shard)
+        # only changes when the catalogue doubles
+        needed = max(1, -(-len(with_peaks) // SHARD_SONGS))
+        self.n_shards = 1 << (needed - 1).bit_length()
+        groups: dict[int, list[int]] = {}
+        for i in with_peaks:
+            groups.setdefault(zlib.crc32(self.ids[i].encode()) % self.n_shards, []).append(i)
+        self.shard_members: dict[int, tuple] = {}
+        reusable = previous.shard_members if previous is not None and previous.n_shards == self.n_shards else {}
+        old_shards = dict(zip(previous.shard_ids, previous.shortlist_index.shards)) if reusable else {}
+        shards, self.shard_ids, self.rebuilt_shards = [], [], 0
+        for g, members in sorted(groups.items()):
+            members.sort(key=lambda i: self.ids[i])
+            signature = tuple(self.keys[i] for i in members)
+            self.shard_members[g] = signature
+            positions = np.array(members, np.int64)
+            if reusable.get(g) == signature:
+                shards.append((positions, old_shards[g][1]))
+            else:
+                shards.append((positions, ShortlistIndex([self._peaks(i) for i in members])))
+                self.rebuilt_shards += 1
+            self.shard_ids.append(g)
+        self.shortlist_index = ShardedShortlist(shards)
+
         # The whole catalogue's rarity per pair hash (8 MB), for the precise
-        # check on each post's shortlist. Pair hashes are made once here
-        # (about 10 ms a song) and not kept.
-        # (pair_hashes directly, so the fingerprints don't keep the hashes)
-        self.weights = rarity_weights(
-            document_frequency(pair_hashes(fp.peaks)[0] if fp.peaks is not None else fp.hashes for _, fp in tracks), len(tracks)
-        )
+        # check on each post's shortlist. Counted again in full, or, given the
+        # previous index, updated for the songs that went or came.
+        def song_hashes(fp_or_index, i=None):
+            if i is not None:  # a song of the previous index
+                old = fp_or_index
+                return old.legacy[i].hashes if i in old.legacy else pair_hashes(old._peaks(i))[0]
+            return pair_hashes(fp_or_index.peaks)[0] if fp_or_index.peaks is not None else fp_or_index.hashes
+
+        if previous is not None:
+            before = {key: i for i, key in enumerate(previous.keys)}
+            now = set(self.keys)
+            self.df = previous.df.copy()
+            for key, i in before.items():
+                if key not in now:
+                    h = np.unique(song_hashes(previous, i))
+                    self.df[h] -= 1
+            for (key, (_, fp)) in zip(self.keys, tracks):
+                if key not in before:
+                    self.df[np.unique(song_hashes(fp))] += 1
+        else:
+            self.df = document_frequency(song_hashes(fp) for _, fp in tracks)
+        self.weights = rarity_weights(self.df, len(tracks))
+
+    def _peaks(self, i: int) -> np.ndarray:
+        return np.stack([self.peak_t[i], self.peak_f[i]], axis=1).astype(np.float64)
 
     def candidates(self, pk: np.ndarray, size: int = SHORTLIST_SIZE) -> list[int]:
-        found = self.with_peaks[self.shortlist_index.shortlist(pk, size)] if len(self.with_peaks) else []
+        found = self.shortlist_index.shortlist(pk, size) if len(self.with_peaks) else []
         return list(dict.fromkeys([int(i) for i in found] + list(self.legacy)))
 
     def subset(self, positions: list[int]) -> "Index":

@@ -220,30 +220,35 @@ SHARD_SIZE = 2000
 
 
 class ShardedShortlist:
-    """The shortlist index in shards of `SHARD_SIZE` songs. Building one big
-    table for 20,000 songs needs several GB for a moment (sorting ~300 million
-    keys); shards keep that to a few hundred MB, and a post is looked up in
-    each shard and the best songs of all shards are merged."""
+    """The shortlist index in shards. Building one big table for 20,000 songs
+    needs several GB for a moment (sorting ~300 million keys); shards keep that
+    to a few hundred MB. A post is looked up in each shard and the best songs
+    of all shards are merged. Each shard knows which positions (in the
+    caller's numbering) its songs have, so the caller can reuse an unchanged
+    shard when the catalogue changes (`bekvor_fp.Index`)."""
 
-    def __init__(self, songs, shard_size: int = SHARD_SIZE):
-        """`songs`: each song's peaks, as a list or as (count, function that
-        returns song i's peaks), so only one shard's peaks exist at a time."""
-        count, get = (len(songs), songs.__getitem__) if isinstance(songs, list) else songs
-        self.n = count
-        self.shards = [
-            (i, ShortlistIndex([get(j) for j in range(i, min(i + shard_size, count))]))
-            for i in range(0, count, shard_size)
-        ]
+    def __init__(self, shards: list[tuple[np.ndarray, ShortlistIndex]]):
+        self.shards = shards
+        self.n = sum(len(positions) for positions, _ in shards)
+
+    @classmethod
+    def build(cls, songs: list[np.ndarray], shard_size: int = SHARD_SIZE) -> "ShardedShortlist":
+        """Consecutive shards of `shard_size` songs; positions are list indices."""
+        return cls([
+            (np.arange(i, min(i + shard_size, len(songs))), ShortlistIndex(songs[i:i + shard_size]))
+            for i in range(0, len(songs), shard_size)
+        ])
 
     def nbytes(self) -> int:
-        return sum(shard.nbytes() for _, shard in self.shards)
+        return sum(shard.nbytes() + positions.nbytes for positions, shard in self.shards)
 
     def shortlist(self, pk: np.ndarray, top: int = 50) -> np.ndarray:
+        """Positions of the `top` most likely songs, best first."""
         query = query_keys(pk)
         found, scores = [], []
-        for first, shard in self.shards:
+        for positions, shard in self.shards:
             songs, sc = shard.scores(query, top)
-            found.append(songs + first)
+            found.append(positions[songs])
             scores.append(sc)
         if not found:
             return np.zeros(0, np.int64)

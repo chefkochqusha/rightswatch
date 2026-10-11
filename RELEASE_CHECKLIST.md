@@ -164,9 +164,9 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   build the second, learned stage (an own neural fingerprint, trained on a
   rented GPU with music Bekvor may use for training; licences of any
   pretrained model checked for commercial use).
-- [ ] **Index rebuild time**: a change to a 20,000-song catalogue rebuilds the
-  whole index (~4 minutes; posts wait and retry meanwhile). Before selling the
-  Agency plan at that size: rebuild only the changed shard.
+- [x] **Index rebuild time** — done 2026-10-11: a catalogue change rebuilds only
+  the changed song's shard (10,000 songs: 6 s instead of 2.5 min). After a
+  restart of the recognition service the first build is still the full one.
 - [ ] **`RECOGNIZER_TOKEN`**: a long random value in `deploy/.env`, never in git.
 
 ## Plans (added 2026-10-10)

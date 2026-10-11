@@ -65,6 +65,12 @@ class Indexes:
             self.items.move_to_end(workspace)
             return entry[1]
 
+    def latest(self, workspace: str) -> fp.Index | None:
+        """The workspace's index whatever its version: the base for a rebuild."""
+        with self.lock:
+            entry = self.items.get(workspace)
+            return entry[1] if entry else None
+
     def put(self, workspace: str, version: str, index: fp.Index) -> None:
         with self.lock:
             self.items[workspace] = (version, index)
@@ -203,8 +209,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(400, {"error": f"Bad index: {e}"})
         with SLOTS:
             started = time.time()
-            INDEXES.put(ws, version, fp.Index(tracks))
-        log("info", "index", workspace=ws, tracks=len(tracks), ms=round((time.time() - started) * 1000))
+            # Large catalogues: unchanged shards of the previous index are reused.
+            index = fp.Index(tracks, previous=INDEXES.latest(ws))
+            INDEXES.put(ws, version, index)
+        log("info", "index", workspace=ws, tracks=len(tracks), rebuiltShards=getattr(index, "rebuilt_shards", None), ms=round((time.time() - started) * 1000))
         self._send(200, {"tracks": len(tracks)})
 
     def do_DELETE(self):
