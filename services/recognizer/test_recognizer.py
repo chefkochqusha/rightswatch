@@ -56,6 +56,16 @@ class FingerprintTest(unittest.TestCase):
         old = fp.Fingerprint(f.hashes, f.times, f.duration_sec, None)
         self.assertIsNone(fp.Fingerprint.from_bytes(old.to_bytes()).melody)
 
+    def test_current_format_stores_peaks_and_is_compact(self):
+        f = fp.fingerprint(to_fs(SONGS["t3"][: SR * 60]))
+        data = f.to_bytes()
+        self.assertTrue(data.startswith(b"bekvor-lp-2\n"))
+        g = fp.Fingerprint.from_bytes(data)
+        self.assertTrue(np.array_equal(f.peaks, g.peaks))
+        self.assertTrue(np.array_equal(f.hashes, g.hashes), "pair hashes come out the same after a reload")
+        hash_format = fp.Fingerprint(f.hashes, f.times, f.duration_sec, f.melody).to_bytes()
+        self.assertLess(len(data), len(hash_format) / 2)
+
     def test_refuses_other_algorithm(self):
         with self.assertRaises(ValueError):
             fp.Fingerprint.from_bytes(b"other-1\n" + b"x")
@@ -102,6 +112,47 @@ class MatchTest(unittest.TestCase):
 
     def test_empty_index(self):
         self.assertEqual(fp.match(fp.Index([]), to_fs(SONGS["t1"][: SR * 10]))["candidates"], [])
+
+
+class LargeCatalogueTest(unittest.TestCase):
+    """Above RECOGNIZER_SHORTLIST_FROM songs a post is shortlisted first (shortlist.py)."""
+
+    @classmethod
+    def setUpClass(cls):
+        tracks = [(name, fp.fingerprint(to_fs(x))) for name, x in SONGS.items()]
+        # an old hash-only fingerprint can't be shortlisted: it is always checked
+        old = fp.fingerprint(to_fs(make_song(9)))
+        tracks.append(("legacy", fp.Fingerprint(old.hashes, old.times, old.duration_sec, old.melody)))
+        cls.index = fp.Index(tracks, shortlist_from=2)
+
+    def test_uses_the_shortlist(self):
+        self.assertTrue(self.index.large)
+        self.assertIn(4, self.index.candidates(fp.peaks(to_fs(SONGS["t1"][SR * 10: SR * 30]))), "legacy songs are always checked")
+
+    def test_finds_a_song_through_the_shortlist(self):
+        r = fp.match(self.index, to_fs(SONGS["t3"][SR * 30: SR * 55]))
+        self.assertGreaterEqual(r["shortlisted"], 1)
+        self.assertEqual(r["candidates"][0]["trackId"], "t3")
+        self.assertAlmostEqual(r["candidates"][0]["songOffsetSec"], 30, delta=0.5)
+
+    def test_finds_a_sped_up_song_through_the_shortlist(self):
+        sped = resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5)
+        top = fp.match(self.index, to_fs(sped))["candidates"][0]
+        self.assertEqual(top["trackId"], "t2")
+        self.assertAlmostEqual(top["speed"], 1.25, delta=0.03)
+
+    def test_finds_a_legacy_song(self):
+        top = fp.match(self.index, to_fs(make_song(9)[SR * 20: SR * 45]))["candidates"][0]
+        self.assertEqual(top["trackId"], "legacy")
+
+    def test_shards_give_the_same_shortlist(self):
+        from shortlist import ShardedShortlist, ShortlistIndex
+        songs = [fp.fingerprint(to_fs(x)).peaks for x in SONGS.values()]
+        post = fp.peaks(to_fs(SONGS["t2"][SR * 15: SR * 40]))
+        one = ShortlistIndex(songs).shortlist(post, 3)
+        sharded = ShardedShortlist(songs, shard_size=1).shortlist(post, 3)
+        self.assertEqual(int(one[0]), int(sharded[0]))
+        self.assertEqual(list(SONGS)[int(sharded[0])], "t2")
 
 
 class ServerTest(unittest.TestCase):

@@ -13,21 +13,27 @@ export interface FingerprintSummary {
   createdAt: Date;
   updatedAt: Date;
   /**
-   * Whether the fingerprint carries the melody line (format `bekvor-lp-1+mel1`,
-   * the second check). Older ones still match, but their songs can only be
-   * suggested, never recognised on their own, until the recording is uploaded again.
+   * Made in the current format (`bekvor-lp-2`: peaks and melody line). Older
+   * fingerprints still match, but they can't be shortlisted in large
+   * catalogues (so every post is checked against them, which is slow), and
+   * those without a melody line can only ever be suggested.
    */
+  current: boolean;
+  /** Carries the melody line (the second check): `bekvor-lp-2` or `bekvor-lp-1+mel1`. */
   hasMelody: boolean;
 }
 
-/** The format name a fingerprint's bytes start with (`services/recognizer/bekvor_fp.py`). */
+/** The format names fingerprints start with (`services/recognizer/bekvor_fp.py`). */
+export const CURRENT_FORMAT_PREFIX = "bekvor-lp-2\n";
 export const MELODY_FORMAT_PREFIX = "bekvor-lp-1+mel1\n";
 
 export async function findFingerprintSummary(workspaceId: string, trackId: string): Promise<FingerprintSummary | null> {
   // Only the first bytes are compared, in the database: a fingerprint can be hundreds of kilobytes.
   const rows = await getPrisma().$queryRaw<FingerprintSummary[]>`
     SELECT "durationSec", "sourceFileName", "createdAt", "updatedAt",
-           substring("data" from 1 for ${MELODY_FORMAT_PREFIX.length}) = convert_to(${MELODY_FORMAT_PREFIX}, 'UTF8') AS "hasMelody"
+           substring("data" from 1 for ${CURRENT_FORMAT_PREFIX.length}) = convert_to(${CURRENT_FORMAT_PREFIX}, 'UTF8') AS "current",
+           (substring("data" from 1 for ${CURRENT_FORMAT_PREFIX.length}) = convert_to(${CURRENT_FORMAT_PREFIX}, 'UTF8')
+             OR substring("data" from 1 for ${MELODY_FORMAT_PREFIX.length}) = convert_to(${MELODY_FORMAT_PREFIX}, 'UTF8')) AS "hasMelody"
     FROM "track_fingerprints"
     WHERE "workspaceId" = ${workspaceId} AND "musicTrackId" = ${trackId}
     LIMIT 1`;

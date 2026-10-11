@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
                 f = fp.fingerprint(y)
             log("info", "fingerprint", seconds=round(f.duration_sec, 1), hashes=int(len(f.hashes)), ms=round((time.time() - started) * 1000))
             return self._send(200, {
-                "algorithm": fp.ALGORITHM,
+                "algorithm": fp.FORMAT_PEAKS,
                 "fingerprint": base64.b64encode(f.to_bytes()).decode(),
                 "durationSec": round(f.duration_sec, 2),
                 "hashCount": int(len(f.hashes)),

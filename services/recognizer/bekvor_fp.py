@@ -22,7 +22,6 @@ import os
 import subprocess
 import tempfile
 import zlib
-from dataclasses import dataclass
 
 import numpy as np
 from scipy.ndimage import maximum_filter, median_filter
@@ -212,32 +211,71 @@ def pair_hashes(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 FORMAT_WITH_MELODY = ALGORITHM + "+mel1"
+# Current format: the peaks themselves (frame uint16, log bin uint8) and the
+# melody line. Pair hashes are derived from the peaks when needed, and the
+# large-catalogue shortlist (shortlist.py) needs the peaks. A third the size
+# of the hash format.
+FORMAT_PEAKS = "bekvor-lp-2"
 
 
-@dataclass
 class Fingerprint:
-    hashes: np.ndarray  # int32
-    times: np.ndarray  # int32, frames
-    duration_sec: float
-    melody: np.ndarray | None = None  # uint8 per frame; None in fingerprints made before the melody check
+    """A song's fingerprint. Made from peaks (current format) or, for
+    fingerprints stored before 2026-10-11, from pair hashes only."""
+
+    def __init__(self, hashes, times, duration_sec: float, melody: np.ndarray | None = None, peaks: np.ndarray | None = None):
+        self._hashes, self._times = hashes, times
+        self.duration_sec = duration_sec
+        self.melody = melody  # uint8 per frame; None in fingerprints made before the melody check
+        self.peaks = peaks  # (frame, logbin) rows by time; None in the older formats
+
+    @classmethod
+    def from_peaks(cls, pk: np.ndarray, duration_sec: float, melody: np.ndarray | None) -> "Fingerprint":
+        return cls(None, None, duration_sec, melody, pk)
+
+    def _pairs(self):
+        if self._hashes is None:
+            self._hashes, self._times = pair_hashes(self.peaks if self.peaks is not None else np.zeros((0, 2)))
+        return self._hashes, self._times
+
+    @property
+    def hashes(self) -> np.ndarray:
+        return self._pairs()[0]
+
+    @property
+    def times(self) -> np.ndarray:
+        return self._pairs()[1]
 
     def to_bytes(self) -> bytes:
+        mel = self.melody if self.melody is not None else np.zeros(0, np.uint8)
+        mel_part = np.array([len(mel)], dtype="<u4").tobytes() + mel.astype(np.uint8).tobytes()
+        if self.peaks is not None:
+            t = np.clip(np.round(self.peaks[:, 0]), 0, 65535).astype("<u2")
+            f = np.clip(np.round(self.peaks[:, 1]), 0, 255).astype(np.uint8)
+            header = np.array([len(t)], dtype="<u4").tobytes() + np.array([self.duration_sec], dtype="<f4").tobytes()
+            return FORMAT_PEAKS.encode() + b"\n" + zlib.compress(header + t.tobytes() + f.tobytes() + mel_part, 6)
         header = np.array([len(self.hashes)], dtype="<u4").tobytes() + np.array([self.duration_sec], dtype="<f4").tobytes()
         body = self.hashes.astype("<i4").tobytes() + self.times.astype("<i4").tobytes()
         if self.melody is None:
             return ALGORITHM.encode() + b"\n" + zlib.compress(header + body, 6)
-        mel = np.array([len(self.melody)], dtype="<u4").tobytes() + self.melody.astype(np.uint8).tobytes()
-        return FORMAT_WITH_MELODY.encode() + b"\n" + zlib.compress(header + body + mel, 6)
+        return FORMAT_WITH_MELODY.encode() + b"\n" + zlib.compress(header + body + mel_part, 6)
 
     @staticmethod
     def from_bytes(data: bytes) -> "Fingerprint":
         name, _, packed = data.partition(b"\n")
         fmt = name.decode()
-        if fmt not in (ALGORITHM, FORMAT_WITH_MELODY):
-            raise ValueError(f"Fingerprint made with {fmt!r}, this is {ALGORITHM}.")
+        if fmt not in (ALGORITHM, FORMAT_WITH_MELODY, FORMAT_PEAKS):
+            raise ValueError(f"Fingerprint made with {fmt!r}, this is {FORMAT_PEAKS}.")
         raw = zlib.decompress(packed)
         n = int(np.frombuffer(raw[:4], dtype="<u4")[0])
         duration = float(np.frombuffer(raw[4:8], dtype="<f4")[0])
+        if fmt == FORMAT_PEAKS:
+            t = np.frombuffer(raw[8:8 + 2 * n], dtype="<u2")
+            f = np.frombuffer(raw[8 + 2 * n:8 + 3 * n], dtype=np.uint8)
+            at = 8 + 3 * n
+            m = int(np.frombuffer(raw[at:at + 4], dtype="<u4")[0])
+            mel = np.frombuffer(raw[at + 4:at + 4 + m], dtype=np.uint8).copy()
+            pk = np.stack([t, f], axis=1).astype(np.float64)
+            return Fingerprint.from_peaks(pk, duration, mel)
         hashes = np.frombuffer(raw[8:8 + 4 * n], dtype="<i4").astype(np.int32)
         times = np.frombuffer(raw[8 + 4 * n:8 + 8 * n], dtype="<i4").astype(np.int32)
         mel = None
@@ -250,37 +288,140 @@ class Fingerprint:
 
 def fingerprint(y: np.ndarray) -> Fingerprint:
     if len(y) < NFFT:
-        return Fingerprint(np.zeros(0, np.int32), np.zeros(0, np.int32), len(y) / FS, np.zeros(0, np.uint8))
+        return Fingerprint.from_peaks(np.zeros((0, 2)), len(y) / FS, np.zeros(0, np.uint8))
     bands = _tonal_bands(y)
-    h, t = pair_hashes(peaks(y, bands=bands))
-    return Fingerprint(h, t, len(y) / FS, melody(bands))
+    pk = peaks(y, bands=bands)
+    # stored rounded, so the hashes made now and after a reload are the same
+    pk = np.stack([np.clip(np.round(pk[:, 0]), 0, 65535), np.clip(np.round(pk[:, 1]), 0, 255)], axis=1)
+    return Fingerprint.from_peaks(pk, len(y) / FS, melody(bands))
 
 
 # ------------------------------------------------------------------ the index
 
-class Index:
-    """One workspace's catalogue, ready to search."""
+# Largest song x offset table counted densely in `Index.score` (8 bytes each).
+DENSE_LIMIT = 4_000_000
 
-    def __init__(self, tracks: list[tuple[str, Fingerprint]]):
+# Above this many songs, a post is first narrowed to a shortlist (shortlist.py)
+# and the precise check runs on the shortlist only.
+SHORTLIST_FROM = int(os.environ.get("RECOGNIZER_SHORTLIST_FROM", "200"))
+SHORTLIST_SIZE = int(os.environ.get("RECOGNIZER_SHORTLIST_SIZE", "50"))
+
+# Pair hashes are below 2**21 (frequency bin < 256 in the top bits), so how
+# many songs have each hash fits a plain table: 2**21 entries, 8 MB.
+HASH_SPACE = 1 << 21
+
+
+def document_frequency(hash_arrays) -> np.ndarray:
+    """For every possible pair hash: in how many of these songs it occurs."""
+    df = np.zeros(HASH_SPACE, np.int32)
+    for h in hash_arrays:
+        if len(h):
+            df[np.unique(h)] += 1
+    return df
+
+
+def rarity_weights(df: np.ndarray, n_songs: int) -> np.ndarray:
+    """log((n + 1) / songs with the hash), per hash; 0 where no song has it."""
+    return np.where(df > 0, np.log((n_songs + 1) / np.maximum(df, 1)), 0).astype(np.float32)
+
+
+class Index:
+    """One workspace's catalogue, ready to search.
+
+    Small catalogues: every song's pair hashes in one table (`large` False).
+    Large catalogues: compact peaks per song plus the triplet shortlist index;
+    pair hashes are made for the shortlisted songs of each post only, so
+    memory stays at a few kilobytes per song instead of ~1 MB.
+    """
+
+    def __init__(self, tracks: list[tuple[str, Fingerprint]], shortlist_from: int | None = None, weights: np.ndarray | None = None):
+        """`weights`: rarity per hash from a larger catalogue (the shortlist
+        path passes the whole catalogue's), so a shortlisted subset keeps the
+        catalogue's rarities instead of its own."""
+        limit = SHORTLIST_FROM if shortlist_from is None else shortlist_from
         self.ids = [track_id for track_id, _ in tracks]
         self.melodies = [fp.melody for _, fp in tracks]
+        self.large = len(tracks) > limit
+        if self.large:
+            self._init_large(tracks)
+            return
         if not tracks:
             self.H = np.zeros(0, np.int32)
             self.S = self.T = self.W = np.zeros(0)
             self.Hu = np.zeros(0, np.int32)
             self.starts = self.counts = np.zeros(0, np.int64)
+            self.max_t = 0
             return
-        H = np.concatenate([fp.hashes for _, fp in tracks]).astype(np.int64)
-        T = np.concatenate([fp.times for _, fp in tracks]).astype(np.int64)
-        S = np.concatenate([np.full(len(fp.hashes), sid, np.int64) for sid, (_, fp) in enumerate(tracks)])
-        order = np.lexsort((S, H))
+        hashes = [fp.hashes for _, fp in tracks]
+        H = np.concatenate(hashes).astype(np.int32)
+        T = np.concatenate([fp.times for _, fp in tracks]).astype(np.int32)
+        S = np.concatenate([np.full(len(h), sid, np.int32) for sid, h in enumerate(hashes)])
+        order = np.argsort(H, kind="stable")  # songs stay in order within a hash
         self.H, self.S, self.T = H[order], S[order], T[order]
-        self.Hu, self.starts, self.counts = np.unique(self.H, return_index=True, return_counts=True)
-        # rarity weight: log((n + 1) / number of songs that have the hash)
-        pair = np.unique(self.H * len(tracks) + self.S)
-        songs_per_hash = np.bincount(np.searchsorted(self.Hu, pair // len(tracks)), minlength=len(self.Hu))
-        weight_u = np.log((len(tracks) + 1) / songs_per_hash)
-        self.W = np.repeat(weight_u, self.counts)
+        # H is sorted: the distinct hashes start where the value changes
+        first = np.flatnonzero(np.r_[True, self.H[1:] != self.H[:-1]])
+        self.Hu, self.starts = self.H[first], first.astype(np.int64)
+        self.counts = np.diff(np.r_[first, len(self.H)]).astype(np.int64)
+        if weights is None:
+            weights = rarity_weights(document_frequency(hashes), len(tracks))
+        self.W = weights[self.H]
+        self.max_t = int(self.T.max()) if len(self.T) else 0
+
+    def _init_large(self, tracks: list[tuple[str, Fingerprint]]) -> None:
+        from shortlist import ShardedShortlist
+
+        self.durations = [fp.duration_sec for _, fp in tracks]
+        self.peak_t: list[np.ndarray | None] = []
+        self.peak_f: list[np.ndarray | None] = []
+        # Fingerprints stored before the peak format have no peaks: they can't
+        # be shortlisted, so they are always checked (re-uploading fixes that).
+        self.legacy: dict[int, Fingerprint] = {}
+        with_peaks: list[int] = []
+        for i, (_, fp) in enumerate(tracks):
+            if fp.peaks is None:
+                self.legacy[i] = fp
+                self.peak_t.append(None)
+                self.peak_f.append(None)
+            else:
+                self.peak_t.append(fp.peaks[:, 0].astype(np.uint16))
+                self.peak_f.append(fp.peaks[:, 1].astype(np.uint8))
+                with_peaks.append(i)
+        self.with_peaks = np.array(with_peaks, np.int64)
+        self.shortlist_index = ShardedShortlist(
+            (len(with_peaks), lambda j: np.stack([self.peak_t[with_peaks[j]], self.peak_f[with_peaks[j]]], axis=1).astype(np.float64))
+        )
+        # The whole catalogue's rarity per pair hash (8 MB), for the precise
+        # check on each post's shortlist. Pair hashes are made once here
+        # (about 10 ms a song) and not kept.
+        # (pair_hashes directly, so the fingerprints don't keep the hashes)
+        self.weights = rarity_weights(
+            document_frequency(pair_hashes(fp.peaks)[0] if fp.peaks is not None else fp.hashes for _, fp in tracks), len(tracks)
+        )
+
+    def candidates(self, pk: np.ndarray, size: int = SHORTLIST_SIZE) -> list[int]:
+        found = self.with_peaks[self.shortlist_index.shortlist(pk, size)] if len(self.with_peaks) else []
+        return list(dict.fromkeys([int(i) for i in found] + list(self.legacy)))
+
+    def subset(self, positions: list[int]) -> "Index":
+        """A small index of these songs (positions in this index), for the precise check."""
+        tracks = []
+        for i in positions:
+            if i in self.legacy:
+                tracks.append((self.ids[i], self.legacy[i]))
+            else:
+                pk = np.stack([self.peak_t[i], self.peak_f[i]], axis=1).astype(np.float64)
+                tracks.append((self.ids[i], Fingerprint.from_peaks(pk, self.durations[i], self.melodies[i])))
+        return Index(tracks, shortlist_from=len(tracks) + 1, weights=self.weights)
+
+    def nbytes(self) -> int:
+        """Memory of the arrays this index holds (for limits and the scale test)."""
+        total = sum(v.nbytes for v in vars(self).values() if isinstance(v, np.ndarray))
+        total += sum(m.nbytes for m in self.melodies if m is not None)
+        if self.large:
+            total += sum(a.nbytes for a in self.peak_t + self.peak_f if a is not None)
+            total += self.shortlist_index.nbytes()
+            total += sum(fp.hashes.nbytes + fp.times.nbytes for fp in self.legacy.values())
+        return total
 
     def score(self, qh: np.ndarray, qt: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Best aligned score per song (rarity-weighted votes for one time
@@ -300,7 +441,22 @@ class Index:
         base = np.repeat(start, cnt)
         within = np.arange(total) - np.repeat(np.cumsum(cnt) - cnt, cnt)
         idx = base + within
-        off = self.T[idx] - np.repeat(tq, cnt)
+        off = self.T[idx].astype(np.int64) - np.repeat(tq, cnt)
+        # Dense counting (one slot per song and offset) when that table is
+        # small enough; otherwise sort the keys. Same result, the first is
+        # several times faster.
+        q_max = int(tq.max()) + 1
+        span = self.max_t + q_max + 2
+        if n * span <= DENSE_LIMIT:
+            key = self.S[idx].astype(np.int64) * span + (off + q_max)
+            sums = np.bincount(key, weights=self.W[idx], minlength=n * span).reshape(n, span)
+            smoothed = sums.copy()
+            smoothed[:, 1:] += sums[:, :-1]
+            smoothed[:, :-1] += sums[:, 1:]
+            at = np.argmax(smoothed, axis=1)
+            best = smoothed[np.arange(n), at]
+            best_off = at - q_max
+            return best, best_off
         OFF = 1 << 22
         key = self.S[idx] * (2 * OFF) + (off + OFF)
         uk, inv = np.unique(key, return_inverse=True)
@@ -312,6 +468,7 @@ class Index:
             smoothed[ok] += sums[p[ok]]
         sid = uk // (2 * OFF)
         offset = uk % (2 * OFF) - OFF
+        sid = sid.astype(np.int64)
         # per song: the best offset (uk is sorted, so songs are contiguous)
         order = np.lexsort((-smoothed, sid))
         first = order[np.r_[True, sid[order][1:] != sid[order][:-1]]]
@@ -325,7 +482,12 @@ def _transforms(robust: bool = True) -> list[tuple[float, int]]:
     if robust:
         for s in np.exp(np.linspace(np.log(0.78), np.log(1.32), 29)):
             combos.append((float(s), 0))  # time-stretch, pitch kept
-            combos.append((float(s), int(round(BPO * np.log2(s)))))  # sped up/slowed: pitch follows
+            # sped up/slowed: pitch follows, by a fraction of a log bin; peaks
+            # round either way, so both neighbouring shifts are tried (slowed
+            # posts: right song on top 27 -> 29 of 30, decided 13 -> 18)
+            shift = BPO * np.log2(s)
+            combos.append((float(s), int(np.floor(shift))))
+            combos.append((float(s), int(np.ceil(shift))))
         for k in range(-8, 9):
             combos.append((1.0, k))  # pitch alone, up to ±4 semitones
     seen, out = set(), []
@@ -369,6 +531,12 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     result = {"algorithm": ALGORITHM, "durationSec": round(duration, 2), "peaks": int(len(pk)), "windows": 0, "candidates": []}
     if len(index.ids) == 0 or len(pk) < 10:
         return result
+    if index.large:
+        shortlisted = index.candidates(pk)
+        result["shortlisted"] = len(shortlisted)
+        if not shortlisted:
+            return result
+        index = index.subset(shortlisted)
 
     whole, _, tf = _query_peaks(index, pk, TRANSFORMS)
     ranked = np.argsort(-whole)[: max(top, 2)]

@@ -93,10 +93,61 @@ TikTok posts): re-run the calibration on them and set the thresholds through
 `RECOGNITION_MATCH_RATIO`, `RECOGNITION_CANDIDATE_RATIO` and
 `RECOGNITION_MIN_SCORE`.
 
+## Large catalogues (2026-10-11)
+
+Above `RECOGNIZER_SHORTLIST_FROM` songs (200) a post is first narrowed to a
+shortlist of `RECOGNIZER_SHORTLIST_SIZE` songs (50) in one pass
+(`shortlist.py`: peak triplets whose key a speed or pitch change leaves
+alone), and the precise check above runs on the shortlist only, with the
+whole catalogue's rarity weights. Fingerprints are stored as peaks
+(`bekvor-lp-2`, a third of the hash format), so the index keeps peaks and
+triplets, not pair hashes, and the triplet table is built in shards of 2,000
+songs. Triplet extraction is compiled with numba (25× faster, numpy fallback).
+
+`scale_bench.py N K BASES` measures it: K composed catalogue songs queried
+under edits, the rest distractors (transposed and re-timed versions of other
+composed songs), 48 posts of songs not in the catalogue. On this 2-core
+development machine:
+
+| Catalogue | Index in memory | Build | Time per post (median) | False MATCH |
+|---|---|---|---|---|
+| 300 | 41 MB | 16 s | 1.3 s (was 12 s before this round) | 0 |
+| 2,000 | 209 MB | 17 s | 2.2 s | 0 of 48 |
+| 20,000 | 2.0 GB (3.7 GB peak while building) | 4 min | 9.9 s (p95 18 s) | 0 of 48 |
+
+Right song on top, by edit, as the catalogue grows (synthetic songs; the 2,000 run was made before both pitch roundings were tried for sped-up and slowed posts, the others after):
+
+| Post | 30 songs | 2,000 | 20,000 |
+|---|---|---|---|
+| Clean / AAC 64 kbit/s | 100 % | 100 % | 100 % |
+| Phone speaker + room | 100 % | 100 % | 100 % |
+| Voice-over, music −6 dB | 97 % | 73 % | 60 % |
+| Voice-over, music −12 dB | 87 % | 55 % | 45 % |
+| Sped up 1.25× | 93 % | 48 % | 20 % |
+| Slowed 0.85× | 97 % | 43 % | 60 % |
+| Worst case (1.2× + voice + phone + AAC) | 43 % | 3 % | 0 % |
+
+**What this means.** Clean, compressed and phone-recorded posts are found
+at any size, and no post of a song outside the catalogue was ever identified
+as one (MATCH). Heavily edited posts get lost in large catalogues: the
+shortlist misses them (at 2,000 songs the right song wasn't among the 50 in
+4 of 15 sped-up and 4 of 15 voice-over posts). Part of that is the test
+data: there are only six chord progressions among the composed songs, and
+the distractors are transposed copies, so thousands of them share a song's
+harmony, which real catalogues don't. Round 2 with real music decides how
+much. Tried without gain: looking up neighbouring triplet cells, weighting
+triplets by rarity, more and denser query triplets, sub-bin peak positions
+(worse). The next step for edited posts is a second, learned stage
+(`RELEASE_CHECKLIST.md`).
+
+Memory: about 100 KB per song. A server for the Agency plan's 20,000 songs
+needs 8 GB RAM for one such workspace (16 GB to be comfortable);
+`RECOGNIZER_CACHED_WORKSPACES` limits how many are kept.
+
 ## Run and test
 
 ```bash
-python3 -m unittest discover -s services/recognizer -p "test_*.py"   # 12 tests
+python3 -m unittest discover -s services/recognizer -p "test_*.py"   # 21 tests
 RECOGNIZER_TOKEN=dev PORT=8090 python3 services/recognizer/server.py
 ```
 

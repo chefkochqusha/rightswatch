@@ -151,9 +151,22 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **TikTok terms on fetching post audio** (lawyer): until clarified, post
   audio comes only from the customer's own upload; nothing is downloaded from
   TikTok.
-- [ ] **Server size**: the recognizer uses about 1 CPU-second per 30 s post with
-  30 songs; set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY` to the server (default 2
-  CPUs, 2 GB) and watch it with the first customers.
+- [ ] **Server size** (measured 2026-10-11, `services/recognizer/README.md`,
+  "Large catalogues"): about 100 KB of memory per catalogue song and 2–10 s of
+  CPU per post (2,000–20,000 songs). Set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY`
+  to the plans sold: 2 GB covers Starter/Growth workspaces, one Agency
+  workspace with 20,000 songs needs about 4 GB (8 GB server minimum, 16 GB to
+  be comfortable).
+- [ ] **Edited posts in large catalogues** (the core risk): sped-up, slowed and
+  voice-over posts are found well in small catalogues but get lost at
+  2,000–20,000 songs in the synthetic test (right song on top 20–60 %). Never a
+  false automatic match. Measure with real music first (round 2); if it holds,
+  build the second, learned stage (an own neural fingerprint, trained on a
+  rented GPU with music Bekvor may use for training; licences of any
+  pretrained model checked for commercial use).
+- [ ] **Index rebuild time**: a change to a 20,000-song catalogue rebuilds the
+  whole index (~4 minutes; posts wait and retry meanwhile). Before selling the
+  Agency plan at that size: rebuild only the changed shard.
 - [ ] **`RECOGNIZER_TOKEN`**: a long random value in `deploy/.env`, never in git.
 
 ## Plans (added 2026-10-10)

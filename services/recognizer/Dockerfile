@@ -8,9 +8,9 @@ RUN apt-get update \
 WORKDIR /srv
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY bekvor_fp.py server.py ./
+COPY bekvor_fp.py shortlist.py server.py ./
 USER recognizer
-ENV PORT=8090 PYTHONUNBUFFERED=1
+ENV PORT=8090 PYTHONUNBUFFERED=1 NUMBA_CACHE_DIR=/tmp/numba-cache
 EXPOSE 8090
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8090/health').status==200 else 1)"
 CMD ["python", "server.py"]
