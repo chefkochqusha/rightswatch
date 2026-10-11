@@ -93,6 +93,35 @@ TikTok posts): re-run the calibration on them and set the thresholds through
 `RECOGNITION_MATCH_RATIO`, `RECOGNITION_CANDIDATE_RATIO` and
 `RECOGNITION_MIN_SCORE`.
 
+## Real recordings (2026-10-11)
+
+`research/fingerprint/real_music.py`: four openly licensed real songs
+(Brahms' Hungarian Dance No. 5 by the US Army Strings, public domain;
+"Let's Go Fishin'" by Karissa Hobbs, a sung song; "Dance of the Sugar Plum
+Fairy" and "Vibe Ace" by Kevin MacLeod; CC BY) from librosa's example data,
+real speech (LibriVox readings, CC BY) as the voice-over, 4 posts per song
+and edit. Right song on top, of 16:
+
+| Post | 34-song catalogue | Same 4 songs among 2,000 (shortlist) |
+|---|---|---|
+| Clean / AAC 64 kbit/s / phone + room | 16 | 16 |
+| Voice-over, music −6 dB | 16 (9 MATCH) | 16 (10 MATCH) |
+| Voice-over, music −12 dB | 16 | 10 |
+| Sped up 1.25× | 16 (15 MATCH) | 16 (15 MATCH) |
+| Slowed 0.85× | 16 | 14 |
+| Tempo 1.2×, pitch kept / pitch −3 st | 16 | 16 |
+| Worst case (1.2× + voice + phone + AAC) | 14 | 2 |
+
+Real recordings stand out far more than the composed songs (median ratio to
+the next song 27–33 for clean posts, 11–12 when sped up), so the losses in
+the large synthetic catalogues above are mostly the test data. Still weak:
+music far under speech (−12 dB) and edits stacked on top of each other, in
+large catalogues. Real speech and a whale recording were never identified as
+a song; the one false MATCH in this run was a composed song taken for
+another composed song with the same chords (the known synthetic look-alike).
+Only four real songs, among composed distractors: round 2 with a customer's
+real catalogue is still the real test.
+
 ## Compared with open source (2026-10-11)
 
 `research/fingerprint/compare_audfprint.py`: the same 30 songs and posts in
