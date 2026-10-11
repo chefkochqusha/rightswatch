@@ -96,6 +96,7 @@ model Workspace {
   audioChecks   AudioCheck[]
   referral      Referral?
   billingProfile BillingProfile?
+  invites       Invite[]
 
   @@map("workspaces")
 }
@@ -910,4 +911,24 @@ model RateLimitCounter {
   @@id([scope, keyHash])
   @@index([updatedAt])
   @@map("rate_limits")
+}
+
+/// A teammate invite: the link carries this row's id, so an invite can be
+/// revoked and pending invites listed (modules/auth/invites.ts). Rows are
+/// removed 30 days after they stopped being pending.
+model Invite {
+  id          String    @id @default(cuid())
+  workspaceId String
+  email       String
+  role        Role
+  invitedById String?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, email])
+  @@map("invites")
 }

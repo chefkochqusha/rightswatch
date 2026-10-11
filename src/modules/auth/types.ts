@@ -120,6 +120,30 @@ export interface WorkspaceRepository {
   findAll(): Promise<WorkspaceRecord[]>;
 }
 
+export interface InviteRecord {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: Role;
+  invitedById: string | null;
+  createdAt: Date;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+  revokedAt: Date | null;
+}
+
+export interface InviteRepository {
+  create(input: { workspaceId: string; email: string; role: Role; invitedById: string | null; expiresAt: Date }): Promise<InviteRecord>;
+  findById(id: string): Promise<InviteRecord | null>;
+  /** Invites neither accepted, revoked nor expired at `now`, newest first. */
+  findPending(workspaceId: string, now: Date): Promise<InviteRecord[]>;
+  markAccepted(id: string, at: Date): Promise<void>;
+  /** Revokes the pending invites of a workspace matching `filter` (by id or by email). */
+  revoke(workspaceId: string, filter: { id: string } | { email: string }, at: Date): Promise<number>;
+  /** Removes invites that stopped being pending before `before`. */
+  deleteSettled(before: Date): Promise<void>;
+}
+
 export interface MembershipRepository {
   create(input: {
     userId: string;

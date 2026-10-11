@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { UniqueConstraintError } from "./errors";
 import type {
   AccountRepository,
+  InviteRecord,
+  InviteRepository,
   MembershipRecord,
   MembershipRepository,
   NewAccount,
@@ -247,6 +249,50 @@ export class InMemoryAccountRepository implements AccountRepository {
   async deleteUser(userId: string): Promise<void> {
     await this.memberships.deleteForUser(userId);
     await this.users.delete(userId);
+  }
+}
+
+export class InMemoryInviteRepository implements InviteRepository {
+  private readonly byId = new Map<string, InviteRecord>();
+
+  async create(input: { workspaceId: string; email: string; role: Role; invitedById: string | null; expiresAt: Date }): Promise<InviteRecord> {
+    const invite: InviteRecord = { id: randomUUID(), ...input, createdAt: new Date(), acceptedAt: null, revokedAt: null };
+    this.byId.set(invite.id, invite);
+    return invite;
+  }
+
+  async findById(id: string): Promise<InviteRecord | null> {
+    return this.byId.get(id) ?? null;
+  }
+
+  async findPending(workspaceId: string, now: Date): Promise<InviteRecord[]> {
+    return [...this.byId.values()]
+      .filter((i) => i.workspaceId === workspaceId && !i.acceptedAt && !i.revokedAt && i.expiresAt > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async markAccepted(id: string, at: Date): Promise<void> {
+    const invite = this.byId.get(id);
+    if (invite) this.byId.set(id, { ...invite, acceptedAt: at });
+  }
+
+  async revoke(workspaceId: string, filter: { id: string } | { email: string }, at: Date): Promise<number> {
+    let count = 0;
+    for (const invite of this.byId.values()) {
+      const matches = "id" in filter ? invite.id === filter.id : invite.email === filter.email;
+      if (invite.workspaceId === workspaceId && matches && !invite.acceptedAt && !invite.revokedAt) {
+        this.byId.set(invite.id, { ...invite, revokedAt: at });
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  async deleteSettled(before: Date): Promise<void> {
+    for (const [id, i] of this.byId) {
+      const settled = i.acceptedAt ?? i.revokedAt ?? i.expiresAt;
+      if (settled < before) this.byId.delete(id);
+    }
   }
 }
 

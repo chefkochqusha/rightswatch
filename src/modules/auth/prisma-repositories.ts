@@ -3,6 +3,8 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { UniqueConstraintError } from "./errors";
 import type {
   AccountRepository,
+  InviteRecord,
+  InviteRepository,
   MembershipRecord,
   MembershipRepository,
   NewAccount,
@@ -55,6 +57,57 @@ function toPrismaRole(role: Role): PrismaRole {
 }
 function fromPrismaRole(role: string): Role {
   return role as Role;
+}
+
+export class PrismaInviteRepository implements InviteRepository {
+  async create(input: { workspaceId: string; email: string; role: Role; invitedById: string | null; expiresAt: Date }): Promise<InviteRecord> {
+    return mapInvite(await getPrisma().invite.create({ data: { ...input, role: toPrismaRole(input.role) } }));
+  }
+
+  async findById(id: string): Promise<InviteRecord | null> {
+    const row = await getPrisma().invite.findUnique({ where: { id } });
+    return row ? mapInvite(row) : null;
+  }
+
+  async findPending(workspaceId: string, now: Date): Promise<InviteRecord[]> {
+    const rows = await getPrisma().invite.findMany({
+      where: { workspaceId, acceptedAt: null, revokedAt: null, expiresAt: { gt: now } },
+      orderBy: { createdAt: "desc" },
+    });
+    return rows.map(mapInvite);
+  }
+
+  async markAccepted(id: string, at: Date): Promise<void> {
+    await getPrisma().invite.updateMany({ where: { id, acceptedAt: null }, data: { acceptedAt: at } });
+  }
+
+  async revoke(workspaceId: string, filter: { id: string } | { email: string }, at: Date): Promise<number> {
+    const result = await getPrisma().invite.updateMany({
+      where: { workspaceId, ...filter, acceptedAt: null, revokedAt: null },
+      data: { revokedAt: at },
+    });
+    return result.count;
+  }
+
+  async deleteSettled(before: Date): Promise<void> {
+    await getPrisma().invite.deleteMany({
+      where: { OR: [{ acceptedAt: { lt: before } }, { revokedAt: { lt: before } }, { expiresAt: { lt: before } }] },
+    });
+  }
+}
+
+function mapInvite(row: {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: string;
+  invitedById: string | null;
+  createdAt: Date;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+  revokedAt: Date | null;
+}): InviteRecord {
+  return { ...row, role: fromPrismaRole(row.role) };
 }
 
 export class PrismaUserRepository implements UserRepository {
