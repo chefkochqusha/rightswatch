@@ -93,6 +93,26 @@ TikTok posts): re-run the calibration on them and set the thresholds through
 `RECOGNITION_MATCH_RATIO`, `RECOGNITION_CANDIDATE_RATIO` and
 `RECOGNITION_MIN_SCORE`.
 
+## Compared with open source (2026-10-11)
+
+`research/fingerprint/compare_audfprint.py`: the same 30 songs and posts in
+audfprint (MIT, the classic Shazam-style method, as in Dejavu) and in Bekvor.
+Right song on top, of 30:
+
+| Post | audfprint | Bekvor |
+|---|---|---|
+| Clean | 30 | 30 |
+| Voice-over, music −6 dB | 30 | 29 |
+| Sped up 1.25× (pitch follows) | **0** | 28 |
+| Slowed 0.85× (pitch follows) | **0** | 29 |
+| Tempo 1.2×, pitch kept | **0** | 30 |
+| Pitch −3 semitones | 24 | 30 |
+
+The classic method doesn't survive the speed and pitch changes TikTok posts
+use all the time; that's why Bekvor searches over speed and pitch. Panako
+(which also does) is AGPL-licensed and names the same patents, so it was not
+used.
+
 ## Large catalogues (2026-10-11)
 
 Above `RECOGNIZER_SHORTLIST_FROM` songs (200) a post is first narrowed to a
