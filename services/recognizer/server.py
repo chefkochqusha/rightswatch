@@ -12,7 +12,15 @@ Endpoints (all but /health need `Authorization: Bearer $RECOGNIZER_TOKEN`):
 
     GET  /health                           -> {"ok": true, "algorithm": ...}
     POST /fingerprint        (audio bytes) -> {"fingerprint": base64, "durationSec", "hashCount", "algorithm"}
-    PUT  /index/<ws>  {"version", "tracks": [{"id", "fingerprint"}]} -> {"tracks": n}
+    PUT  /index/<ws>  {"version", "tracks": [{"id", "key", "fingerprint"?}]}
+                                           -> {"tracks": n}, or 409 {"missing": [ids]}
+    POST /index/<ws>/tracks  {"tracks": [{"id", "key", "fingerprint"}]} -> {"staged": n}
+
+Large catalogues don't send every fingerprint each time: the app sends the
+list of songs with a `key` per fingerprint (when it last changed), the
+service reuses what its previous index already holds and answers with the
+songs it is `missing`; the app stages those in batches (POST .../tracks) and
+sends the list again. A track that comes with its fingerprint is used as is.
     POST /match/<ws>?version=<v>  (audio)  -> match result, or 409 when the
                                               index for that version isn't loaded
     DELETE /index/<ws>                     -> forget a workspace's index
@@ -30,9 +38,12 @@ import re
 import sys
 import threading
 import time
+import zlib
 from collections import OrderedDict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
+
+import numpy as np
 
 import bekvor_fp as fp
 
@@ -41,6 +52,8 @@ PORT = int(os.environ.get("PORT", "8090"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 MAX_AUDIO_BYTES = int(os.environ.get("RECOGNIZER_MAX_AUDIO_MB", "200")) * 1024 * 1024
 MAX_INDEX_BYTES = int(os.environ.get("RECOGNIZER_MAX_INDEX_MB", "1024")) * 1024 * 1024
+# Fingerprints waiting for the next index build, per workspace (raw bytes, ~15 KB a song).
+MAX_STAGED_BYTES = int(os.environ.get("RECOGNIZER_MAX_STAGED_MB", "1024")) * 1024 * 1024
 MAX_SONG_SECONDS = 20 * 60
 MAX_POST_SECONDS = 10 * 60
 CACHED_WORKSPACES = int(os.environ.get("RECOGNIZER_CACHED_WORKSPACES", "16"))
@@ -81,6 +94,28 @@ class Indexes:
     def drop(self, workspace: str) -> None:
         with self.lock:
             self.items.pop(workspace, None)
+            STAGED.pop(workspace, None)
+
+
+# Staged fingerprints: workspace -> {(track id, key): bytes}
+STAGED: dict[str, dict[tuple[str, str], bytes]] = {}
+STAGED_LOCK = threading.Lock()
+
+
+def reusable_tracks(previous: fp.Index | None) -> dict[tuple[str, str], fp.Fingerprint]:
+    """(id, key) -> fingerprint, rebuilt from what a large previous index holds.
+    A small index keeps only pair hashes, so nothing can be taken from it."""
+    if previous is None or not previous.large:
+        return {}
+    out = {}
+    for i, key in enumerate(previous.keys):
+        if i in previous.legacy:
+            f = previous.legacy[i]
+        else:
+            f = fp.Fingerprint.from_peaks(previous._peaks(i).astype(np.float32), previous.durations[i], previous.melodies[i])
+        f.digest = key[1]
+        out[key] = f
+    return out
 
 
 INDEXES = Indexes(CACHED_WORKSPACES)
@@ -163,6 +198,28 @@ class Handler(BaseHTTPRequestHandler):
                 "durationSec": round(f.duration_sec, 2),
                 "hashCount": int(len(f.hashes)),
             })
+        if url.path.startswith("/index/") and url.path.endswith("/tracks"):
+            ws = self._workspace(url.path[: -len("/tracks")], "/index/")
+            if ws is None:
+                return
+            data = self._body(MAX_INDEX_BYTES)
+            if data is None:
+                return
+            try:
+                batch = {}
+                for t in json.loads(data)["tracks"]:
+                    raw = base64.b64decode(t["fingerprint"])
+                    fp.Fingerprint.from_bytes(raw)  # refuse what can't be read now, not at build time
+                    batch[(str(t["id"]), str(t["key"]))] = raw
+            except (KeyError, ValueError, TypeError, zlib.error) as e:
+                return self._send(400, {"error": f"Bad tracks: {e}"})
+            with STAGED_LOCK:
+                current = STAGED.setdefault(ws, {})
+                size = sum(len(v) for v in current.values()) + sum(len(v) for v in batch.values())
+                if size > MAX_STAGED_BYTES:
+                    return self._send(413, {"error": "Too many fingerprints waiting."})
+                current.update(batch)
+            return self._send(200, {"staged": len(batch)})
         if url.path.startswith("/match/"):
             ws = self._workspace(url.path, "/match/")
             if ws is None:
@@ -201,17 +258,41 @@ class Handler(BaseHTTPRequestHandler):
         data = self._body(MAX_INDEX_BYTES)
         if data is None:
             return
+        previous = INDEXES.latest(ws)
         try:
             body = json.loads(data)
-            tracks = [(str(t["id"]), fp.Fingerprint.from_bytes(base64.b64decode(t["fingerprint"]))) for t in body["tracks"]]
             version = str(body["version"])
-        except (KeyError, ValueError, TypeError) as e:
+            listed = [(str(t["id"]), t.get("key"), t.get("fingerprint")) for t in body["tracks"]]
+            with STAGED_LOCK:
+                staged = dict(STAGED.get(ws, {}))
+            reuse = reusable_tracks(previous)
+            tracks, missing = [], []
+            for track_id, key, b64 in listed:
+                if b64 is not None:
+                    f = fp.Fingerprint.from_bytes(base64.b64decode(b64))
+                    if key is not None:
+                        f.digest = str(key)
+                elif key is not None and (track_id, str(key)) in staged:
+                    f = fp.Fingerprint.from_bytes(staged[(track_id, str(key))])
+                    f.digest = str(key)
+                elif key is not None and (track_id, str(key)) in reuse:
+                    f = reuse[(track_id, str(key))]
+                else:
+                    missing.append(track_id)
+                    continue
+                tracks.append((track_id, f))
+        except (KeyError, ValueError, TypeError, AttributeError, zlib.error) as e:
             return self._send(400, {"error": f"Bad index: {e}"})
+        if missing:
+            return self._send(409, {"error": "Fingerprints missing.", "missing": missing})
+        del reuse
         with SLOTS:
             started = time.time()
             # Large catalogues: unchanged shards of the previous index are reused.
-            index = fp.Index(tracks, previous=INDEXES.latest(ws))
+            index = fp.Index(tracks, previous=previous)
             INDEXES.put(ws, version, index)
+        with STAGED_LOCK:
+            STAGED.pop(ws, None)
         log("info", "index", workspace=ws, tracks=len(tracks), rebuiltShards=getattr(index, "rebuilt_shards", None), ms=round((time.time() - started) * 1000))
         self._send(200, {"tracks": len(tracks)})
 

@@ -140,6 +140,45 @@ describe("RecognizerClient", () => {
     await assert.rejects(client.fingerprint(new Uint8Array([1])), (e: RecognitionServiceError) => !e.unreadableAudio && /500: boom/.test(e.message));
   });
 
+  it("syncs an index: the list first, then only what the service is missing, in batches", async () => {
+    const calls: { method: string; url: string; body: string }[] = [];
+    let puts = 0;
+    const fetchImpl = (async (url: string, init: RequestInit) => {
+      calls.push({ method: String(init.method), url, body: String(init.body) });
+      if (init.method === "PUT") {
+        puts += 1;
+        const answer = puts === 1 ? { status: 409, body: { missing: ["b", "c"] } } : { status: 200, body: { tracks: 3 } };
+        return new Response(JSON.stringify(answer.body), { status: answer.status });
+      }
+      return new Response(JSON.stringify({ staged: 1 }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const client = new RecognizerClient({ baseUrl: "http://r", token: "t", fetchImpl });
+    const tracks = ["a", "b", "c"].map((trackId, i) => ({ trackId, fingerprintUpdatedAt: new Date(1000 + i) }));
+    const loaded: string[][] = [];
+    const result = await client.syncIndex("ws", "v1", tracks, async (ids) => {
+      loaded.push(ids);
+      return ids.map((trackId) => ({ trackId, fingerprint: new Uint8Array([1]) }));
+    }, 1);
+    assert.deepEqual(result, { sent: 2 });
+    assert.deepEqual(loaded, [["b"], ["c"]], "only the missing songs, one batch each");
+    assert.deepEqual(calls.map((c) => `${c.method} ${c.url}`), ["PUT http://r/index/ws", "POST http://r/index/ws/tracks", "POST http://r/index/ws/tracks", "PUT http://r/index/ws"]);
+    const listing = JSON.parse(calls[0].body);
+    assert.deepEqual(listing.tracks[0], { id: "a", key: "1000" });
+    assert.equal((listing.tracks[0] as Record<string, unknown>).fingerprint, undefined, "the list carries no fingerprints");
+    assert.equal(JSON.parse(calls[1].body).tracks[0].key, "1001");
+  });
+
+  it("sends nothing more when the service already holds every fingerprint", async () => {
+    const { calls, client } = stub(200, { tracks: 1 });
+    const loaded: string[] = [];
+    await client.syncIndex("ws", "v1", [{ trackId: "a", fingerprintUpdatedAt: new Date(5) }], async (ids) => {
+      loaded.push(...ids);
+      return [];
+    });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(loaded, []);
+  });
+
   it("reports an unreachable service", async () => {
     const client = new RecognizerClient({
       baseUrl: "http://recognizer:8090",

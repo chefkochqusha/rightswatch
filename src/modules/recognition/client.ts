@@ -4,7 +4,7 @@ import type { RecognitionFingerprint, RecognitionMatchResult } from "./types";
 /**
  * Talks to the recognition service (`services/recognizer/server.py`) on the
  * server's private network. The service keeps nothing: fingerprints live in
- * Postgres, and a workspace's are sent to it (`loadIndex`) whenever the
+ * Postgres, and a workspace's are sent to it (`syncIndex`) whenever the
  * catalogue's `version` changed since it last saw them.
  */
 
@@ -34,6 +34,14 @@ export function catalogueVersion(tracks: readonly IndexTrack[]): string {
     .join("\n");
   return createHash("sha256").update(lines).digest("hex").slice(0, 24);
 }
+
+/** Identifies a song's current fingerprint: it changes when the recording is uploaded again. */
+export function fingerprintKey(track: IndexTrack): string {
+  return String(track.fingerprintUpdatedAt.getTime());
+}
+
+/** Fingerprints per request when the service is missing some (~15 KB each). */
+const INDEX_BATCH = 500;
 
 export interface RecognizerClientOptions {
   baseUrl: string;
@@ -66,12 +74,38 @@ export class RecognizerClient {
     return (await res.json()) as RecognitionFingerprint;
   }
 
-  async loadIndex(workspaceId: string, version: string, tracks: { trackId: string; fingerprint: Uint8Array }[]): Promise<void> {
-    const body = JSON.stringify({
-      version,
-      tracks: tracks.map((t) => ({ id: t.trackId, fingerprint: Buffer.from(t.fingerprint).toString("base64") })),
-    });
-    await this.request("PUT", `/index/${encodeURIComponent(workspaceId)}`, body, "application/json");
+  /**
+   * Makes the service hold this version of a workspace's index without
+   * sending every fingerprint each time: the list of songs goes first (with a
+   * key per fingerprint, `fingerprintKey`); the service reuses what it holds
+   * and names the songs it's missing, which are loaded with `load` and sent
+   * in batches; then the list again. A 20,000-song catalogue is ~300 MB of
+   * fingerprints, which this never holds in memory at once.
+   */
+  async syncIndex(
+    workspaceId: string,
+    version: string,
+    tracks: readonly IndexTrack[],
+    load: (trackIds: string[]) => Promise<{ trackId: string; fingerprint: Uint8Array }[]>,
+    batchSize = INDEX_BATCH,
+  ): Promise<{ sent: number }> {
+    const path = `/index/${encodeURIComponent(workspaceId)}`;
+    const listing = JSON.stringify({ version, tracks: tracks.map((t) => ({ id: t.trackId, key: fingerprintKey(t) })) });
+    let res = await this.request("PUT", path, listing, "application/json", [409]);
+    if (res.ok) return { sent: 0 };
+    const missing = ((await res.json()) as { missing?: string[] }).missing ?? [];
+    if (missing.length === 0) throw new RecognitionServiceError("The recognition service refused the index.");
+    const keys = new Map(tracks.map((t) => [t.trackId, fingerprintKey(t)]));
+    for (let i = 0; i < missing.length; i += batchSize) {
+      const batch = await load(missing.slice(i, i + batchSize));
+      const body = JSON.stringify({
+        tracks: batch.map((t) => ({ id: t.trackId, key: keys.get(t.trackId), fingerprint: Buffer.from(t.fingerprint).toString("base64") })),
+      });
+      await this.request("POST", `${path}/tracks`, body, "application/json");
+    }
+    res = await this.request("PUT", path, listing, "application/json", [409]);
+    if (!res.ok) throw new RecognitionServiceError("The recognition service is still missing fingerprints after they were sent.");
+    return { sent: missing.length };
   }
 
   /** `null` when the service doesn't have this version of the index: load it and ask again. */

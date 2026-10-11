@@ -126,7 +126,7 @@ export async function runAudioCheckJob(job: JobRecord): Promise<AudioCheckPayloa
     const version = catalogueVersion(tracks);
     let result = await client.match(workspaceId, version, audio).catch(asPermanentIfUnreadable);
     if (!result) {
-      await client.loadIndex(workspaceId, version, await indexData(workspaceId, tracks.map((t) => t.trackId)));
+      await client.syncIndex(workspaceId, version, tracks, (trackIds) => indexData(workspaceId, trackIds));
       result = await client.match(workspaceId, version, audio).catch(asPermanentIfUnreadable);
       if (!result) throw new Error("The recognition service didn't keep the index.");
     }

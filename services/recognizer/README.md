@@ -13,15 +13,19 @@ browser ──upload──▶ app (/api/uploads/…) ──file──▶ upload 
                      ▼
                   worker (in the app process)
                      │  POST /fingerprint  (a song)      → fingerprint stored in Postgres
-                     │  PUT  /index/<ws>   (when changed) → index kept in memory here
+                     │  PUT  /index/<ws>   (when changed: the song list; the     → index kept in memory here
+                     │       fingerprints it lacks go in batches to .../tracks)
                      │  POST /match/<ws>   (a post)       → candidates → decision (app)
                      ▼
                   recognizer (this service, private network only)
 ```
 
 - **Keeps nothing.** Fingerprints live in Postgres (so the nightly backup
-  covers them); this service holds a few workspaces' indexes in memory and is
-  sent a new one when the catalogue's version changes. Uploaded audio is
+  covers them); this service holds a few workspaces' indexes in memory. When
+  the catalogue's version changes the app sends the list of songs with a key
+  per fingerprint; the service reuses what its previous index holds (large
+  catalogues) and names what it's missing, which the app sends in batches of
+  500. A one-song change sends one fingerprint, not 20,000. Uploaded audio is
   decoded through a temporary file deleted at once.
 - **The decision is the app's** (`src/modules/recognition/decide.ts`): MATCH
   (clearly ahead of every other song and found in at least half of the post),

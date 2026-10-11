@@ -228,6 +228,36 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(body["candidates"][0]["trackId"], "t4")
         self.assertEqual(self.call("POST", "/match/ws1?version=v2", body=b"x")[0], 409, "a new version needs a new index")
 
+    def test_index_from_a_list_staged_fingerprints_and_the_previous_index(self):
+        prints = {}
+        for name in ("t1", "t4"):
+            prints[name] = self.call("POST", "/fingerprint", body=wav_bytes(SONGS[name][: SR * 60], SR))[1]["fingerprint"]
+        listing = [{"id": k, "key": f"{k}@1"} for k in prints]
+        status, body = self.call("PUT", "/index/ws-sync", json_body={"version": "v1", "tracks": listing})
+        self.assertEqual((status, sorted(body["missing"])), (409, ["t1", "t4"]))
+        status, body = self.call("POST", "/index/ws-sync/tracks", json_body={"tracks": [{"id": "t1", "key": "t1@1", "fingerprint": prints["t1"]}]})
+        self.assertEqual((status, body["staged"]), (200, 1))
+        self.assertEqual(self.call("PUT", "/index/ws-sync", json_body={"version": "v1", "tracks": listing})[1]["missing"], ["t4"])
+        self.call("POST", "/index/ws-sync/tracks", json_body={"tracks": [{"id": "t4", "key": "t4@1", "fingerprint": prints["t4"]}]})
+        old_limit = fp.SHORTLIST_FROM
+        fp.SHORTLIST_FROM = 1  # take the large-catalogue path, which can be reused
+        try:
+            self.assertEqual(self.call("PUT", "/index/ws-sync", json_body={"version": "v1", "tracks": listing})[0], 200)
+            # a new version with the same songs: nothing has to be sent again
+            status, body = self.call("PUT", "/index/ws-sync", json_body={"version": "v2", "tracks": listing})
+            self.assertEqual((status, body["tracks"]), (200, 2))
+            status, body = self.call("POST", "/match/ws-sync?version=v2", body=wav_bytes(SONGS["t4"][SR * 10: SR * 35], SR))
+            self.assertEqual(body["candidates"][0]["trackId"], "t4")
+            # a changed fingerprint (new key) is missing again
+            changed = [{"id": "t1", "key": "t1@2"}, {"id": "t4", "key": "t4@1"}]
+            self.assertEqual(self.call("PUT", "/index/ws-sync", json_body={"version": "v3", "tracks": changed})[1]["missing"], ["t1"])
+        finally:
+            fp.SHORTLIST_FROM = old_limit
+
+    def test_staging_refuses_unreadable_fingerprints(self):
+        status, _ = self.call("POST", "/index/ws1/tracks", json_body={"tracks": [{"id": "x", "key": "1", "fingerprint": "bm90IGEgZmluZ2VycHJpbnQ="}]})
+        self.assertEqual(status, 400)
+
     def test_409_reaches_the_client_even_with_a_large_body(self):
         status, body = self.call("POST", "/match/ws-big?version=v1", body=b"\0" * (30 * 1024 * 1024))
         self.assertEqual(status, 409)
