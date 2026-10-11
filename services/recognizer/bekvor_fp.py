@@ -322,6 +322,8 @@ DENSE_LIMIT = 4_000_000
 # and the precise check runs on the shortlist only.
 SHORTLIST_FROM = int(os.environ.get("RECOGNIZER_SHORTLIST_FROM", "200"))
 SHORTLIST_SIZE = int(os.environ.get("RECOGNIZER_SHORTLIST_SIZE", "50"))
+# ... and how far down it goes when no song stood out among the first.
+SHORTLIST_WIDE = int(os.environ.get("RECOGNIZER_SHORTLIST_WIDE", "200"))
 
 # Pair hashes are below 2**21 (frequency bin < 256 in the top bits), so how
 # many songs have each hash fits a plain table: 2**21 entries, 8 MB.
@@ -592,7 +594,13 @@ def _query_peaks(index: Index, pk: np.ndarray, transforms) -> tuple[np.ndarray, 
 def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     """Which catalogue songs the audio contains, best first, with the
     evidence a decision needs: score, the next song's score, how many
-    windows of the post each song wins, and the speed/pitch it was found at."""
+    windows of the post each song wins, and the speed/pitch it was found at.
+
+    Large catalogues: the precise check runs on the shortlist's best
+    `SHORTLIST_SIZE` songs; when no song stands out clearly there, on the next
+    ones up to `SHORTLIST_WIDE` too. Hard posts (music quiet under speech,
+    several edits at once) often have the right song just below the first
+    cut, while clear posts are settled in the first round."""
     duration = len(y) / FS
     bands = _tonal_bands(y) if len(y) >= NFFT else None
     pk = peaks(y, bands=bands) if bands is not None else np.zeros((0, 2))
@@ -600,14 +608,43 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     result = {"algorithm": ALGORITHM, "durationSec": round(duration, 2), "peaks": int(len(pk)), "windows": 0, "candidates": []}
     if len(index.ids) == 0 or len(pk) < 10:
         return result
-    if index.large:
-        shortlisted = index.candidates(pk)
-        result["shortlisted"] = len(shortlisted)
-        if not shortlisted:
-            return result
-        index = index.subset(shortlisted)
+    if not index.large:
+        return _evaluate([_scored(index, pk)], pk, query_melody, top, result)
 
-    whole, _, tf = _query_peaks(index, pk, TRANSFORMS)
+    ranked = index.candidates(pk, SHORTLIST_WIDE)  # shortlist order, then songs that can't be shortlisted
+    legacy = [i for i in ranked if i in index.legacy]
+    found = [i for i in ranked if i not in index.legacy]
+    first, rest = found[:SHORTLIST_SIZE] + legacy, found[SHORTLIST_SIZE:]
+    if not first:
+        return result
+    parts = [_scored(index.subset(first), pk)]
+    if rest and not _stands_out(parts[0][1]):
+        parts.append(_scored(index.subset(rest), pk))
+    result["shortlisted"] = sum(len(part.ids) for part, _, _ in parts)
+    return _evaluate(parts, pk, query_melody, top, result)
+
+
+def _scored(part: Index, pk: np.ndarray):
+    whole, _, tf = _query_peaks(part, pk, TRANSFORMS)
+    return part, whole, tf
+
+
+def _stands_out(whole: np.ndarray, ratio: float = 3.0, floor: float = 20.0) -> bool:
+    """The best song is clearly ahead (as the app's decision rule reads it)."""
+    if len(whole) < 2:
+        return len(whole) == 1 and whole[0] > floor
+    first, second = np.sort(whole)[-2:][::-1]
+    return first / max(second, floor) >= ratio
+
+
+def _evaluate(parts, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict) -> dict:
+    """The candidates from one or more scored parts of the catalogue (songs
+    are scored independently, with the catalogue's weights, so parts can be
+    put side by side)."""
+    ids = [track_id for part, _, _ in parts for track_id in part.ids]
+    melodies = [m for part, _, _ in parts for m in part.melodies]
+    whole = np.concatenate([w for _, w, _ in parts])
+    tf = [t for _, _, tfs in parts for t in tfs]
     ranked = np.argsort(-whole)[: max(top, 2)]
     second_overall = float(whole[ranked[1]]) if len(ranked) > 1 else 0.0
 
@@ -617,13 +654,13 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     last = pk[-1, 0]
     starts = [0] if last <= win else list(range(0, int(last - win) + hop, hop))
     candidate_tfs = {tf[i][:2] for i in ranked if tf[i] is not None}
-    wins = np.zeros(len(index.ids), np.int64)
+    wins = np.zeros(len(ids), np.int64)
     for a in starts:
         sel = pk[(pk[:, 0] >= a) & (pk[:, 0] < a + win)].copy()
         if len(sel) < 10:
             continue
         sel[:, 0] -= a
-        sc, _, _ = _query_peaks(index, sel, candidate_tfs)
+        sc = np.concatenate([_query_peaks(part, sel, candidate_tfs)[0] for part, _, _ in parts])
         if sc.max() > 0:
             wins[int(np.argmax(sc))] += 1
     result["windows"] = len(starts)
@@ -635,7 +672,7 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
         # for the top song: the best other song; for the others: the top song
         other = second_overall if rank == 0 else float(whole[ranked[0]])
         result["candidates"].append({
-            "trackId": index.ids[i],
+            "trackId": ids[i],
             "score": round(float(whole[i]), 2),
             "nextScore": round(other, 2),
             "windowsWon": int(wins[i]),
@@ -645,8 +682,8 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
             # 2nd check: do the melody lines agree at this alignment? None when the
             # song's fingerprint predates the melody check, or too little to compare.
             "melodyAgreement": (
-                None if index.melodies[i] is None
-                else _round(melody_agreement(query_melody, index.melodies[i], s, k, off))
+                None if melodies[i] is None
+                else _round(melody_agreement(query_melody, melodies[i], s, k, off))
             ),
         })
     return result

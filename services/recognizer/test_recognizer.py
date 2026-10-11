@@ -170,6 +170,18 @@ class LargeCatalogueTest(unittest.TestCase):
         finally:
             fp.SHARD_SONGS = old
 
+    def test_looks_further_down_the_shortlist_only_when_no_song_stands_out(self):
+        old = fp.SHORTLIST_SIZE, fp.SHORTLIST_WIDE
+        fp.SHORTLIST_SIZE, fp.SHORTLIST_WIDE = 1, 5
+        try:
+            clear = fp.match(self.index, to_fs(SONGS["t3"][SR * 30: SR * 55]))
+            self.assertEqual(clear["candidates"][0]["trackId"], "t3")
+            self.assertEqual(clear["shortlisted"], 2, "the best song (and the legacy one) settle it")
+            unclear = fp.match(self.index, to_fs(make_song(31)[SR * 10: SR * 35]))
+            self.assertGreater(unclear["shortlisted"], 2, "a post of no catalogue song looks further")
+        finally:
+            fp.SHORTLIST_SIZE, fp.SHORTLIST_WIDE = old
+
     def test_shards_give_the_same_shortlist(self):
         from shortlist import ShardedShortlist, ShortlistIndex
         songs = [fp.fingerprint(to_fs(x)).peaks for x in SONGS.values()]

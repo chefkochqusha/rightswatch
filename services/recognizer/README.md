@@ -106,21 +106,32 @@ Fairy" and "Vibe Ace" by Kevin MacLeod; CC BY) from librosa's example data,
 real speech (LibriVox readings, CC BY) as the voice-over, 4 posts per song
 and edit. Right song on top, of 16:
 
-| Post | 34-song catalogue | Same 4 songs among 2,000 (shortlist) |
-|---|---|---|
-| Clean / AAC 64 kbit/s / phone + room | 16 | 16 |
-| Voice-over, music −6 dB | 16 (9 MATCH) | 16 (10 MATCH) |
-| Voice-over, music −12 dB | 16 | 10 |
-| Sped up 1.25× | 16 (15 MATCH) | 16 (15 MATCH) |
-| Slowed 0.85× | 16 | 14 |
-| Tempo 1.2×, pitch kept / pitch −3 st | 16 | 16 |
-| Worst case (1.2× + voice + phone + AAC) | 14 | 2 |
+| Post | 34-song catalogue | Among 2,000 | Among 2,000, second round |
+|---|---|---|---|
+| Clean / AAC 64 kbit/s / phone + room | 16 | 16 | 16 |
+| Voice-over, music −6 dB | 16 (9 MATCH) | 16 (10 MATCH) | 16 (10 MATCH) |
+| Voice-over, music −12 dB | 16 | 10 | **15** |
+| Sped up 1.25× | 16 (15 MATCH) | 16 (15 MATCH) | 16 (15 MATCH) |
+| Slowed 0.85× | 16 | 14 | **16** |
+| Tempo 1.2×, pitch kept / pitch −3 st | 16 | 16 | 16 |
+| Worst case (1.2× + voice + phone + AAC) | 14 | 2 | **11** |
+
+Every miss among 2,000 was a shortlist miss, often just below the cut (rank
+50–150): whenever the right song was among the 50, the precise check put it
+on top. Hence the **second round**: when no song stands out clearly (3× the
+next) among the first 50, the precise check also runs on the shortlist's
+places 51–200 (`RECOGNIZER_SHORTLIST_WIDE`). Clear posts cost the same; hard
+posts take longer. In the synthetic 2,000-song test (where most posts are
+unclear) right-on-top went from 29/22/19/17/1 to 30/25/25/25/3 of 40 (voice
+−6 dB / voice −12 dB / sped up / slowed / worst), still no false MATCH, at
+5.1 s instead of 2.2 s per post (median; p95 7.3 s). Real posts mostly stand
+out in the first round (median 1.8 s).
 
 Real recordings stand out far more than the composed songs (median ratio to
 the next song 27–33 for clean posts, 11–12 when sped up), so the losses in
-the large synthetic catalogues above are mostly the test data. Still weak:
-music far under speech (−12 dB) and edits stacked on top of each other, in
-large catalogues. Real speech and a whale recording were never identified as
+the large synthetic catalogues above are mostly the test data. Still the
+weakest: edits stacked on top of each other (worst case), found but mostly
+only as a suggestion. Real speech and a whale recording were never identified as
 a song; the one false MATCH in this run was a composed song taken for
 another composed song with the same chords (the known synthetic look-alike).
 Only four real songs, among composed distractors: round 2 with a customer's
