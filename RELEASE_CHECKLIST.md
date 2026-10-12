@@ -165,8 +165,9 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   2,000–20,000 songs in the synthetic test (right song on top 20–60 %). Never a
   false automatic match. A denser second pass for posts where no song stands
   out (2026-10-12) cut misses from 65 to 45 of 360 in the 30-song calibration;
-  its effect and time at 2,000–20,000 songs are still to be measured
-  (`research/fingerprint/real_music.py 2000`). Measure with real music first (round 2); if it holds,
+  among 2,000 songs with real recordings it found 16 of 16 voice-overs at
+  −12 dB and 12 of 16 worst-case edits (was 15 and 11), no false match, median
+  2.5 s per post. 20,000 songs not yet measured with it. Measure with real music first (round 2); if it holds,
   build the second, learned stage (an own neural fingerprint, trained on a
   rented GPU with music Bekvor may use for training; licences of any
   pretrained model checked for commercial use).
