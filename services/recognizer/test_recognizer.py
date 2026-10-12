@@ -113,6 +113,26 @@ class MatchTest(unittest.TestCase):
     def test_empty_index(self):
         self.assertEqual(fp.match(fp.Index([]), to_fs(SONGS["t1"][: SR * 10]))["candidates"], [])
 
+    def test_a_clear_post_needs_no_second_pass(self):
+        r = fp.match(self.index, to_fs(SONGS["t3"][SR * 30: SR * 55]))
+        self.assertNotIn("densePass", r)
+
+    def test_the_second_pass_keeps_scores_on_the_first_pass_scale(self):
+        """A post nothing stands out in gets the denser second pass; its scores
+        are scaled back, so noise and voice stay under the app's minimum (60)."""
+        for y in (to_fs(make_voice(5, 25)), np.random.default_rng(3).standard_normal(fp.FS * 25).astype(np.float32) * 0.1):
+            r = fp.match(self.index, y)
+            top = r["candidates"][0] if r["candidates"] else None
+            self.assertTrue(top is None or top["score"] < 60, r)
+
+    def test_the_second_pass_finds_music_under_a_voice(self):
+        import real_test
+
+        clip = to_fs(SONGS["t2"][SR * 20: SR * 45])
+        post = real_test.mix(clip, to_fs(make_voice(7, 27)), -9)
+        top = fp.match(self.index, post)["candidates"][0]
+        self.assertEqual(top["trackId"], "t2")
+
 
 class LargeCatalogueTest(unittest.TestCase):
     """Above RECOGNIZER_SHORTLIST_FROM songs a post is shortlisted first (shortlist.py)."""

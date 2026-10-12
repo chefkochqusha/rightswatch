@@ -163,7 +163,10 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 - [ ] **Edited posts in large catalogues** (the core risk): sped-up, slowed and
   voice-over posts are found well in small catalogues but get lost at
   2,000–20,000 songs in the synthetic test (right song on top 20–60 %). Never a
-  false automatic match. Measure with real music first (round 2); if it holds,
+  false automatic match. A denser second pass for posts where no song stands
+  out (2026-10-12) cut misses from 65 to 45 of 360 in the 30-song calibration;
+  its effect and time at 2,000–20,000 songs are still to be measured
+  (`research/fingerprint/real_music.py 2000`). Measure with real music first (round 2); if it holds,
   build the second, learned stage (an own neural fingerprint, trained on a
   rented GPU with music Bekvor may use for training; licences of any
   pretrained model checked for commercial use).

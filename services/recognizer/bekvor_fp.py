@@ -185,16 +185,18 @@ def melody_agreement(query: np.ndarray, ref: np.ndarray, speed: float, shift: in
     return float(np.mean(distance <= 1))
 
 
-def pair_hashes(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def pair_hashes(pk: np.ndarray, fanout: int = FANOUT, lookahead: int = LOOKAHEAD) -> tuple[np.ndarray, np.ndarray]:
     """(hash, anchor frame) for landmark pairs; peaks may be fractional (after
     a transform) and are rounded first. Same pairs as the prototype: for each
-    anchor, the first FANOUT later peaks within the time and pitch limits."""
+    anchor, the first `fanout` later peaks within the time and pitch limits.
+    Songs always use FANOUT; a post's second, denser pass (`match`) pairs
+    more peaks so the song's pairs are still among them."""
     if len(pk) < 2:
         return np.zeros(0, np.int32), np.zeros(0, np.int32)
     t = np.round(pk[:, 0]).astype(np.int64)
     f = np.round(pk[:, 1]).astype(np.int64)
     n = len(t)
-    K = min(LOOKAHEAD, n - 1)
+    K = min(lookahead, n - 1)
     i = np.arange(n)[None, :]
     k = np.arange(1, K + 1)[:, None]
     j = i + k
@@ -203,7 +205,7 @@ def pair_hashes(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     dt = t[jj] - t[None, :]
     df = f[jj] - f[None, :]
     valid = inside & (dt >= DT_MIN) & (dt <= DT_MAX) & (np.abs(df) <= DF_MAX) & (f[None, :] >= 0) & (f[None, :] < 256)
-    valid &= np.cumsum(valid, axis=0) <= FANOUT
+    valid &= np.cumsum(valid, axis=0) <= fanout
     kk, ii = np.nonzero(valid)
     a = ii
     hashes = (f[a] << 13) | ((df[kk, ii] + 64) << 6) | dt[kk, ii]
@@ -573,7 +575,7 @@ def _transforms(robust: bool = True) -> list[tuple[float, int]]:
 TRANSFORMS = _transforms()
 
 
-def _query_peaks(index: Index, pk: np.ndarray, transforms) -> tuple[np.ndarray, np.ndarray, list]:
+def _query_peaks(index: Index, pk: np.ndarray, transforms, density: int = 1) -> tuple[np.ndarray, np.ndarray, list]:
     """Best score per song over the transforms, and the transform per song."""
     n = len(index.ids)
     best = np.zeros(n)
@@ -582,13 +584,21 @@ def _query_peaks(index: Index, pk: np.ndarray, transforms) -> tuple[np.ndarray, 
         p = pk.copy()
         p[:, 0] *= s  # query frame -> reference frame
         p[:, 1] -= k
-        h, t = pair_hashes(p)
+        h, t = pair_hashes(p, FANOUT * density, LOOKAHEAD * density)
         sc, off = index.score(h, t)
         better = sc > best
         for i in np.nonzero(better)[0]:
             best_tf[i] = (s, k, int(off[i]))
         best = np.maximum(best, sc)
     return best, len(pk), best_tf
+
+
+DENSE_FACTOR = 2  # the second pass: twice the peaks per second, twice the pairs per peak
+# More pairs mean more chance votes too: songs that aren't in the post scored
+# about 1.6x as much in the dense pass (four real recordings, 2026-10-12).
+# Its scores are divided by this, so the app's minimum score keeps meaning
+# the same; ratios between songs don't change.
+DENSE_SCORE_SCALE = 1.6
 
 
 def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
@@ -600,7 +610,13 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     `SHORTLIST_SIZE` songs; when no song stands out clearly there, on the next
     ones up to `SHORTLIST_WIDE` too. Hard posts (music quiet under speech,
     several edits at once) often have the right song just below the first
-    cut, while clear posts are settled in the first round."""
+    cut, while clear posts are settled in the first round.
+
+    When no song is clearly ahead in at least half the post, a second pass
+    reads the post with twice the peaks (`DENSE_FACTOR`): under a voice-over
+    the voice takes many of the strongest peaks, and the song's own peaks are
+    often the next ones down. The pass with the clearer leader is kept. Clear
+    posts never pay for it."""
     duration = len(y) / FS
     bands = _tonal_bands(y) if len(y) >= NFFT else None
     pk = peaks(y, bands=bands) if bands is not None else np.zeros((0, 2))
@@ -608,8 +624,34 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     result = {"algorithm": ALGORITHM, "durationSec": round(duration, 2), "peaks": int(len(pk)), "windows": 0, "candidates": []}
     if len(index.ids) == 0 or len(pk) < 10:
         return result
+    first = _match_peaks(index, pk, query_melody, top, {**result, "candidates": []}, 1)
+    if _decisive(first):
+        return first
+    dense = peaks(y, per_sec=PEAKS_PER_SEC * DENSE_FACTOR, bands=bands)
+    second = _match_peaks(index, dense, query_melody, top, {**result, "peaks": int(len(dense)), "candidates": []}, DENSE_FACTOR)
+    if _lead(second) > _lead(first):
+        for c in second["candidates"]:
+            c["score"] = round(c["score"] / DENSE_SCORE_SCALE, 2)
+            c["nextScore"] = round(c["nextScore"] / DENSE_SCORE_SCALE, 2)
+        second["densePass"] = True
+        return second
+    return first
+
+
+def _lead(result: dict) -> float:
+    """How far the best song is ahead, as the app's decision rule reads it."""
+    c = result["candidates"]
+    return c[0]["score"] / max(c[0]["nextScore"], 20.0) if c else 0.0
+
+
+def _decisive(result: dict) -> bool:
+    c = result["candidates"]
+    return bool(c) and _lead(result) >= 3.0 and c[0]["windowsWon"] * 2 >= result["windows"] > 0
+
+
+def _match_peaks(index: Index, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int) -> dict:
     if not index.large:
-        return _evaluate([_scored(index, pk)], pk, query_melody, top, result)
+        return _evaluate([_scored(index, pk, density)], pk, query_melody, top, result, density)
 
     ranked = index.candidates(pk, SHORTLIST_WIDE)  # shortlist order, then songs that can't be shortlisted
     legacy = [i for i in ranked if i in index.legacy]
@@ -617,15 +659,15 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     first, rest = found[:SHORTLIST_SIZE] + legacy, found[SHORTLIST_SIZE:]
     if not first:
         return result
-    parts = [_scored(index.subset(first), pk)]
+    parts = [_scored(index.subset(first), pk, density)]
     if rest and not _stands_out(parts[0][1]):
-        parts.append(_scored(index.subset(rest), pk))
+        parts.append(_scored(index.subset(rest), pk, density))
     result["shortlisted"] = sum(len(part.ids) for part, _, _ in parts)
-    return _evaluate(parts, pk, query_melody, top, result)
+    return _evaluate(parts, pk, query_melody, top, result, density)
 
 
-def _scored(part: Index, pk: np.ndarray):
-    whole, _, tf = _query_peaks(part, pk, TRANSFORMS)
+def _scored(part: Index, pk: np.ndarray, density: int = 1):
+    whole, _, tf = _query_peaks(part, pk, TRANSFORMS, density)
     return part, whole, tf
 
 
@@ -637,7 +679,7 @@ def _stands_out(whole: np.ndarray, ratio: float = 3.0, floor: float = 20.0) -> b
     return first / max(second, floor) >= ratio
 
 
-def _evaluate(parts, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict) -> dict:
+def _evaluate(parts, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int = 1) -> dict:
     """The candidates from one or more scored parts of the catalogue (songs
     are scored independently, with the catalogue's weights, so parts can be
     put side by side)."""
@@ -660,7 +702,7 @@ def _evaluate(parts, pk: np.ndarray, query_melody: np.ndarray, top: int, result:
         if len(sel) < 10:
             continue
         sel[:, 0] -= a
-        sc = np.concatenate([_query_peaks(part, sel, candidate_tfs)[0] for part, _, _ in parts])
+        sc = np.concatenate([_query_peaks(part, sel, candidate_tfs, density)[0] for part, _, _ in parts])
         if sc.max() > 0:
             wins[int(np.argmax(sc))] += 1
     result["windows"] = len(starts)

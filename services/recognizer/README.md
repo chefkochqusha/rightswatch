@@ -214,6 +214,41 @@ Memory: about 100 KB per song. A server for the Agency plan's 20,000 songs
 needs 8 GB RAM for one such workspace (16 GB to be comfortable);
 `RECOGNIZER_CACHED_WORKSPACES` limits how many are kept.
 
+## Second, denser pass for hard posts (2026-10-12)
+
+Under a voice-over the voice takes many of the strongest peaks, and the
+song's own peaks are often the next ones down. So when no song is clearly
+ahead (3× the next) in at least half of the post, `match` reads the post a
+second time with twice the peaks per second and twice the pairs per peak
+(`DENSE_FACTOR`), and keeps the pass with the clearer leader (the result
+then says `densePass`). More pairs also mean more chance votes, so the dense
+pass's scores are divided by `DENSE_SCORE_SCALE` (1.6, what songs that aren't
+in the post gained) and the app's minimum score keeps its meaning. Clear
+posts never pay for the second pass.
+
+Four real recordings (`real_test.py --edits --voice`, 84 cases): posts
+missed 4 → 2 of 42, found or suggested 38 → 40, still no false match, no
+wrong song and no false suggestion.
+
+Synthetic calibration (`calibrate.py 30 15`, 360 posts of catalogue songs,
+75 without):
+
+| Post | Missed before → after |
+|---|---|
+| Voice-over, music −6 dB | 5 → 1 |
+| Voice-over, music −12 dB | 6 → 3 |
+| Worst case: 1.2× + voice + phone + AAC | 27 → 22 |
+| Slowed 0.85× | 7 → 5 |
+| Song only in the second half | 6 → 4 |
+| Pitch −3 st / phone + room | 2 → 0 / 1 → 0 |
+| **All 360** | **65 → 45** |
+
+Posts without a catalogue song: still no MATCH; suggestions 12 → 13 (one
+more "other song + voice" for a person to dismiss). Automatic matches rose
+on their own too (pitch −3 st 9 → 11, phone + room 19 → 21). Time per post:
+median 1.0 → 1.3 s, slowest 1.6 → 3.6 s (only hard posts take the second
+pass).
+
 ## Your own music: `real_test.py` (round 2)
 
 The test to run before relying on recognition: the songs you have the rights
