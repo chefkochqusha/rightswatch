@@ -214,6 +214,38 @@ Memory: about 100 KB per song. A server for the Agency plan's 20,000 songs
 needs 8 GB RAM for one such workspace (16 GB to be comfortable);
 `RECOGNIZER_CACHED_WORKSPACES` limits how many are kept.
 
+## Your own music: `real_test.py` (round 2)
+
+The test to run before relying on recognition: the songs you have the rights
+to, and real posts that use some of them. Runs on any computer with Python,
+the packages in `requirements.txt` and ffmpeg; nothing leaves the computer.
+
+    python3 services/recognizer/real_test.py SONGS/ POSTS/ --edits --voice speech.mp3
+
+- `SONGS/`: one file per song; the file name (without extension) is its name.
+- `POSTS/`: the posts, named `<song name>__anything.mp4`, or `none__x.mp4`
+  for a post that uses no catalogue song (these matter most: they show false
+  matches). Or list them in a CSV (`--labels labels.csv`, columns `post,song`).
+- `--edits`: also cuts TikTok-style posts from every song (30 s clip, 20 s
+  from the middle, AAC, noise, sped up, slowed, phone, and with `--voice` a
+  voice-over at -6 and -12 dB and a combined edit) and checks each twice:
+  with the song in the catalogue (should be found) and without it (nothing
+  should be found).
+
+It prints one line per post with the app's decision (`decide.py`, the same
+rule as `src/modules/recognition/decide.ts`; both run the cases in
+`decide_cases.json`), a summary, and threshold suggestions for the app's
+environment. The exit code is 1 when any post got a FALSE MATCH or a WRONG
+SONG.
+
+First run on the four openly licensed recordings from "Real recordings"
+(2026-10-12; LibriVox speech as the voice): 84 cases, 0 false matches, 0
+wrong songs. Of the 42 posts that use a catalogue song, 34 were identified
+on their own, 4 suggested for a person to confirm, 4 missed (one song,
+Vibe Ace, under a voice-over; the combined 1.2× + voice + AAC edit of
+another). The misses scored 39–49, the best wrong song 50: the minimum
+score of 60 is what keeps wrong songs out, so lowering it isn't safe.
+
 ## Run and test
 
 ```bash

@@ -1,0 +1,16 @@
+{
+  "note": "Shared cases for the decision rule: src/modules/recognition/decide.ts and services/recognizer/decide.py must agree on every one.",
+  "cases": [
+    { "name": "no candidates", "result": { "windows": 3, "candidates": [] }, "outcome": "NO_MATCH" },
+    { "name": "score under the minimum", "result": { "windows": 3, "candidates": [{ "trackId": "a", "score": 59, "nextScore": 0, "windowsWon": 3, "melodyAgreement": 0.9 }] }, "outcome": "NO_MATCH" },
+    { "name": "clear match with melody", "result": { "windows": 4, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 2, "melodyAgreement": 0.7 }] }, "outcome": "MATCH" },
+    { "name": "next score under the floor counts as the floor", "result": { "windows": 2, "candidates": [{ "trackId": "a", "score": 60, "nextScore": 5, "windowsWon": 1, "melodyAgreement": 0.8 }] }, "outcome": "MATCH" },
+    { "name": "melody too low", "result": { "windows": 4, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 4, "melodyAgreement": 0.69 }] }, "outcome": "CANDIDATE" },
+    { "name": "melody unknown", "result": { "windows": 4, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 4, "melodyAgreement": null }] }, "outcome": "CANDIDATE" },
+    { "name": "too few windows", "result": { "windows": 5, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 2, "melodyAgreement": 0.9 }] }, "outcome": "CANDIDATE" },
+    { "name": "no windows at all", "result": { "windows": 0, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 0, "melodyAgreement": 0.9 }] }, "outcome": "CANDIDATE" },
+    { "name": "ahead but not by much", "result": { "windows": 3, "candidates": [{ "trackId": "a", "score": 200, "nextScore": 100, "windowsWon": 3, "melodyAgreement": 0.9 }] }, "outcome": "CANDIDATE" },
+    { "name": "nothing stands out", "result": { "windows": 3, "candidates": [{ "trackId": "a", "score": 150, "nextScore": 100, "windowsWon": 2, "melodyAgreement": 0.9 }] }, "outcome": "NO_MATCH" },
+    { "name": "stricter match ratio from the environment", "thresholds": { "matchRatio": 8 }, "result": { "windows": 4, "candidates": [{ "trackId": "a", "score": 300, "nextScore": 50, "windowsWon": 4, "melodyAgreement": 0.9 }] }, "outcome": "CANDIDATE" }
+  ]
+}

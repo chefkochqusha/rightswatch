@@ -135,9 +135,12 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   worker, uploads, matching and the job queue. Expect small fixes on the first
   `docker compose up`.
 - [ ] **Round 2 with real music**: 20–50 real songs and 5–10 real TikTok posts
-  that use some of them; re-run `services/recognizer/calibrate.py` on them and
-  set `RECOGNITION_MATCH_RATIO` / `RECOGNITION_CANDIDATE_RATIO` /
-  `RECOGNITION_MIN_SCORE`. Only then decide on `RECOGNITION_AUTO_IDENTIFY`.
+  that use some of them, plus a few posts with other music (`none__*.mp4`);
+  run `services/recognizer/real_test.py SONGS/ POSTS/ --edits --voice speech.mp3`
+  (built 2026-10-12, see its README section) and set
+  `RECOGNITION_MATCH_RATIO` / `RECOGNITION_CANDIDATE_RATIO` /
+  `RECOGNITION_MIN_SCORE` from what it prints. Only then decide on
+  `RECOGNITION_AUTO_IDENTIFY`.
 - [ ] **Patent check** (patent attorney): landmark-pair audio matching
   (US6990453, US7627477 and European equivalents) before paying customers rely
   on own recognition.

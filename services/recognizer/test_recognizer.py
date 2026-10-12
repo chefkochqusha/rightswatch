@@ -284,3 +284,60 @@ class ServerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DecideTest(unittest.TestCase):
+    """The Python copy of the app's decision rule agrees with the app on the
+    shared cases (`decide_cases.json`, also run by decide-shared.test.ts)."""
+
+    def test_shared_cases(self):
+        import decide
+
+        with open(os.path.join(HERE, "decide_cases.json"), encoding="utf-8") as f:
+            cases = json.load(f)["cases"]
+        for case in cases:
+            with self.subTest(case["name"]):
+                self.assertEqual(decide.decide(case["result"], case.get("thresholds"))["outcome"], case["outcome"])
+
+
+class RealTestScriptTest(unittest.TestCase):
+    """`real_test.py` end to end on composed songs written as files."""
+
+    def test_folders_labels_edits_and_exit_code(self):
+        import real_test
+
+        with tempfile.TemporaryDirectory() as d:
+            songs, posts = os.path.join(d, "songs"), os.path.join(d, "posts")
+            os.makedirs(songs)
+            os.makedirs(posts)
+            for name, seed in (("alpha", 1), ("beta", 2), ("gamma", 3)):
+                with open(os.path.join(songs, f"{name}.m4a"), "wb") as f:
+                    f.write(wav_bytes(SONGS[f"t{seed}"], SR))
+            clip = SONGS["t2"][10 * SR : 35 * SR]
+            with open(os.path.join(posts, "beta__clip.m4a"), "wb") as f:
+                f.write(wav_bytes(clip, SR))
+            with open(os.path.join(posts, "none__other.m4a"), "wb") as f:
+                f.write(wav_bytes(SONGS["t4"][: 25 * SR], SR))
+            with open(os.path.join(posts, "unlabelled.m4a"), "wb") as f:
+                f.write(wav_bytes(SONGS["t1"][: 25 * SR], SR))
+            labels = os.path.join(d, "labels.csv")
+            with open(labels, "w", encoding="utf-8") as f:
+                f.write("post,song\nunlabelled.m4a,alpha\n")
+            out = os.path.join(d, "out.json")
+            code = real_test.main([songs, posts, "--labels", labels, "--edits", "--json", out])
+            with open(out, encoding="utf-8") as f:
+                cases = json.load(f)["cases"]
+        by_post = {c["post"]: c for c in cases if c["kind"] == "post"}
+        self.assertEqual(by_post["beta__clip.m4a"]["found"], "beta")
+        self.assertEqual(by_post["unlabelled.m4a"]["found"], "alpha")
+        self.assertNotEqual(by_post["none__other.m4a"]["outcome"], "MATCH")
+        # every song's edits are run with and without the song in the catalogue
+        self.assertEqual(sum(c["kind"] == "edit" for c in cases), sum(c["kind"] == "edit, song not in catalogue" for c in cases))
+        self.assertGreaterEqual(sum(c["kind"] == "edit" for c in cases), 3 * 7)
+        self.assertEqual(code, 1 if any(c["verdict"] in ("FALSE MATCH", "WRONG SONG") for c in cases) else 0)
+
+    def test_refuses_a_label_for_a_song_that_isnt_there(self):
+        import real_test
+
+        with self.assertRaises(SystemExit):
+            real_test.labels_from(["/x/missing__a.mp4"], None, {"alpha"})
