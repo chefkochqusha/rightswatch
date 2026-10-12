@@ -4,7 +4,7 @@ import { recordAudit } from "@/app/_lib/audit-event";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 import { requireWorkspaceManager } from "@/app/_lib/authorize";
 import { revalidatePath } from "next/cache";
-import { changeMemberRole, inviteTeammate, removeMember, transferOwnership } from "@/modules/auth";
+import { changeMemberRole, inviteTeammate, removeMember, revokeInvite, transferOwnership } from "@/modules/auth";
 import type { ManageMemberError, RateLimiter, Role } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { createRateLimiter } from "@/app/_lib/rate-limit-store";
@@ -41,8 +41,9 @@ export async function inviteTeammateAction(
       workspaceName: session.workspace.name,
       email,
       role,
+      invitedById: session.user.id,
     },
-    { secret: getSessionSecret() },
+    { secret: getSessionSecret(), inviteRepository: getAuthStore().invites },
   );
 
   if (!result.ok) {
@@ -74,7 +75,20 @@ export async function inviteTeammateAction(
       log("warn", "invite.email_failed", { error: error instanceof Error ? error.message : String(error) });
     }
   }
+  revalidatePath("/workspace/team");
   return { issuedToken: result.token, invitedEmail, emailed };
+}
+
+export async function revokeInviteAction(_previous: MemberActionState, formData: FormData): Promise<MemberActionState> {
+  const session = await requireWorkspaceManager();
+  const inviteId = String(formData.get("inviteId") ?? "");
+  const invites = getAuthStore().invites;
+  const invite = await invites.findById(inviteId);
+  const revoked = await revokeInvite({ workspaceId: session.workspace.id, inviteId }, { inviteRepository: invites });
+  if (!invite || !revoked) return { error: "That invite was already used or taken back." };
+  await recordAudit({ workspaceId: session.workspace.id, actorId: session.user.id, action: "team.invite_revoked", targetType: "invite", targetId: invite.email, metadata: { role: invite.role } });
+  revalidatePath("/workspace/team");
+  return { done: "Invite taken back. The link no longer works." };
 }
 
 // Managing members after they joined: roles, removal, ownership (modules/auth/manage-members.ts).

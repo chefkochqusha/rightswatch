@@ -597,8 +597,14 @@ listed under "Known gaps"):
   Signup still says "an account with that email already exists"; hiding it
   needs email verification (see "Known gaps").
 - **Invites:** the role is re-checked when the link is read, not only when
-  it's minted, so a token can never carry OWNER. Links are stateless, so
-  they can't be revoked before their 7-day expiry (no `Invite` table).
+  it's minted, so a token can never carry OWNER. **New 2026-10-12:** each
+  link carries the id of an `Invite` row, and `acceptInvite` refuses it
+  unless that row is still open (same workspace and email, not accepted,
+  not taken back, not expired). Owners and admins see open invites on the
+  Team page and can take them back; inviting the same email again takes
+  back the earlier invite. Rows are deleted 30 days after they settle, when
+  the next invite is sent (no scheduled job, so it works the same on Vercel
+  and our own server).
 - **Atomic account creation:** a user, their membership and (for signup)
   their workspace are one nested Prisma write (`AccountRepository`). Written
   separately, a failure between steps left a user with no membership who
@@ -1177,8 +1183,6 @@ reads as an oversight:
 - Multi-workspace membership — Phase 5 scope is one workspace per user;
   turning `current-user.ts` into a workspace picker is a bigger, riskier
   change than anything else on this list
-- Revoking an invite link before it expires — needs an `Invite` table the
-  schema doesn't have; links are stateless and expire after 7 days
 - Managing campaigns (§2, and §8's "group creators" and "assign
   campaign") — campaigns are real workspace data now, and a rights record
   can be scoped to them, but only the demo data loader creates them and

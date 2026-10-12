@@ -1,13 +1,15 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { acceptInvite } from "./accept-invite";
-import { createInviteToken } from "./invite-token";
+import { createInviteToken, INVITE_TOKEN_TTL_MS } from "./invite-token";
+import { inviteTeammate, revokeInvite } from "./invite-teammate";
 import { verifyPassword } from "./password";
 import {
   InMemoryUserRepository,
   InMemoryWorkspaceRepository,
   InMemoryMembershipRepository,
   InMemoryAccountRepository,
+  InMemoryInviteRepository,
 } from "./in-memory-repositories";
 
 const SECRET = "test-secret-do-not-use-in-real-env";
@@ -21,6 +23,7 @@ async function makeDeps() {
     deps: {
       userRepository,
       accountRepository: new InMemoryAccountRepository(userRepository, workspaceRepository, membershipRepository),
+      inviteRepository: new InMemoryInviteRepository(),
       secret: SECRET,
     },
     membershipRepository,
@@ -28,16 +31,19 @@ async function makeDeps() {
   };
 }
 
-function makeToken(
+type Deps = Awaited<ReturnType<typeof makeDeps>>["deps"];
+
+/** Stores an invite row the way `inviteTeammate` does and signs a link for it. */
+async function makeToken(
+  deps: Deps,
   workspaceId: string,
-  overrides: Partial<Parameters<typeof createInviteToken>[0]> = {},
-  now?: number,
+  overrides: Partial<{ email: string; role: Parameters<typeof createInviteToken>[0]["role"] }> = {},
+  now: number = Date.now(),
 ) {
-  return createInviteToken(
-    { workspaceId, workspaceName: "Acme Records", email: "newhire@acme.com", role: "ANALYST", ...overrides },
-    SECRET,
-    now,
-  );
+  const email = overrides.email ?? "newhire@acme.com";
+  const role = overrides.role ?? "ANALYST";
+  const invite = await deps.inviteRepository.create({ workspaceId, email, role, invitedById: null, expiresAt: new Date(now + INVITE_TOKEN_TTL_MS) });
+  return createInviteToken({ inviteId: invite.id, workspaceId, workspaceName: "Acme Records", email, role }, SECRET, now);
 }
 
 describe("acceptInvite", () => {
@@ -45,7 +51,7 @@ describe("acceptInvite", () => {
     const { deps, membershipRepository, workspaceId } = await makeDeps();
 
     const result = await acceptInvite(
-      { token: makeToken(workspaceId), password: "correct horse", name: "New Hire" },
+      { token: await makeToken(deps, workspaceId), password: "correct horse", name: "New Hire" },
       deps,
     );
 
@@ -70,7 +76,7 @@ describe("acceptInvite", () => {
   test("defaults name to null when none is given", async () => {
     const { deps, workspaceId } = await makeDeps();
     const result = await acceptInvite(
-      { token: makeToken(workspaceId, { email: "noname@acme.com" }), password: "correct horse", name: null },
+      { token: await makeToken(deps, workspaceId, { email: "noname@acme.com" }), password: "correct horse", name: null },
       deps,
     );
     assert.equal(result.ok, true);
@@ -86,7 +92,7 @@ describe("acceptInvite", () => {
   test("rejects a token signed with a different secret", async () => {
     const { deps, workspaceId } = await makeDeps();
     const token = createInviteToken(
-      { workspaceId, workspaceName: "Acme", email: "a@b.com", role: "VIEWER" },
+      { inviteId: "x", workspaceId, workspaceName: "Acme", email: "a@b.com", role: "VIEWER" },
       "a-different-secret",
     );
     const result = await acceptInvite({ token, password: "correct horse", name: null }, deps);
@@ -95,9 +101,8 @@ describe("acceptInvite", () => {
 
   test("rejects an expired token", async () => {
     const { deps, workspaceId } = await makeDeps();
-    // acceptInvite has no `now` param of its own, so expiry is simulated by
-    // minting a token whose 7-day window closed a day ago.
-    const expired = makeToken(workspaceId, {}, Date.now() - 8 * 24 * 60 * 60 * 1000);
+    // Expiry simulated by minting a token whose 7-day window closed a day ago.
+    const expired = await makeToken(deps, workspaceId, {}, Date.now() - 8 * 24 * 60 * 60 * 1000);
     const result = await acceptInvite({ token: expired, password: "correct horse", name: null }, deps);
     assert.deepEqual(result, { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
   });
@@ -105,7 +110,7 @@ describe("acceptInvite", () => {
   test("rejects a genuinely signed token whose role is never invitable (OWNER), creating nothing", async () => {
     const { deps, workspaceId } = await makeDeps();
     const result = await acceptInvite(
-      { token: makeToken(workspaceId, { role: "OWNER" }), password: "correct horse", name: null },
+      { token: await makeToken(deps, workspaceId, { role: "OWNER" }), password: "correct horse", name: null },
       deps,
     );
     assert.deepEqual(result, { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
@@ -114,34 +119,65 @@ describe("acceptInvite", () => {
 
   test("rejects a password shorter than 8 characters", async () => {
     const { deps, workspaceId } = await makeDeps();
-    const result = await acceptInvite({ token: makeToken(workspaceId), password: "short", name: null }, deps);
+    const result = await acceptInvite({ token: await makeToken(deps, workspaceId), password: "short", name: null }, deps);
     assert.deepEqual(result, { ok: false, error: "WEAK_PASSWORD" });
   });
 
-  test("rejects re-accepting an invite whose email already has an account", async () => {
+  test("an invite works once: accepting it again is refused", async () => {
     const { deps, workspaceId } = await makeDeps();
-    const token = makeToken(workspaceId);
+    const token = await makeToken(deps, workspaceId);
 
     const first = await acceptInvite({ token, password: "correct horse", name: null }, deps);
     assert.equal(first.ok, true);
 
     const second = await acceptInvite({ token, password: "another password", name: null }, deps);
-    assert.deepEqual(second, { ok: false, error: "EMAIL_ALREADY_REGISTERED" });
+    assert.deepEqual(second, { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
   });
 
   test("rejects an invite whose email was registered independently before acceptance", async () => {
     const { deps, workspaceId } = await makeDeps();
     await deps.userRepository.create({ email: "newhire@acme.com", passwordHash: "hash", name: null });
 
-    const result = await acceptInvite({ token: makeToken(workspaceId), password: "correct horse", name: null }, deps);
+    const result = await acceptInvite({ token: await makeToken(deps, workspaceId), password: "correct horse", name: null }, deps);
     assert.deepEqual(result, { ok: false, error: "EMAIL_ALREADY_REGISTERED" });
   });
 
   test("an invite to a workspace that no longer exists fails without leaving a user behind", async () => {
     const { deps } = await makeDeps();
-    await assert.rejects(() =>
-      acceptInvite({ token: makeToken("workspace-gone"), password: "correct horse", name: null }, deps),
-    );
+    const token = await makeToken(deps, "workspace-gone");
+    await assert.rejects(() => acceptInvite({ token, password: "correct horse", name: null }, deps));
     assert.equal(await deps.userRepository.findByEmail("newhire@acme.com"), null);
+  });
+
+  test("a taken-back invite no longer works, and creates nothing", async () => {
+    const { deps, workspaceId } = await makeDeps();
+    const issued = await inviteTeammate(
+      { workspaceId, workspaceName: "Acme Records", email: "newhire@acme.com", role: "ANALYST", invitedById: null },
+      { secret: SECRET, inviteRepository: deps.inviteRepository },
+    );
+    assert.ok(issued.ok);
+    if (!issued.ok) return;
+    await revokeInvite({ workspaceId, inviteId: issued.inviteId }, { inviteRepository: deps.inviteRepository });
+    const result = await acceptInvite({ token: issued.token, password: "correct horse", name: null }, deps);
+    assert.deepEqual(result, { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
+    assert.equal(await deps.userRepository.findByEmail("newhire@acme.com"), null);
+  });
+
+  test("a signed link whose invite row is missing or belongs elsewhere is refused", async () => {
+    const { deps, workspaceId } = await makeDeps();
+    const unknown = createInviteToken({ inviteId: "no-such-invite", workspaceId, workspaceName: "Acme", email: "newhire@acme.com", role: "ANALYST" }, SECRET);
+    assert.deepEqual(await acceptInvite({ token: unknown, password: "correct horse", name: null }, deps), { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
+
+    const other = await deps.inviteRepository.create({ workspaceId: "other-workspace", email: "newhire@acme.com", role: "ANALYST", invitedById: null, expiresAt: new Date(Date.now() + INVITE_TOKEN_TTL_MS) });
+    const mixed = createInviteToken({ inviteId: other.id, workspaceId, workspaceName: "Acme", email: "newhire@acme.com", role: "ANALYST" }, SECRET);
+    assert.deepEqual(await acceptInvite({ token: mixed, password: "correct horse", name: null }, deps), { ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
+  });
+
+  test("accepting marks the invite as used, so it leaves the open list", async () => {
+    const { deps, workspaceId } = await makeDeps();
+    const token = await makeToken(deps, workspaceId);
+    assert.equal((await deps.inviteRepository.findPending(workspaceId, new Date())).length, 1);
+    assert.equal((await acceptInvite({ token, password: "correct horse", name: null }, deps)).ok, true);
+    assert.equal((await deps.inviteRepository.findPending(workspaceId, new Date())).length, 0);
   });
 });

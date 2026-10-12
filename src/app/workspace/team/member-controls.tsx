@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { buttonStyles } from "@/components/ui/button";
-import { changeMemberRoleAction, removeMemberAction, transferOwnershipAction, type MemberActionState } from "./actions";
+import { changeMemberRoleAction, removeMemberAction, revokeInviteAction, transferOwnershipAction, type MemberActionState } from "./actions";
 
 const SELECT = "block rounded-md border border-line bg-bg px-2.5 py-1.5 text-[0.8125rem] text-tx";
 const ROLES = [
@@ -98,6 +98,20 @@ export function TransferOwnership({ admins }: { admins: { userId: string; label:
         {pending ? "Handing over…" : "Make owner"}
       </button>
       </div>
+      <Message state={state} />
+    </form>
+  );
+}
+
+/** Takes back a pending invite: its link stops working at once. One click, since sending a new invite undoes it. */
+export function RevokeInvite({ inviteId, label }: { inviteId: string; label: string }) {
+  const [state, action, pending] = useActionState(revokeInviteAction, {});
+  return (
+    <form action={action}>
+      <input type="hidden" name="inviteId" value={inviteId} />
+      <button type="submit" disabled={pending || !!state.done} className={buttonStyles("secondary", "sm")}>
+        {pending ? "Taking back…" : "Take back"}<span className="sr-only"> the invite for {label}</span>
+      </button>
       <Message state={state} />
     </form>
   );

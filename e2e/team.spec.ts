@@ -2,8 +2,9 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { fillCompanyDetails } from "./helpers";
 
 /**
- * Managing the team: invite two people, change a role, remove someone (their
- * login stops working), and hand the workspace to an admin.
+ * Managing the team: invite two people, take back a third invite (its link
+ * stops working), change a role, remove someone (their login stops
+ * working), and hand the workspace to an admin.
  */
 async function invite(page: Page, email: string, role: "ADMIN" | "ANALYST" | "VIEWER"): Promise<string> {
   await page.goto("/workspace/team");
@@ -41,6 +42,19 @@ test("roles, removal and handing over the workspace", async ({ page, browser }) 
   await expect(page.getByRole("button", { name: "Current plan" }).first()).toBeVisible();
 
   const adaPage = await accept(browser, await invite(page, `e2e-ada-${stamp}@example.com`, "ADMIN"), "Ada Admin");
+
+  // An invite taken back before it's used: its link stops working.
+  const cleoEmail = `e2e-cleo-${stamp}@example.com`;
+  const cleoLink = await invite(page, cleoEmail, "VIEWER");
+  await page.goto("/workspace/team");
+  await expect(page.getByRole("heading", { name: /Open invites/ })).toBeVisible();
+  await page.getByRole("button", { name: `Take back the invite for ${cleoEmail}` }).click();
+  await expect(page.getByText("Invite taken back. The link no longer works.")).toBeVisible();
+  const cleoPage = await (await browser.newContext()).newPage();
+  await cleoPage.goto(cleoLink);
+  await expect(cleoPage.getByText("Invite link invalid or expired")).toBeVisible();
+  await cleoPage.context().close();
+
   const benPage = await accept(browser, await invite(page, `e2e-ben-${stamp}@example.com`, "ANALYST"), "Ben Analyst");
 
   // Ben becomes a viewer.
@@ -68,4 +82,5 @@ test("roles, removal and handing over the workspace", async ({ page, browser }) 
   await adaPage.goto("/workspace/audit");
   await expect(adaPage.getByText("Handed the workspace to a new owner").first()).toBeVisible();
   await expect(adaPage.getByText("Removed a member").first()).toBeVisible();
+  await expect(adaPage.getByText(`Took back the invite for ${cleoEmail}`)).toBeVisible();
 });

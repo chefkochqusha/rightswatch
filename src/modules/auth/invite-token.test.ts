@@ -5,6 +5,7 @@ import { createSessionToken } from "./session";
 
 const SECRET = "test-secret-do-not-use-in-real-env";
 const BASE_PAYLOAD = {
+  inviteId: "invite-1",
   workspaceId: "workspace-1",
   workspaceName: "Acme Records",
   email: "newhire@acme.com",

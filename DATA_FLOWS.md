@@ -11,6 +11,7 @@ This is an engineering inventory, not legal advice.
 |---|---|---|---|
 | Email, name, password hash (scrypt), role | Team members (customers' staff) | Postgres (Neon) | Login, roles |
 | Session rows (hashed id, expiry) | Team members | Postgres | Logout, revocation. Valid 7 days |
+| Invites: invited email, role, who invited, dates (sent, expires, accepted, taken back) | People invited by a member | Postgres (`invites`) | The invite link works only while its row is open; owners and admins see open invites and can take them back. Links expire after 7 days; rows are deleted 30 days after they were used, taken back or expired |
 | Workspace name, plan, subscription status | The customer | Postgres, Stripe | Accounts, billing |
 | Company name, billing address, VAT ID and its VIES result | The customer (a business; a sole trader's name is personal data) | Postgres (`billing_profiles`), Stripe customer | Invoices (§ 14 UStG), the B2B check; Stripe asks VIES about EU VAT IDs |
 | Creators: TikTok username, display name, profile link, country, follower count | Creators (third parties, public data) | Postgres | The watchlist |

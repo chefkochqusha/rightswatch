@@ -44,6 +44,7 @@ export async function acceptInviteAction(
     {
       userRepository: store.users,
       accountRepository: store.accounts,
+      inviteRepository: store.invites,
       secret: getSessionSecret(),
     },
   );

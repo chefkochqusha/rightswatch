@@ -73,7 +73,11 @@ bis diese überschrieben werden. Notizen und Protokolleinträge bleiben beim
 Arbeitsbereich, ohne Ihren Namen.
 
 Wenn Sie zu einem Arbeitsbereich eingeladen werden, erhalten wir Ihre
-E-Mail-Adresse von der Person, die Sie einlädt.
+E-Mail-Adresse von der Person, die Sie einlädt. Wir speichern sie mit der
+Rolle, dem Einladenden und den Zeitpunkten (gesendet, gültig bis, angenommen
+oder zurückgenommen), damit der Einladungslink nur einmal und nur bis zur
+Rücknahme funktioniert. Ein Link gilt 7 Tage; der Eintrag wird 30 Tage nach
+Annahme, Rücknahme oder Ablauf gelöscht.
 
 ## 6. Service-E-Mails
 

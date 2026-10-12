@@ -66,7 +66,7 @@ describe("session tokens", () => {
 
   test("an invite link is never accepted as a session, even one whose payload is shaped like a session", () => {
     const invite = createInviteToken(
-      { workspaceId: "w1", workspaceName: "Acme", email: "a@b.com", role: "VIEWER" },
+      { inviteId: "i1", workspaceId: "w1", workspaceName: "Acme", email: "a@b.com", role: "VIEWER" },
       SECRET,
     );
     assert.equal(verifySessionToken(invite, SECRET), null);

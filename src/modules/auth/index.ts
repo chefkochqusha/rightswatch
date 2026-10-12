@@ -37,6 +37,8 @@ export type {
   MembershipRepository,
   AccountRepository,
   SessionRepository,
+  InviteRecord,
+  InviteRepository,
 } from "./types";
 
 export { slugify, generateUniqueSlug } from "./slug";
@@ -47,6 +49,7 @@ export {
   InMemoryMembershipRepository,
   InMemoryAccountRepository,
   InMemorySessionRepository,
+  InMemoryInviteRepository,
 } from "./in-memory-repositories";
 
 // The `Prisma*Repository` classes are deliberately NOT re-exported here:
@@ -71,14 +74,14 @@ export type { LogInInput, LogInDependencies, LogInResult } from "./log-in";
 export { createInviteToken, verifyInviteToken, INVITABLE_ROLES } from "./invite-token";
 export type { InviteTokenPayload } from "./invite-token";
 
-export { inviteTeammate } from "./invite-teammate";
+export { inviteTeammate, revokeInvite, SETTLED_INVITE_RETENTION_MS } from "./invite-teammate";
 export type {
   InviteTeammateInput,
   InviteTeammateDependencies,
   InviteTeammateResult,
 } from "./invite-teammate";
 
-export { acceptInvite } from "./accept-invite";
+export { acceptInvite, isPending as isInvitePending } from "./accept-invite";
 export type {
   AcceptInviteInput,
   AcceptInviteDependencies,

@@ -8,16 +8,14 @@ import type { Role } from "./types";
  * (`derive-key.ts`): an invite link can never verify as a session cookie or
  * the other way round.
  *
- * Stateless means there is no server-side invite record, with two honest
- * consequences: an invite can't be revoked once issued (it's valid until it
- * expires), and there's no "pending invites" list to show — only membership,
- * once one is accepted. An `Invite` table would fix both; it isn't in the
- * schema, and the link only ever reaches the person the inviter chose to
- * share it with.
+ * The token carries the id of an `Invite` row (`inviteId`). The signature
+ * proves the link wasn't tampered with; the row decides whether it still
+ * counts: `acceptInvite` refuses a link whose row was revoked, accepted or
+ * deleted, so an admin can take an invite back before it's used.
  *
  * 7-day expiry is a reasonable default (not a figure from the Brief).
  */
-const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * OWNER is never invitable — a workspace has exactly one, set at signup.
@@ -29,6 +27,8 @@ const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const INVITABLE_ROLES: readonly Role[] = ["ADMIN", "ANALYST", "VIEWER"];
 
 export interface InviteTokenPayload {
+  /** The `Invite` row this link belongs to. */
+  inviteId: string;
   workspaceId: string;
   workspaceName: string;
   email: string;
@@ -87,6 +87,7 @@ function isInviteTokenPayload(value: unknown): value is InviteTokenPayload {
   if (typeof value !== "object" || value === null) return false;
   const v = value as InviteTokenPayload;
   return (
+    typeof v.inviteId === "string" &&
     typeof v.workspaceId === "string" &&
     typeof v.workspaceName === "string" &&
     typeof v.email === "string" &&

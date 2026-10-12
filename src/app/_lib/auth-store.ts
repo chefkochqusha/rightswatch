@@ -1,6 +1,7 @@
 import { createRateLimiter } from "./rate-limit-store";
 import type {
   AccountRepository,
+  InviteRepository,
   MembershipRepository,
   RateLimiter,
   SessionRepository,
@@ -9,6 +10,7 @@ import type {
 } from "@/modules/auth";
 import {
   PrismaAccountRepository,
+  PrismaInviteRepository,
   PrismaMembershipRepository,
   PrismaSessionRepository,
   PrismaUserRepository,
@@ -30,6 +32,8 @@ interface AuthStore {
   memberships: MembershipRepository;
   accounts: AccountRepository;
   sessions: SessionRepository;
+  /** Teammate invites: a link only works while its row is pending. */
+  invites: InviteRepository;
   /** Login failures per email + client IP: 5 per 15 minutes. */
   loginRateLimiter: RateLimiter;
   /** Login failures per client IP, across all emails: 30 per 15 minutes —
@@ -49,6 +53,7 @@ export function getAuthStore(): AuthStore {
       memberships: new PrismaMembershipRepository(),
       accounts: new PrismaAccountRepository(),
       sessions: new PrismaSessionRepository(),
+      invites: new PrismaInviteRepository(),
       loginRateLimiter: createRateLimiter("login"),
       loginIpRateLimiter: createRateLimiter("login-ip", { maxAttempts: 30 }),
       resetRateLimiter: createRateLimiter("password-reset", { maxAttempts: 3 }),

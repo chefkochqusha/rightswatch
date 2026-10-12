@@ -4,7 +4,7 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { ROLE_LABELS } from "@/components/team/labels";
 import type { MembershipRecord, UserRecord } from "@/modules/auth";
 import { InviteForm } from "./invite-form";
-import { RemoveMember, RoleControl, TransferOwnership } from "./member-controls";
+import { RemoveMember, RevokeInvite, RoleControl, TransferOwnership } from "./member-controls";
 import { getPlanLimits } from "@/app/_lib/plan-limits";
 
 export const metadata = {
@@ -47,6 +47,8 @@ export default async function TeamPage() {
     .filter(({ membership, user }) => membership.role === "ADMIN" && user.id !== session.user.id)
     .map(({ user }) => ({ userId: user.id, label: user.name ? `${user.name} (${user.email})` : user.email }));
   const limits = await getPlanLimits(session.workspace.id);
+  const pendingInvites = canInvite ? await store.invites.findPending(session.workspace.id, new Date()) : [];
+  const isDemo = session.workspace.slug === DEMO_WORKSPACE_SLUG;
 
   return (
     <div>
@@ -62,6 +64,39 @@ export default async function TeamPage() {
           </p>
           <div className="mt-4">
             <InviteForm />
+          </div>
+        </section>
+      )}
+
+      {pendingInvites.length > 0 && (
+        <section className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+          <div className="border-b border-line px-5 py-4">
+            <h2 className="text-sm font-semibold">Open invites ({pendingInvites.length})</h2>
+            <p className="mt-1 text-[0.8125rem] text-t2">Not used yet. Taking one back makes its link stop working.</p>
+          </div>
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-line text-[0.8125rem] text-t2">
+                  <th className="px-5 py-3 font-medium">Email</th>
+                  <th className="px-5 py-3 font-medium">Role</th>
+                  <th className="px-5 py-3 font-medium">Expires</th>
+                  <th className="px-5 py-3 font-medium"><span className="sr-only">Manage</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingInvites.map((invite) => (
+                  <tr key={invite.id} className="border-b border-line last:border-0">
+                    <td className="px-5 py-3.5 align-top text-tx">{isDemo ? "Hidden in the demo" : invite.email}</td>
+                    <td className="px-5 py-3.5 align-top text-t2">{ROLE_LABELS[invite.role]}</td>
+                    <td className="px-5 py-3.5 align-top whitespace-nowrap text-t2">{dateFormatter.format(invite.expiresAt)}</td>
+                    <td className="px-5 py-3.5 text-right align-top">
+                      <RevokeInvite inviteId={invite.id} label={isDemo ? "this person" : invite.email} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
@@ -94,7 +129,7 @@ export default async function TeamPage() {
                     )}
                   </td>
                   <td className="px-5 py-3.5 align-top text-t2">
-                    {session.workspace.slug === DEMO_WORKSPACE_SLUG ? "Hidden in the demo" : user.email}
+                    {isDemo ? "Hidden in the demo" : user.email}
                   </td>
                   <td className="px-5 py-3.5 align-top text-t2">
                     {canInvite && membership.role !== "OWNER" && user.id !== session.user.id ? (

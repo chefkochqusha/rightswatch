@@ -83,6 +83,8 @@ function describeAction(
       const roleLabel = role && role in ROLE_LABELS ? ROLE_LABELS[role as Role] : null;
       return roleLabel ? `Invited ${entry.targetId} as ${roleLabel}` : `Invited ${entry.targetId}`;
     }
+    case "team.invite_revoked":
+      return `Took back the invite for ${entry.targetId}`;
     case "billing.plan_chosen":
       return `Chose the ${entry.targetId.charAt(0)}${entry.targetId.slice(1).toLowerCase()} plan`;
     default:

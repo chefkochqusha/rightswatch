@@ -38,6 +38,7 @@ const AUDIT_ACTION_LABELS: Partial<Record<string, string>> = {
   "rights.removed": "Deleted a rights record",
   "account.password_changed": "Changed a password",
   "team.invited": "Invited a teammate",
+  "team.invite_revoked": "Took back an invite",
   "team.role_changed": "Changed a member's role",
   "team.removed": "Removed a member",
   "team.ownership_transferred": "Handed the workspace to a new owner",

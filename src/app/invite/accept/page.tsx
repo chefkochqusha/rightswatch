@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
-import { verifyInviteToken } from "@/modules/auth";
+import { isInvitePending, verifyInviteToken } from "@/modules/auth";
+import { getAuthStore } from "@/app/_lib/auth-store";
 import { AcceptInviteForm } from "./accept-invite-form";
 
 export const metadata = {
@@ -36,7 +37,9 @@ export default async function AcceptInvitePage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const payload = token ? verifyInviteToken(token, getSessionSecret()) : null;
+  const verified = token ? verifyInviteToken(token, getSessionSecret()) : null;
+  // A revoked or already used invite reads the same as an expired one.
+  const payload = verified && (await isInvitePending(verified, getAuthStore().invites)) ? verified : null;
 
   if (!token || !payload) {
     return (
