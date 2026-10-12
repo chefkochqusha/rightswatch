@@ -24,7 +24,8 @@ test("managing a campaign", async ({ page }) => {
 
   // The creator's page shows the campaign.
   await page.getByRole("link", { name: /@lena\.creates/ }).click();
-  await expect(page.getByText("Summer launch")).toBeVisible();
+  await page.waitForURL(/\/workspace\/creators\//);
+  await expect(page.getByText("Summer launch", { exact: true })).toBeVisible();
 
   // A rights record limited to the campaign keeps it from being deleted.
   const songId = await addSong(page, `Campaign Song ${Date.now()}`);
@@ -33,7 +34,9 @@ test("managing a campaign", async ({ page }) => {
   await page.getByLabel("Only some campaigns").check();
   await page.getByLabel("Summer launch").check();
   await page.getByRole("button", { name: "Add rights record" }).click();
-  await expect(page.getByText("Summer launch").first()).toBeVisible();
+  // Saved: the record shows with an Edit button and its campaign.
+  await expect(page.getByRole("button", { name: /Edit/ }).first()).toBeVisible();
+  await expect(page.getByText("Summer launch", { exact: true })).toBeVisible();
 
   await page.goto("/workspace/campaigns");
   await expect(page.getByText("1 rights record limited to it")).toBeVisible();
@@ -55,6 +58,7 @@ test("managing a campaign", async ({ page }) => {
   await page.getByRole("button", { name: /Edit/ }).first().click();
   await page.getByLabel("Every campaign").check();
   await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(0);
   await page.goto("/workspace/campaigns");
   await expect(page.getByText("no rights record limited to it")).toBeVisible();
   await page.getByRole("button", { name: "Delete Summer 2026" }).click();
