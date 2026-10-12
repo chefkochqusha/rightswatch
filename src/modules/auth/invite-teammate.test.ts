@@ -134,4 +134,16 @@ describe("inviteTeammate", () => {
     );
     if (old.ok) assert.equal(await invites.findById(old.inviteId), null);
   });
+
+  test("the workspace's invite rows, open and settled, can be listed for the data export", async () => {
+    const invites = new InMemoryInviteRepository();
+    const deps = makeDeps(invites);
+    const a = await inviteTeammate({ workspaceId: "workspace-1", workspaceName: "Acme", email: "a@acme.com", role: "VIEWER", invitedById: null }, deps);
+    await inviteTeammate({ workspaceId: "workspace-1", workspaceName: "Acme", email: "b@acme.com", role: "VIEWER", invitedById: null }, deps);
+    await inviteTeammate({ workspaceId: "workspace-2", workspaceName: "Other", email: "c@other.com", role: "VIEWER", invitedById: null }, deps);
+    assert.ok(a.ok);
+    if (a.ok) await revokeInvite({ workspaceId: "workspace-1", inviteId: a.inviteId }, { inviteRepository: invites });
+    const rows = await invites.findForWorkspace("workspace-1");
+    assert.deepEqual(rows.map((r) => r.email).sort(), ["a@acme.com", "b@acme.com"]);
+  });
 });

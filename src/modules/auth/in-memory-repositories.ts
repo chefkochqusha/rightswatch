@@ -265,6 +265,10 @@ export class InMemoryInviteRepository implements InviteRepository {
     return this.byId.get(id) ?? null;
   }
 
+  async findForWorkspace(workspaceId: string): Promise<InviteRecord[]> {
+    return [...this.byId.values()].filter((i) => i.workspaceId === workspaceId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async findPending(workspaceId: string, now: Date): Promise<InviteRecord[]> {
     return [...this.byId.values()]
       .filter((i) => i.workspaceId === workspaceId && !i.acceptedAt && !i.revokedAt && i.expiresAt > now)

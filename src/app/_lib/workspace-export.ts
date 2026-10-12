@@ -61,7 +61,7 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     if (user) members.push({ id: user.id, email: user.email, name: user.name, role: m.role, joinedAt: m.createdAt });
   }
 
-  const [workspace, creators, catalogue, rights, report, subscription, fingerprints, audioChecks] = await Promise.all([
+  const [workspace, creators, catalogue, rights, report, subscription, fingerprints, audioChecks, campaigns, invites] = await Promise.all([
     auth.workspaces.findById(workspaceId),
     getCreatorStore().creators.findForWorkspace(workspaceId),
     getLibraryStore().catalog.findCatalogue(workspaceId),
@@ -81,6 +81,8 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
         content: { select: { externalContentId: true } },
       },
     }),
+    getLibraryStore().campaigns.findForWorkspace(workspaceId),
+    auth.invites.findForWorkspace(workspaceId),
   ]);
   const plan = subscription ? await getBillingStore().plans.findById(subscription.planId) : null;
   const billing = await findBillingProfile(workspaceId);
@@ -89,7 +91,11 @@ export async function buildDataExport(session: CurrentSession, scope: ExportScop
     ...base,
     workspace: { id: workspaceId, name: session.workspace.name, slug: session.workspace.slug, createdAt: workspace?.createdAt ?? null },
     members,
+    invites: invites.map((i) => ({
+      email: i.email, role: i.role, invitedBy: i.invitedById, sentAt: i.createdAt, expiresAt: i.expiresAt, acceptedAt: i.acceptedAt, takenBackAt: i.revokedAt,
+    })),
     creators,
+    campaigns: campaigns.map((c) => ({ id: c.id, name: c.name, createdAt: c.createdAt, creatorIds: c.creatorIds })),
     songs: catalogue,
     rightsRecords: rights,
     referenceAudio: fingerprints.map((f) => ({ ...f, songId: f.musicTrackId, musicTrackId: undefined })),

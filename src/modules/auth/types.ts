@@ -135,6 +135,8 @@ export interface InviteRecord {
 export interface InviteRepository {
   create(input: { workspaceId: string; email: string; role: Role; invitedById: string | null; expiresAt: Date }): Promise<InviteRecord>;
   findById(id: string): Promise<InviteRecord | null>;
+  /** Every invite row the workspace still holds (open and settled), newest first — for the data export. */
+  findForWorkspace(workspaceId: string): Promise<InviteRecord[]>;
   /** Invites neither accepted, revoked nor expired at `now`, newest first. */
   findPending(workspaceId: string, now: Date): Promise<InviteRecord[]>;
   markAccepted(id: string, at: Date): Promise<void>;

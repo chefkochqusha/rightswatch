@@ -69,6 +69,11 @@ export class PrismaInviteRepository implements InviteRepository {
     return row ? mapInvite(row) : null;
   }
 
+  async findForWorkspace(workspaceId: string): Promise<InviteRecord[]> {
+    const rows = await getPrisma().invite.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" } });
+    return rows.map(mapInvite);
+  }
+
   async findPending(workspaceId: string, now: Date): Promise<InviteRecord[]> {
     const rows = await getPrisma().invite.findMany({
       where: { workspaceId, acceptedAt: null, revokedAt: null, expiresAt: { gt: now } },

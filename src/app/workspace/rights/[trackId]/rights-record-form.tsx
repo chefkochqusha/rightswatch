@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useId, useState } from "react";
 import { buttonStyles } from "@/components/ui/button";
 import { ActionForm } from "@/components/ui/action-form";
@@ -127,6 +128,12 @@ export function RightsRecordForm({
         <FieldError message={errors.startDate ?? errors.endDate} />
       </fieldset>
 
+      {campaigns.length === 0 && (
+        <p className="text-[0.8125rem] text-t2">
+          Covers every campaign. To limit it to some, create campaigns on the{" "}
+          <Link href="/workspace/campaigns" className="underline">Campaigns</Link> page first.
+        </p>
+      )}
       {campaigns.length > 0 && (
         <fieldset>
           <legend className="text-[0.8125rem] font-medium text-tx">Campaigns</legend>
