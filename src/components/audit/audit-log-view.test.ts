@@ -191,4 +191,26 @@ describe("buildAuditLogView", () => {
     ]);
     assert.ok(views.every((v) => v.href === null));
   });
+  test("campaign and invite events name what changed, and link to the campaigns while the campaign exists", () => {
+    const views = buildAuditLogView(
+      [
+        makeEntry({ id: "a", action: "campaign.created", targetType: "campaign", targetId: "c1", metadata: { name: "Summer" } }),
+        makeEntry({ id: "b", action: "campaign.renamed", targetType: "campaign", targetId: "c1", metadata: { from: "Summer", name: "Summer 26" } }),
+        makeEntry({ id: "c", action: "campaign.creator_added", targetType: "campaign", targetId: "c1", metadata: { name: "Summer 26", handle: "mia" } }),
+        makeEntry({ id: "d", action: "campaign.creator_removed", targetType: "campaign", targetId: "c1", metadata: { name: "Summer 26", handle: null } }),
+        makeEntry({ id: "e", action: "campaign.deleted", targetType: "campaign", targetId: "c1", metadata: { name: "Summer 26" } }),
+        makeEntry({ id: "f", action: "team.invite_revoked", targetType: "invite", targetId: "sam@example.com", metadata: { role: "VIEWER" } }),
+      ],
+      { ...noContext, members: new Map(), casesById: new Map() },
+    );
+    assert.deepEqual(views.map((v) => v.description), [
+      "Created the campaign Summer",
+      "Renamed the campaign Summer to Summer 26",
+      "Put @mia on the campaign Summer 26",
+      "Took a creator off the campaign Summer 26",
+      "Deleted the campaign Summer 26",
+      "Took back the invite for sam@example.com",
+    ]);
+    assert.deepEqual(views.map((v) => v.href), ["/workspace/campaigns", "/workspace/campaigns", "/workspace/campaigns", "/workspace/campaigns", null, null]);
+  });
 });

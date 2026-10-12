@@ -83,6 +83,23 @@ function describeAction(
       const roleLabel = role && role in ROLE_LABELS ? ROLE_LABELS[role as Role] : null;
       return roleLabel ? `Invited ${entry.targetId} as ${roleLabel}` : `Invited ${entry.targetId}`;
     }
+    case "campaign.created":
+    case "campaign.deleted":
+    case "campaign.renamed":
+    case "campaign.creator_added":
+    case "campaign.creator_removed": {
+      const name = getMetadataString(entry.metadata, "name") ?? "a campaign";
+      const handle = getMetadataString(entry.metadata, "handle");
+      const who = handle ? `@${handle}` : "a creator";
+      if (entry.action === "campaign.created") return `Created the campaign ${name}`;
+      if (entry.action === "campaign.deleted") return `Deleted the campaign ${name}`;
+      if (entry.action === "campaign.renamed") {
+        const from = getMetadataString(entry.metadata, "from");
+        return from ? `Renamed the campaign ${from} to ${name}` : `Renamed a campaign to ${name}`;
+      }
+      if (entry.action === "campaign.creator_added") return `Put ${who} on the campaign ${name}`;
+      return `Took ${who} off the campaign ${name}`;
+    }
     case "team.invite_revoked":
       return `Took back the invite for ${entry.targetId}`;
     case "billing.plan_chosen":
@@ -116,6 +133,7 @@ function resolveHref(
   // song's once it's out of the catalogue.
   if (entry.targetType === "creator") return `/workspace/creators/${encodeURIComponent(entry.targetId)}`;
   if (entry.targetType === "song") return `/workspace/rights/${encodeURIComponent(entry.targetId)}`;
+  if (entry.targetType === "campaign" && entry.action !== "campaign.deleted") return "/workspace/campaigns";
   if (entry.targetType !== "case") return null;
   const relatedCase = casesById.get(entry.targetId);
   if (!relatedCase) return null;

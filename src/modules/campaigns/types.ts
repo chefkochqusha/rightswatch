@@ -10,8 +10,9 @@
  * workspace when it's built (a Prisma-backed one queries `WHERE
  * workspaceId = ? AND creators: { some: … }`), so the id would only ever
  * repeat what the caller already knows. Campaigns are workspace data users
- * manage (Brief §2: "assign creators to campaigns/projects"); until that's
- * built, `FixtureCampaignRepository` serves the demo dataset's campaigns.
+ * manage (Brief §2: "assign creators to campaigns/projects") on the
+ * Campaigns page (`manage.ts`); `FixtureCampaignRepository` serves the demo
+ * dataset's campaigns to the demo scan.
  */
 
 export interface CampaignRecord {
@@ -49,5 +50,9 @@ export interface CampaignDirectory {
   /** The campaign with this name, created if there's none yet. */
   ensure(workspaceId: string, name: string): Promise<WorkspaceCampaign>;
   addCreator(workspaceId: string, campaignId: string, creatorId: string): Promise<void>;
+  /** Nothing happens when the creator isn't on it. */
+  removeCreator(workspaceId: string, campaignId: string, creatorId: string): Promise<void>;
+  rename(workspaceId: string, campaignId: string, name: string): Promise<void>;
+  delete(workspaceId: string, campaignId: string): Promise<void>;
 }
 

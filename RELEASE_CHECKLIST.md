@@ -291,9 +291,10 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   closing a case. B2B-only keeps the BFSG out of scope, but customers' public
   bodies and large companies ask for it.
 - [ ] **Security re-check before real customer data**: `SECURITY.md` has the
-  audit and what is still open (shared rate limits, `SESSION_SECRET` as
-  Sensitive, dev/prod separation, the Prisma and lint-tool advisories, logins in
-  the audit log, deleting a single member's account). Re-run the checks in its
+  audit and what is still open (`SESSION_SECRET` as Sensitive, dev/prod
+  separation, the Prisma and lint-tool advisories, spend limit, restore drill;
+  shared rate limits, logins in the audit log and removing a member are done).
+  Re-run the checks in its
   "After a change" section on the live address.
 
 ## UI kit

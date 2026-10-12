@@ -48,6 +48,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
   const primary: WorkspaceNavItem[] = [
     { href: "/workspace", label: "Overview", alsoActiveFor: ["/workspace/items"] },
     { href: "/workspace/creators", label: "Creators" },
+    { href: "/workspace/campaigns", label: "Campaigns" },
     { href: "/workspace/matches", label: "Music Matches" },
     { href: "/workspace/cases", label: "Cases" },
     { href: "/workspace/rights", label: "Rights Library" },

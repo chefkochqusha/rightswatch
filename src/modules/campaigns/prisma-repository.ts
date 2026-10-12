@@ -55,4 +55,19 @@ export class PrismaCampaignDirectory implements CampaignDirectory {
     if (!campaign || !creator) throw new Error("That campaign or creator isn't in this workspace.");
     await getPrisma().campaign.update({ where: { id: campaign.id }, data: { creators: { connect: { id: creator.id } } } });
   }
+
+  async removeCreator(workspaceId: string, campaignId: string, creatorId: string): Promise<void> {
+    const campaign = await getPrisma().campaign.findFirst({ where: { id: campaignId, workspaceId }, select: { id: true } });
+    if (!campaign) throw new Error("That campaign isn't in this workspace.");
+    await getPrisma().campaign.update({ where: { id: campaign.id }, data: { creators: { disconnect: { id: creatorId } } } });
+  }
+
+  async rename(workspaceId: string, campaignId: string, name: string): Promise<void> {
+    const result = await getPrisma().campaign.updateMany({ where: { id: campaignId, workspaceId }, data: { name } });
+    if (result.count === 0) throw new Error("That campaign isn't in this workspace.");
+  }
+
+  async delete(workspaceId: string, campaignId: string): Promise<void> {
+    await getPrisma().campaign.deleteMany({ where: { id: campaignId, workspaceId } });
+  }
 }

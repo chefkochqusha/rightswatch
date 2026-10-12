@@ -9,7 +9,7 @@ import AxeBuilder from "@axe-core/playwright";
  * LEGAL_DE.md).
  */
 const PUBLIC = ["/", "/login", "/signup", "/imprint", "/privacy"];
-const WORKSPACE = ["/workspace", "/workspace/cases", "/workspace/creators", "/workspace/rights", "/workspace/settings", "/workspace/billing"];
+const WORKSPACE = ["/workspace", "/workspace/cases", "/workspace/creators", "/workspace/campaigns", "/workspace/rights", "/workspace/settings", "/workspace/billing"];
 
 async function violations(page: Page): Promise<string[]> {
   // Fade-ins measured halfway would fail contrast for the wrong reason: wait

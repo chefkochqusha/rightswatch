@@ -267,6 +267,9 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
               ))}
             </ul>
           )}
+          <p className="border-t border-line px-5 py-3 text-[0.8125rem]">
+            <Link href="/workspace/campaigns" className="font-medium text-accent hover:underline">Manage campaigns</Link>
+          </p>
         </Section>
       </div>
 

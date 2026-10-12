@@ -483,7 +483,7 @@ field-compatible with this schema.
 |---|---|---|
 | Identity & tenancy | `User`, `Workspace`, `Membership` (+`Role`), `Session` | Yes — Prisma-backed (Neon), `modules/auth`. `Session` is a documented addition to §43's "at minimum" list (see "Auth & authorization") |
 | Creators & content | `Creator` (+`CreatorStatus`), `Content`, `CommercialContent` (+`Platform`) | Yes — Prisma-backed. `Creator` is the watchlist members manage (`modules/creators`, see "Creator management"), with two documented additions to §8's fields: `lastError` and `removedAt`. `Content`/`CommercialContent` are written by every scan (`modules/scan-results`) for watchlist creators only — a scan never adds a creator |
-| Campaigns | `Campaign` | Yes — Prisma-backed (`modules/campaigns`): what a rights record can be scoped to, and the scan's per-creator lookup. Created by the demo data loader; managing them in the UI is still to come (see "Known gaps") |
+| Campaigns | `Campaign` | Yes — Prisma-backed (`modules/campaigns`): what a rights record can be scoped to, and the scan's per-creator lookup. Managed on the Campaigns page (`app/workspace/campaigns`, rules in `modules/campaigns/manage.ts`): create, rename, delete, put creators on and off. A campaign a rights record is limited to can't be deleted (the record would silently cover every campaign); changing who is on one re-assesses the songs whose records are limited to campaigns |
 | Music | `MusicTrack`, `MusicMatch` | Yes — Prisma-backed. `MusicTrack` is a song the workspace knows; `inCatalogue` marks the ones it administers — the Rights Library — with §10's track fields and where the song came from (`source`, `externalId`, `artworkUrl`) as documented additions. Scans write `MusicMatch` (`modules/scan-results`): one per (content, track, provider), plus a track-less one recording "nothing identified" |
 | Rights | `RightsRecord`, `RightsRule`, `RightsAssessment` (+2 enums) | `RightsRecord`: yes — Prisma-backed, the Rights Library's records per song (`modules/rights`), with §10's `notes` and `source`. `RightsAssessment`: computed by `rights-engine`, persisted by `modules/scan-results` with its explanation and the rights records it matched, and re-computed in place when a song's records change. `RightsRule`: unbuilt (see below) |
 | Cases | `Case`, `CaseNote`, `CaseEvidence` | `Case`/`CaseNote`: yes, Prisma-backed, with a full UI — status transitions, assignment, and notes — on the item detail page. `CaseEvidence`: out of scope (no object-storage decision) |
@@ -1170,9 +1170,9 @@ reads as an oversight:
   first enforced in production; it's caught locally now.
 - Running the real TikTok connector — it's written and tested against stubbed
   responses, and waits on TikTok's API-access reply for credentials (TikTok
-  webhooks, the other `WebhookEvent` source, come with it). Also unbuilt:
-  audio recognition, so real posts carry no identified song until a person
-  says which one (see "Music Matches")
+  webhooks, the other `WebhookEvent` source, come with it). Song recognition
+  is our own (`services/recognizer`) and runs on our own server; on Vercel
+  alone a person says which song a post uses (see "Music Matches")
 - Stripe going live — built and tested; waiting on a Stripe account, three
   test-mode prices and a webhook destination (`STRIPE_INTEGRATION.md`)
 
@@ -1183,10 +1183,6 @@ reads as an oversight:
 - Multi-workspace membership — Phase 5 scope is one workspace per user;
   turning `current-user.ts` into a workspace picker is a bigger, riskier
   change than anything else on this list
-- Managing campaigns (§2, and §8's "group creators" and "assign
-  campaign") — campaigns are real workspace data now, and a rights record
-  can be scoped to them, but only the demo data loader creates them and
-  signs creators up; a creator's page shows its campaigns read-only
 - A proper wordmark and brand guide — the mark exists (a lowercase "b"
   whose bowl is a record, `components/brand/logo-mark.tsx`, the same
   drawing as `app/icon.svg`, `app/favicon.ico` and `app/apple-icon.png`),
