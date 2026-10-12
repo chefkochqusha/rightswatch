@@ -49,7 +49,8 @@ test("roles, removal and handing over the workspace", async ({ page, browser }) 
   await page.goto("/workspace/team");
   await expect(page.getByRole("heading", { name: /Open invites/ })).toBeVisible();
   await page.getByRole("button", { name: `Take back the invite for ${cleoEmail}` }).click();
-  await expect(page.getByText("Invite taken back. The link no longer works.")).toBeVisible();
+  // The row (and with it the whole list, as it was the only open invite) goes away.
+  await expect(page.getByRole("button", { name: `Take back the invite for ${cleoEmail}` })).toHaveCount(0);
   const cleoPage = await (await browser.newContext()).newPage();
   await cleoPage.goto(cleoLink);
   await expect(cleoPage.getByText("Invite link invalid or expired")).toBeVisible();
