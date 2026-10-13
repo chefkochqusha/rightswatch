@@ -57,6 +57,8 @@ services:
     restart: unless-stopped
     environment:
       RECOGNIZER_TOKEN: ${RECOGNIZER_TOKEN:?set RECOGNIZER_TOKEN in deploy/.env}
+      # "0" turns off the second, denser pass for hard posts (faster, finds fewer)
+      RECOGNIZER_DENSE_PASS: ${RECOGNIZER_DENSE_PASS:-1}
     # Matching is CPU work; leave headroom for the app and the database.
     cpus: ${RECOGNIZER_CPUS:-2}
     mem_limit: ${RECOGNIZER_MEMORY:-2g}

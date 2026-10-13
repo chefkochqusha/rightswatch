@@ -599,6 +599,9 @@ DENSE_FACTOR = 2  # the second pass: twice the peaks per second, twice the pairs
 # Its scores are divided by this, so the app's minimum score keeps meaning
 # the same; ratios between songs don't change.
 DENSE_SCORE_SCALE = 1.6
+# Off ("0") skips the second pass: faster in very large catalogues, fewer hard
+# posts found (services/recognizer/README.md has the numbers).
+DENSE_PASS = os.environ.get("RECOGNIZER_DENSE_PASS", "1") != "0"
 
 
 def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
@@ -625,7 +628,7 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     if len(index.ids) == 0 or len(pk) < 10:
         return result
     first = _match_peaks(index, pk, query_melody, top, {**result, "candidates": []}, 1)
-    if _decisive(first):
+    if _decisive(first) or not DENSE_PASS:
         first.pop("_parts", None)
         return first
     dense = peaks(y, per_sec=PEAKS_PER_SEC * DENSE_FACTOR, bands=bands)

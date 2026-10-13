@@ -239,6 +239,15 @@ after): posts with no song found 62 → 48 of the 120 hard ones (voice −6 dB
 1 suggestion of 48; median 7.8 → 9.6 s, p95 10.8 → 13.4 s per post (two
 runs in parallel on two cores).
 
+20,000 songs (`scale_bench.py 20000 20`, `RECOGNIZER_DENSE_PASS=0` against
+the default): 7 more hard posts found (voice −6 dB nothing found 8 → 6,
+voice −12 dB 13 → 9, slowed 18 → 17), 2 more automatic matches (phone +
+room); no wrong MATCH, and 0 MATCH and 0 suggestions for the 48 posts without
+a catalogue song either way. Median 19.8 → 22.1 s, p95 30.2 → 34.2 s per
+post. So at this size the time goes into the search itself (the shortlist
+and its second round), not into the second pass: one core handles roughly
+4,000 posts a day. `RECOGNIZER_DENSE_PASS=0` turns the pass off.
+
 Four real recordings (`real_test.py --edits --voice`, 84 cases): posts
 missed 4 → 2 of 42, found or suggested 38 → 40, still no false match, no
 wrong song and no false suggestion.
