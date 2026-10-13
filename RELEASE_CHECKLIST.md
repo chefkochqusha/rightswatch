@@ -215,7 +215,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   of 1 hour of runtime logs, and team seats. Upgrade at the latest before the
   first customer, the paid pricing page being promoted, or the launch video going
   out.
-- [ ] **TikTok Commercial Content API** — apply at
+- [ ] **TikTok Commercial Content API** (texts and facts for the form: `TIKTOK_APPLICATION.md`) — apply at
   `developers.tiktok.com/application/commercial-content-api` (needs company
   details; approval takes a few days — the only item with lead time). Then set
   `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` in Vercel (and delete
