@@ -145,6 +145,19 @@ class LargeCatalogueTest(unittest.TestCase):
         tracks.append(("legacy", fp.Fingerprint(old.hashes, old.times, old.duration_sec, old.melody)))
         cls.index = fp.Index(tracks, shortlist_from=2)
 
+    def test_the_second_pass_rescores_the_shortlisted_songs(self):
+        """In a large catalogue the dense pass re-scores the songs the first
+        pass narrowed the post to (no new search), and leaks nothing internal."""
+        import real_test
+
+        clip = to_fs(SONGS["t2"][SR * 20: SR * 45])
+        r = fp.match(self.index, real_test.mix(clip, to_fs(make_voice(7, 27)), -12))
+        self.assertNotIn("_parts", r)
+        self.assertEqual(r["candidates"][0]["trackId"], "t2")
+        clean = fp.match(self.index, clip)
+        self.assertNotIn("_parts", clean)
+        self.assertNotIn("densePass", clean)
+
     def test_uses_the_shortlist(self):
         self.assertTrue(self.index.large)
         self.assertIn(4, self.index.candidates(fp.peaks(to_fs(SONGS["t1"][SR * 10: SR * 30]))), "legacy songs are always checked")

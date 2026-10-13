@@ -228,6 +228,17 @@ pass's scores are divided by `DENSE_SCORE_SCALE` (1.6, what songs that aren't
 in the post gained) and the app's minimum score keeps its meaning. Clear
 posts never pay for the second pass.
 
+In large catalogues the second pass doesn't search again: it re-scores the
+songs the first pass shortlisted (the same small indexes, not rebuilt) and
+only at the speeds and pitches near where the first pass found its best
+songs. Searching 20,000 songs again with twice the peaks had taken 40–50 s
+per hard post. Synthetic 2,000-song test (`scale_bench.py 2000 20`, before →
+after): posts with no song found 62 → 48 of the 120 hard ones (voice −6 dB
+7 → 2, voice −12 dB 9 → 5, sped up 11 → 9, slowed 16 → 15, worst case
+19 → 17); no wrong MATCH; posts without a catalogue song still 0 MATCH and
+1 suggestion of 48; median 7.8 → 9.6 s, p95 10.8 → 13.4 s per post (two
+runs in parallel on two cores).
+
 Four real recordings (`real_test.py --edits --voice`, 84 cases): posts
 missed 4 → 2 of 42, found or suggested 38 → 40, still no false match, no
 wrong song and no false suggestion.

@@ -626,9 +626,16 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
         return result
     first = _match_peaks(index, pk, query_melody, top, {**result, "candidates": []}, 1)
     if _decisive(first):
+        first.pop("_parts", None)
         return first
     dense = peaks(y, per_sec=PEAKS_PER_SEC * DENSE_FACTOR, bands=bands)
-    second = _match_peaks(index, dense, query_melody, top, {**result, "peaks": int(len(dense)), "candidates": []}, DENSE_FACTOR)
+    second = _match_peaks(
+        index, dense, query_melody, top, {**result, "peaks": int(len(dense)), "candidates": []},
+        # small catalogues: every transform (cheap); large ones: only near the first pass's best
+        DENSE_FACTOR, first.get("_parts"), _near(first["candidates"]) if index.large else None,
+    )
+    first.pop("_parts", None)
+    second.pop("_parts", None)
     if _lead(second) > _lead(first):
         for c in second["candidates"]:
             c["score"] = round(c["score"] / DENSE_SCORE_SCALE, 2)
@@ -636,6 +643,18 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
         second["densePass"] = True
         return second
     return first
+
+
+def _near(candidates: list[dict]) -> list[tuple[float, int]]:
+    """The speed/pitch transforms close to where the first pass found its best
+    songs (and the original), for the dense pass: trying all of them again
+    with twice the peaks cost as much as the rest of the search."""
+    wanted = [(1.0, 0)] + [(c["speed"], int(round(c["pitchSemitones"] * 2))) for c in candidates]
+    out = []
+    for s, k in TRANSFORMS:
+        if any(abs(np.log(s / s0)) <= 0.04 and abs(k - k0) <= 1 for s0, k0 in wanted):
+            out.append((s, k))
+    return out
 
 
 def _lead(result: dict) -> float:
@@ -649,9 +668,20 @@ def _decisive(result: dict) -> bool:
     return bool(c) and _lead(result) >= 3.0 and c[0]["windowsWon"] * 2 >= result["windows"] > 0
 
 
-def _match_peaks(index: Index, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int) -> dict:
+def _match_peaks(
+    index: Index, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int,
+    parts: list[Index] | None = None, transforms: list[tuple[float, int]] | None = None,
+) -> dict:
+    """One pass over the catalogue. In a large catalogue the dense pass gets
+    `parts`, the small indexes of the songs the first pass already narrowed
+    the post to, and re-scores only those: searching 20,000 songs again with
+    twice the peaks took 40-50 s per post instead of about 10."""
+    tfs = transforms or TRANSFORMS
     if not index.large:
-        return _evaluate([_scored(index, pk, density)], pk, query_melody, top, result, density)
+        return _evaluate([_scored(index, pk, density, tfs)], pk, query_melody, top, result, density)
+    if parts:
+        result["shortlisted"] = sum(len(part.ids) for part in parts)
+        return _evaluate([_scored(part, pk, density, tfs) for part in parts], pk, query_melody, top, result, density)
 
     ranked = index.candidates(pk, SHORTLIST_WIDE)  # shortlist order, then songs that can't be shortlisted
     legacy = [i for i in ranked if i in index.legacy]
@@ -659,15 +689,16 @@ def _match_peaks(index: Index, pk: np.ndarray, query_melody: np.ndarray, top: in
     first, rest = found[:SHORTLIST_SIZE] + legacy, found[SHORTLIST_SIZE:]
     if not first:
         return result
-    parts = [_scored(index.subset(first), pk, density)]
-    if rest and not _stands_out(parts[0][1]):
-        parts.append(_scored(index.subset(rest), pk, density))
-    result["shortlisted"] = sum(len(part.ids) for part, _, _ in parts)
-    return _evaluate(parts, pk, query_melody, top, result, density)
+    scored = [_scored(index.subset(first), pk, density)]
+    if rest and not _stands_out(scored[0][1]):
+        scored.append(_scored(index.subset(rest), pk, density))
+    result["shortlisted"] = sum(len(part.ids) for part, _, _ in scored)
+    result["_parts"] = [part for part, _, _ in scored]
+    return _evaluate(scored, pk, query_melody, top, result, density)
 
 
-def _scored(part: Index, pk: np.ndarray, density: int = 1):
-    whole, _, tf = _query_peaks(part, pk, TRANSFORMS, density)
+def _scored(part: Index, pk: np.ndarray, density: int = 1, transforms=None):
+    whole, _, tf = _query_peaks(part, pk, transforms or TRANSFORMS, density)
     return part, whole, tf
 
 
