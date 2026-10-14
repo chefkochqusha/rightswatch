@@ -23,8 +23,14 @@ environment. Expect one small fix on the first `docker compose up`.
 ## What the owner needs
 
 1. **A server in the EU** from a company seated in the EU, for example Hetzner
-   (Germany/Finland): 2–4 vCPU, 4–8 GB RAM, about 10–40 € a month. The song
-   recognition will need the CPU later. Sign the provider's DPA (AVV).
+   (Germany/Finland): 2–4 vCPU, 4–8 GB RAM, about 10–40 € a month. Sign the
+   provider's DPA (AVV). Song recognition sizing (`services/recognizer/README.md`):
+   about 100 KB of memory per song with reference audio, so a few hundred songs
+   fit anywhere; a 20,000-song catalogue (Agency) needs ~2 GB for the index and
+   up to 3.4 GB while it is built, and about 20 s of one core per hard post
+   (roughly 4,000 posts a day per core). The recognition container may use
+   `RECOGNIZER_MEMORY` (default 4g); raise it, and the server, for very large
+   catalogues.
 2. **The domain** (once the name is settled), with an A record pointing at
    the server.
 3. **`RECOGNIZER_TOKEN`** in `deploy/.env`: any long random string (`openssl rand -hex 32`).
