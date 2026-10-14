@@ -271,6 +271,33 @@ on their own too (pitch −3 st 9 → 11, phone + room 19 → 21). Time per post
 median 1.0 → 1.3 s, slowest 1.6 → 3.6 s (only hard posts take the second
 pass).
 
+## Where large catalogues lose time and posts (2026-10-14)
+
+Measured on the shortlist alone (synthetic, 20 catalogue songs among 2,000
+and 20,000, rank of the right song among the 400 best):
+
+| | 2,000: in the first 200 | 20,000: in the first 200 |
+|---|---|---|
+| Sped up 1.25× | 15 of 20 | 7 of 20 |
+| Slowed 0.85× | 20 | 18 |
+| Voice-over −12 dB | 17 | 12 |
+| Worst case | 2 | 0 |
+
+- **Sped-up posts and voice-overs are lost in the shortlist.** Reading the
+  post with twice the peaks for the shortlist helps them (20,000: sped up
+  7 → 11, voice 12 → 15) but hurts slowed posts (18 → 15) and costs 4.5 s
+  more per post, so it isn't used.
+- **Slowed posts are lost later:** the right song is in the shortlist and
+  usually on top of the precise check, but under the minimum score.
+- **The shortlist is the slow part at 20,000 songs: 11 of the ~20 s per
+  post.** Half of it is sorting and looking up vote cells (`np.unique` and
+  `searchsorted` in `ShortlistIndex.scores`). A compiled vote count could
+  roughly halve it; worth doing once a customer has that many songs.
+- The worst case (sped up + voice + phone + AAC) is out of reach for
+  landmarks at this size. That, and the sped-up posts, is the case for a
+  learned second stage (nearest-neighbour search over embeddings scales to
+  large catalogues by design).
+
 ## Your own music: `real_test.py` (round 2)
 
 The test to run before relying on recognition: the songs you have the rights
