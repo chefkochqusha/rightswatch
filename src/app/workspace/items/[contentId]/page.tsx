@@ -10,7 +10,7 @@ import { getLibraryStore } from "@/app/_lib/library-store";
 import { CasePanel } from "./case-panel";
 import { IdentifyForm } from "./identify-form";
 import { RejectSongForm } from "./reject-song-form";
-import { PostAudioCheck } from "@/components/recognition/post-audio-check";
+import { PostAudioCheck, hasAudioSuggestion } from "@/components/recognition/post-audio-check";
 import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 
@@ -64,6 +64,10 @@ export default async function WorkspaceItemDetailPage({
   const catalogue = item.kind === "ASSESSED" ? [] : await getLibraryStore().catalog.findCatalogue(session.workspace.id);
   const songOptions = catalogue.map((track) => ({ id: track.id, label: track.artist ? `${track.title} — ${track.artist}` : track.title }));
   const showAudioCheck = isOwnRecognitionEnabled() && session.workspace.slug !== DEMO_WORKSPACE_SLUG;
+  const needsSong = item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR";
+  // An audio check suggested a song: it is confirmed in that section, so the
+  // song picker isn't shown twice.
+  const suggested = showAudioCheck && needsSong && (await hasAudioSuggestion(session.workspace.id, contentId));
 
   return (
     <div>
@@ -109,11 +113,16 @@ export default async function WorkspaceItemDetailPage({
               {item.kind === "OTHER_MUSIC"
                 ? "A song was identified, but it isn't in your library, so there is nothing to check it against. Add it in the Rights Library and this post is checked."
                 : item.kind === "NO_MUSIC_MATCH"
-                  ? "No song was identified in this post."
-                  : "Identifying the song in this post didn't complete."}{" "}
-              {item.kind !== "OTHER_MUSIC" && "If you know which of your songs it uses, say so and the rights check runs."}
+                  ? "No song was identified in this post yet."
+                  : `Identifying the song in this post didn't complete${item.error ? ` (${item.error})` : ""}.`}{" "}
+              {item.kind !== "OTHER_MUSIC" &&
+                (suggested
+                  ? "Bekvor found a likely song in its audio: confirm it below and the rights check runs."
+                  : showAudioCheck
+                    ? "Choose which of your songs it uses, or upload its audio below; then the rights check runs."
+                    : "If you know which of your songs it uses, say so and the rights check runs.")}
             </p>
-            {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length > 0 && (
+            {item.kind !== "OTHER_MUSIC" && !suggested && canManageCases(session.role) && catalogue.length > 0 && (
               <IdentifyForm contentId={contentId} songs={songOptions} />
             )}
             {item.kind !== "OTHER_MUSIC" && canManageCases(session.role) && catalogue.length === 0 && (
@@ -130,7 +139,7 @@ export default async function WorkspaceItemDetailPage({
           workspaceId={session.workspace.id}
           externalContentId={contentId}
           canManage={canManageCases(session.role)}
-          needsSong={item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR"}
+          needsSong={needsSong}
           catalogue={songOptions}
         />
       )}

@@ -36,7 +36,7 @@ test("reference audio, a post's video, a recognised song, confirmed into a case"
   await page.getByText("Wrong song?").click();
   await page.fill("#reject-note", "Checked by ear: it's a different song.");
   await page.getByRole("button", { name: "Withdraw this song" }).click();
-  await expect(page.getByText("No song was identified in this post.")).toBeVisible();
+  await expect(page.getByText("No song was identified in this post yet.")).toBeVisible();
   await page.goto("/workspace/audit");
   await expect(page.getByText("Withdrew a wrong song from a post").first()).toBeVisible();
 });

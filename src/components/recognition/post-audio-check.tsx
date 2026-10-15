@@ -11,6 +11,19 @@ const timeFormatter = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", ti
 const OUTCOME_LABEL = { MATCH: "Song recognised", CANDIDATE: "Possible match", NO_MATCH: "No song of yours found" } as const;
 
 /**
+ * Whether the post's newest finished audio check named one of the
+ * workspace's songs, for the page to offer confirming it in one place only.
+ */
+export async function hasAudioSuggestion(workspaceId: string, externalContentId: string): Promise<boolean> {
+  const latest = await getPrisma().audioCheck.findFirst({
+    where: { workspaceId, status: "DONE", content: { externalContentId, creator: { workspaceId } } },
+    orderBy: { createdAt: "desc" },
+    select: { outcome: true, musicTrackId: true },
+  });
+  return !!latest?.musicTrackId && (latest.outcome === "MATCH" || latest.outcome === "CANDIDATE");
+}
+
+/**
  * Checking a post's audio against the workspace's songs (own recognition):
  * upload the post's video or sound, see the result of each check. A sure
  * match identifies the song by itself; a possible one waits for a person,

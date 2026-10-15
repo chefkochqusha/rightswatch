@@ -93,22 +93,11 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
             catalogue, so its rights weren&apos;t checked.
           </p>
         </section>
-      ) : (
-        <section className="rounded-lg border border-line bg-surface p-5">
-          <h2 className="text-sm font-semibold">
-            {item.kind === "NO_MUSIC_MATCH" ? "No track identified" : "Identification failed"}
-          </h2>
-          <p className="mt-2 text-sm text-t2">
-            {item.kind === "MUSIC_ID_ERROR"
-              ? item.error
-              : "No music identification provider could match this content to a track, so no rights assessment could run."}
-          </p>
-        </section>
-      )}
+      ) : null /* no song yet: the post page's "Song in this post" section says so and offers the next step */}
 
       <details className="mt-4 rounded-lg border border-line bg-surface p-5">
         <summary className="cursor-pointer text-[0.8125rem] font-medium text-t2">
-          Raw platform payload (audit only — never used by the rights engine)
+          What TikTok sent for this post (kept for your records; the rights check doesn&apos;t use it)
         </summary>
         <pre className="mt-3 overflow-x-auto rounded-md bg-surface-2 p-3 text-xs text-t2">
           {JSON.stringify(item.content.rawPayload, null, 2)}
