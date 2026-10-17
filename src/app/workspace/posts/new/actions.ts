@@ -9,6 +9,8 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { manualPostContent, parseManualPost, type ManualPostField } from "@/modules/connectors/manual-post";
 
+const OWN_OFFER_LABEL = "Own paid offer";
+
 const PLATFORM_NAMES: Record<string, string> = { TIKTOK: "TikTok", INSTAGRAM: "Instagram", YOUTUBE: "YouTube" };
 
 export interface AddPostState {
@@ -50,11 +52,14 @@ async function addPost(formData: FormData): Promise<AddPostState> {
   const field = (name: string) => String(formData.get(name) ?? "");
 
   const creator = await getCreatorStore().creators.findById(workspaceId, field("creatorId"));
-  const parsed = parseManualPost({ url: field("url"), publishedOn: field("publishedOn"), brands: field("brands"), label: field("label"), territory: field("territory") });
+  // A creator the team marked as promoting their own paid offers: a post
+  // with no label typed is labelled that way rather than "Paid partnership".
+  const label = field("label").trim() || (creator?.promotesOwnOffers ? OWN_OFFER_LABEL : "");
+  const parsed = parseManualPost({ url: field("url"), publishedOn: field("publishedOn"), brands: field("brands"), label, territory: field("territory") });
   const fieldErrors: AddPostState["fieldErrors"] = parsed.ok ? {} : { ...parsed.fieldErrors };
   if (!creator || creator.removedAt) fieldErrors.creatorId = "Choose a creator from your watchlist.";
   else if (parsed.ok && parsed.post.platform !== creator.platform) {
-    fieldErrors.url = `This is a ${PLATFORM_NAMES[parsed.post.platform]} link, but @${creator.handle} is on your watchlist as a ${PLATFORM_NAMES[creator.platform] ?? creator.platform} creator.`;
+    fieldErrors.url = `This is a ${PLATFORM_NAMES[parsed.post.platform]} link, but @${creator.handle} is on your watchlist for ${PLATFORM_NAMES[creator.platform] ?? creator.platform}.`;
   } else if (parsed.ok && parsed.post.handle !== null && parsed.post.handle !== creator.handle.toLowerCase()) {
     fieldErrors.url = `This link is a post by @${parsed.post.handle}, not @${creator.handle}.`;
   }

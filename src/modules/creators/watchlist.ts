@@ -191,6 +191,27 @@ export async function updateCreatorDetails(
   return { ok: true, creator: await deps.creatorRepository.update(creator.id, parsed.details) };
 }
 
+// --- Own paid offers ----------------------------------------------------
+
+export type SetPromotesOwnOffersResult =
+  | { ok: true; creator: CreatorRecord; changed: boolean }
+  | { ok: false; error: "NOT_FOUND" };
+
+/**
+ * A member marks (or unmarks) a creator as promoting their own paid offers.
+ * The mark is the team's judgement, recorded as such; Bekvor never infers
+ * it from a bio, a link or anything else (`LEGAL_DE.md`). Idempotent.
+ */
+export async function setPromotesOwnOffers(
+  input: CreatorRef & { on: boolean },
+  deps: WatchlistDependencies,
+): Promise<SetPromotesOwnOffersResult> {
+  const creator = await findOnWatchlist(input, deps);
+  if (!creator) return { ok: false, error: "NOT_FOUND" };
+  if (creator.promotesOwnOffers === input.on) return { ok: true, creator, changed: false };
+  return { ok: true, creator: await deps.creatorRepository.update(creator.id, { promotesOwnOffers: input.on }), changed: true };
+}
+
 // --- Scan outcome -------------------------------------------------------
 
 /**

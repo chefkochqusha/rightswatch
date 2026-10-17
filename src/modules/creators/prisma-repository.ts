@@ -66,6 +66,7 @@ function mapCreator(row: Creator): CreatorRecord {
     lastSeenAt: row.lastSeenAt,
     lastError: row.lastError,
     removedAt: row.removedAt,
+    promotesOwnOffers: row.promotesOwnOffers,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

@@ -75,7 +75,16 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
         defaultValue={v?.brands}
         error={state.fieldErrors?.brands}
       />
-      <FormField label="Label on the post" name="label" optional placeholder="Paid partnership" autoComplete="off" maxLength={60} defaultValue={v?.label} />
+      <FormField
+        label="Label on the post"
+        name="label"
+        optional
+        placeholder="Paid partnership"
+        hint="Left empty: “Paid partnership”, or “Own paid offer” for a creator your team marked that way."
+        autoComplete="off"
+        maxLength={60}
+        defaultValue={v?.label}
+      />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <button type="submit" disabled={pending} className={buttonStyles("primary")}>

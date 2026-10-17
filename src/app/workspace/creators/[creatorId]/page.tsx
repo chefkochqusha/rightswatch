@@ -20,7 +20,7 @@ import { CREATOR_STATUS_DESCRIPTIONS, countryName, formatFollowers } from "@/com
 import { formatRelativeTime } from "@/components/ui/time";
 import { PLATFORM_LABELS } from "@/components/rights/labels";
 import { MonitoringToggle } from "../monitoring-toggle";
-import { removeCreatorAction } from "../actions";
+import { removeCreatorAction, setPromotesOwnOffersAction } from "../actions";
 import { EditDetailsForm } from "./edit-details-form";
 import { RestoreForm } from "./restore-form";
 
@@ -77,6 +77,9 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-[2rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{creator.handle}</h1>
               {!creator.removedAt && (creator.platform === "TIKTOK" || !creator.monitoringEnabled) && <CreatorStatusBadge status={creator.status} />}
+              {creator.promotesOwnOffers && (
+                <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-tx">Promotes own paid offers</span>
+              )}
             </div>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] text-t2">
               {creator.displayName && <span className="text-tx">{creator.displayName}</span>}
@@ -156,11 +159,17 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         <Fact label="Followers" value={formatFollowers(creator.followerCount)} />
         <Fact
           label="Last scan"
-          value={creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not scanned yet"}
+          value={
+            creator.platform !== "TIKTOK"
+              ? "Posts by link"
+              : creator.lastSeenAt
+                ? formatRelativeTime(creator.lastSeenAt, now)
+                : "Not scanned yet"
+          }
           title={creator.lastSeenAt ? dateTimeFormatter.format(creator.lastSeenAt) : undefined}
         />
         <Fact label="On the watchlist since" value={dateFormatter.format(creator.createdAt)} />
-        {!creator.removedAt && (
+        {!creator.removedAt && (creator.platform === "TIKTOK" || !creator.monitoringEnabled) && (
           <p className="col-span-full text-[0.8125rem] text-t2">{CREATOR_STATUS_DESCRIPTIONS[creator.status]}</p>
         )}
       </dl>
@@ -304,6 +313,24 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
           </ul>
         )}
       </Section>
+
+      {canManage && !creator.removedAt && (
+        <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
+          <h2 className="text-[1.0625rem] font-semibold tracking-[-0.01em]">Own paid offers</h2>
+          <p className="mt-1 max-w-2xl text-[0.8125rem] text-t2">
+            {creator.promotesOwnOffers
+              ? `Your team marked @${creator.handle} as promoting their own paid offers, like a subscription, a shop or a course. Their posts count as commercial use even without a paid-partnership label, and posts you add for them are labelled that way.`
+              : `Does @${creator.handle} send viewers to their own paid offer, like a subscription, a shop or a course? Then their posts are commercial use even without a paid-partnership label. This is your team's call; Bekvor never decides it.`}
+          </p>
+          <form action={setPromotesOwnOffersAction} className="mt-4">
+            <input type="hidden" name="creatorId" value={creator.id} />
+            <input type="hidden" name="on" value={creator.promotesOwnOffers ? "false" : "true"} />
+            <button type="submit" className={buttonStyles("secondary", "sm")}>
+              {creator.promotesOwnOffers ? "Remove the mark" : "Mark as promoting own paid offers"}
+            </button>
+          </form>
+        </section>
+      )}
 
       {canManage && !creator.removedAt && (
         <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">

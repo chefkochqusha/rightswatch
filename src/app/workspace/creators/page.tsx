@@ -177,7 +177,10 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
                             <Link href={`/workspace/creators/${creator.id}`} className="group block">
                               <span className="font-medium text-tx group-hover:text-accent">@{creator.handle}</span>
                               {creator.platform !== "TIKTOK" && (
-                                <span className="ml-2 text-[0.75rem] text-t2">{PLATFORM_LABELS[creator.platform]}</span>
+                                <>
+                                  {" "}
+                                  <span className="ml-1 text-[0.75rem] text-t2">{PLATFORM_LABELS[creator.platform]}</span>
+                                </>
                               )}
                               {creator.displayName && (
                                 <span className="block text-[0.8125rem] text-t2">{creator.displayName}</span>

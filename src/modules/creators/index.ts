@@ -19,6 +19,7 @@ export {
   removeCreator,
   resumeCreator,
   scanOutcomeChanges,
+  setPromotesOwnOffers,
   updateCreatorDetails,
 } from "./watchlist";
 export type {
@@ -30,6 +31,7 @@ export type {
   PauseCreatorResult,
   RemoveCreatorResult,
   ResumeCreatorResult,
+  SetPromotesOwnOffersResult,
   UpdateCreatorDetailsResult,
   WatchlistDependencies,
 } from "./watchlist";

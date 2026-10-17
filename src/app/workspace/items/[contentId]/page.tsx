@@ -7,6 +7,7 @@ import { getWorkspaceScanItem } from "@/app/_lib/workspace-scan-store";
 import { AssessmentSummary } from "@/components/rights/assessment-summary";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getLibraryStore } from "@/app/_lib/library-store";
+import { getCreatorStore } from "@/app/_lib/creator-store";
 import { CasePanel } from "./case-panel";
 import { IdentifyForm } from "./identify-form";
 import { RejectSongForm } from "./reject-song-form";
@@ -68,6 +69,7 @@ export default async function WorkspaceItemDetailPage({
   // An audio check suggested a song: it is confirmed in that section, so the
   // song picker isn't shown twice.
   const suggested = showAudioCheck && needsSong && (await hasAudioSuggestion(session.workspace.id, contentId));
+  const creator = await getCreatorStore().creators.findById(session.workspace.id, item.creatorId);
 
   return (
     <div>
@@ -79,9 +81,15 @@ export default async function WorkspaceItemDetailPage({
         <div>
           <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{item.creatorUsername}</h1>
           <p className="mt-1 text-sm text-t2">
-            {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
+            {item.content.brandNames.join(", ") || "No brand named"} ·{" "}
+            {item.content.label && `${item.content.label} · `}
             {dateFormatter.format(item.content.publishedAt)}
           </p>
+          {creator?.promotesOwnOffers && (
+            <p className="mt-1 text-sm text-t2">
+              Your team marked @{creator.handle} as promoting their own paid offers, so their posts count as commercial use.
+            </p>
+          )}
         </div>
         {item.kind === "ASSESSED" && <StatusBadge status={item.assessment.status} />}
       </div>

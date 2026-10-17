@@ -12,6 +12,7 @@ import {
   pauseCreator,
   removeCreator,
   resumeCreator,
+  setPromotesOwnOffers,
   updateCreatorDetails,
   type AddCreatorError,
   type CreatorPlatform,
@@ -183,6 +184,27 @@ export async function updateCreatorDetailsAction(_prev: CreatorFormState, formDa
   await audit(session.workspace.id, session.user.id, "creator.updated", creatorId, { handle: result.creator.handle });
   revalidatePath("/workspace", "layout");
   return { saved: true };
+}
+
+/**
+ * Marks or unmarks a creator as promoting their own paid offers: the team's
+ * judgement, recorded in the audit log, never Bekvor's (`LEGAL_DE.md`).
+ */
+export async function setPromotesOwnOffersAction(formData: FormData): Promise<void> {
+  const session = await requireCaseManager();
+  const creatorId = String(formData.get("creatorId") ?? "");
+  const on = formData.get("on") === "true";
+  const result = await setPromotesOwnOffers(
+    { workspaceId: session.workspace.id, creatorId, on },
+    { creatorRepository: getCreatorStore().creators },
+  );
+  if (!result.ok) throw new Error("That creator isn't on your watchlist.");
+  if (result.changed) {
+    await audit(session.workspace.id, session.user.id, on ? "creator.own_offers_marked" : "creator.own_offers_unmarked", creatorId, {
+      handle: result.creator.handle,
+    });
+  }
+  revalidatePath("/workspace", "layout");
 }
 
 async function audit(
