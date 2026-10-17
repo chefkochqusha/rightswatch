@@ -54,9 +54,12 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
     statsByCreator.set(item.creatorId, stats);
   }
 
-  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || creator.status === statusFilter));
+  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || scanStatus(creator) === statusFilter));
   const countByStatus = new Map<CreatorStatus, number>();
-  for (const creator of creators) countByStatus.set(creator.status, (countByStatus.get(creator.status) ?? 0) + 1);
+  for (const creator of creators) {
+    const status = scanStatus(creator);
+    if (status) countByStatus.set(status, (countByStatus.get(status) ?? 0) + 1);
+  }
   const now = new Date();
 
   return (
@@ -222,6 +225,13 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
       </section>
     </div>
   );
+}
+
+/** The status the filters count: none for a monitored creator on a platform
+ *  scans don't reach (Instagram, posts by link), so they never read as
+ *  "Pending" forever. A paused one is paused on any platform. */
+function scanStatus(creator: CreatorRecord): CreatorStatus | null {
+  return creator.platform !== "TIKTOK" && creator.monitoringEnabled ? null : creator.status;
 }
 
 function matchesQuery(creator: CreatorRecord, query: string): boolean {

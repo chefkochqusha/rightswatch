@@ -11,6 +11,8 @@ test("an Instagram creator, marked as promoting own paid offers, gets a post add
   await page.locator('form:has(input[name="username"]) button[type="submit"]').click();
   await expect(page.getByText(/@mia\.moves is on your watchlist\. Add their Instagram posts by link/)).toBeVisible();
   await expect(page.getByText("Posts by link", { exact: true })).toBeVisible();
+  // Only the TikTok creator waits for a scan.
+  await expect(page.getByRole("link", { name: "Pending 1" })).toBeVisible();
 
   // Mark them: the team's call, shown on the creator page.
   await page.getByRole("link", { name: /@mia\.moves/ }).first().click();
