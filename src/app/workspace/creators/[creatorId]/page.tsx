@@ -18,6 +18,7 @@ import { CreatorStatusBadge } from "@/components/creators/creator-status-badge";
 import { countryOptions } from "@/components/creators/country-options";
 import { CREATOR_STATUS_DESCRIPTIONS, countryName, formatFollowers } from "@/components/creators/labels";
 import { formatRelativeTime } from "@/components/ui/time";
+import { PLATFORM_LABELS } from "@/components/rights/labels";
 import { MonitoringToggle } from "../monitoring-toggle";
 import { removeCreatorAction } from "../actions";
 import { EditDetailsForm } from "./edit-details-form";
@@ -75,7 +76,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-[2rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{creator.handle}</h1>
-              {!creator.removedAt && <CreatorStatusBadge status={creator.status} />}
+              {!creator.removedAt && (creator.platform === "TIKTOK" || !creator.monitoringEnabled) && <CreatorStatusBadge status={creator.status} />}
             </div>
             <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem] text-t2">
               {creator.displayName && <span className="text-tx">{creator.displayName}</span>}
@@ -86,7 +87,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-accent hover:underline"
                 >
-                  Profile on TikTok
+                  Profile on {PLATFORM_LABELS[creator.platform]}
                   <ExternalIcon className="h-3 w-3" />
                 </a>
               )}
@@ -114,6 +115,18 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         </div>
       </div>
 
+      {!creator.removedAt && creator.platform !== "TIKTOK" && (
+        <Callout tone="neutral">
+          <p>
+            Scans don&apos;t reach {PLATFORM_LABELS[creator.platform]} yet. Add this creator&apos;s paid posts by link,
+            then upload the post&apos;s video or sound to check the song.{" "}
+            <Link href="/workspace/posts/new" className="font-medium text-accent underline underline-offset-2">
+              Add a post
+            </Link>
+          </p>
+        </Callout>
+      )}
+
       {creator.removedAt ? (
         <Callout tone="neutral">
           <p>
@@ -122,7 +135,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
           </p>
           {canManage && (
             <div className="mt-3">
-              <RestoreForm handle={creator.handle} />
+              <RestoreForm handle={creator.handle} platform={creator.platform} />
             </div>
           )}
         </Callout>
@@ -296,7 +309,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
           <h2 className="text-[1.0625rem] font-semibold tracking-[-0.01em]">Details</h2>
           <p className="mt-1 mb-5 text-[0.8125rem] text-t2">
-            TikTok doesn&apos;t report where a post was shown, so the creator&apos;s country stands in for it when a
+            The platform doesn&apos;t report where a post was shown, so the creator&apos;s country stands in for it when a
             rights record covers specific territories.
           </p>
           <EditDetailsForm

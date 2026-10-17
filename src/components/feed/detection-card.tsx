@@ -8,7 +8,7 @@ import { CreatorAvatar } from "@/components/creators/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CaseStatusBadge } from "@/components/cases/case-status-badge";
 import { ExternalIcon } from "@/components/ui/icons";
-import { REASON_LABELS, formatConfidence } from "@/components/rights/labels";
+import { PLATFORM_LABELS, REASON_LABELS, formatConfidence } from "@/components/rights/labels";
 import { formatRelativeTime } from "@/components/ui/time";
 
 export interface DetectionSong {
@@ -124,7 +124,7 @@ export function DetectionCard({
                 rel="noopener noreferrer"
                 className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.8125rem] font-medium text-accent hover:bg-accent/10"
               >
-                View on TikTok
+                View on {PLATFORM_LABELS[item.content.platform]}
                 <ExternalIcon className="h-3.5 w-3.5" />
               </a>
             )}

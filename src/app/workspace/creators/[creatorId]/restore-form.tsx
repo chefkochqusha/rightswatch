@@ -8,11 +8,12 @@ const initialState: CreatorFormState = {};
 
 /** Puts a removed creator back on the watchlist — the same as adding the
  *  username again, which restores this record rather than making a new one. */
-export function RestoreForm({ handle }: { handle: string }) {
+export function RestoreForm({ handle, platform }: { handle: string; platform: string }) {
   const [state, formAction, pending] = useActionState(addCreatorAction, initialState);
   return (
     <form action={formAction} className="flex flex-wrap items-center gap-3">
       <input type="hidden" name="username" value={handle} />
+      <input type="hidden" name="platform" value={platform} />
       <button type="submit" disabled={pending} className={buttonStyles("primary", "sm")}>
         {pending ? "Adding…" : "Add back to watchlist"}
       </button>

@@ -34,7 +34,8 @@ export type {
   WatchlistDependencies,
 } from "./watchlist";
 
-export { normalizeTikTokUsername, tikTokProfileUrl } from "./username";
+export { instagramProfileUrl, normalizeInstagramUsername, normalizeTikTokUsername, normalizeUsername, profileUrlFor, tikTokProfileUrl } from "./username";
+export type { CreatorPlatform } from "./username";
 export { COUNTRY_CODES, normalizeCountryCode } from "./countries";
 export { MAX_DISPLAY_NAME_LENGTH, parseCreatorDetails } from "./details";
 export type { CreatorDetails, CreatorDetailsError, CreatorDetailsInput } from "./details";

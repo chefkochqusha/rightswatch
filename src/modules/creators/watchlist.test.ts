@@ -37,6 +37,23 @@ describe("addCreator", () => {
     assert.equal(result.creator.monitoringEnabled, true);
   });
 
+  test("adds an Instagram creator with Instagram's rules and profile link", async () => {
+    const { deps } = setup();
+    const result = await addCreator({ workspaceId: "w1", username: "https://www.instagram.com/Lena.Creates/", platform: "INSTAGRAM" }, deps);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.creator.platform, "INSTAGRAM");
+    assert.equal(result.creator.handle, "lena.creates");
+    assert.equal(result.creator.profileUrl, "https://www.instagram.com/lena.creates/");
+    // The same name on TikTok is a different creator.
+    const tiktok = await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);
+    assert.equal(tiktok.ok && tiktok.creator.platform, "TIKTOK");
+    assert.deepEqual(await addCreator({ workspaceId: "w1", username: "@lena.creates", platform: "INSTAGRAM" }, deps), {
+      ok: false,
+      error: "ALREADY_ON_WATCHLIST",
+    });
+  });
+
   test("refuses a creator already on the watchlist", async () => {
     const { deps } = setup();
     await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);

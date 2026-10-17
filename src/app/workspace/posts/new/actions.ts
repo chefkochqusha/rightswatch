@@ -9,6 +9,8 @@ import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { manualPostContent, parseManualPost, type ManualPostField } from "@/modules/connectors/manual-post";
 
+const PLATFORM_NAMES: Record<string, string> = { TIKTOK: "TikTok", INSTAGRAM: "Instagram", YOUTUBE: "YouTube" };
+
 export interface AddPostState {
   /** What was sent, so the form keeps it after an error (React resets a form after its action). */
   values?: Record<"creatorId" | "url" | "publishedOn" | "brands" | "territory" | "label", string>;
@@ -51,7 +53,9 @@ async function addPost(formData: FormData): Promise<AddPostState> {
   const parsed = parseManualPost({ url: field("url"), publishedOn: field("publishedOn"), brands: field("brands"), label: field("label"), territory: field("territory") });
   const fieldErrors: AddPostState["fieldErrors"] = parsed.ok ? {} : { ...parsed.fieldErrors };
   if (!creator || creator.removedAt) fieldErrors.creatorId = "Choose a creator from your watchlist.";
-  else if (parsed.ok && parsed.post.handle !== creator.handle.toLowerCase()) {
+  else if (parsed.ok && parsed.post.platform !== creator.platform) {
+    fieldErrors.url = `This is a ${PLATFORM_NAMES[parsed.post.platform]} link, but @${creator.handle} is on your watchlist as a ${PLATFORM_NAMES[creator.platform] ?? creator.platform} creator.`;
+  } else if (parsed.ok && parsed.post.handle !== null && parsed.post.handle !== creator.handle.toLowerCase()) {
     fieldErrors.url = `This link is a post by @${parsed.post.handle}, not @${creator.handle}.`;
   }
   if (!parsed.ok || !creator || Object.keys(fieldErrors).length > 0) return { fieldErrors };
@@ -79,7 +83,7 @@ async function addPost(formData: FormData): Promise<AddPostState> {
     action: "post.added",
     targetType: "content",
     targetId: parsed.post.videoId,
-    metadata: { handle: creator.handle },
+    metadata: { handle: creator.handle, platform: creator.platform },
   });
   revalidatePath("/workspace", "layout");
   redirect(`/workspace/items/${parsed.post.videoId}?added=1`);

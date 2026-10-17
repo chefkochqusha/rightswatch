@@ -14,6 +14,7 @@ import {
   resumeCreator,
   updateCreatorDetails,
   type AddCreatorError,
+  type CreatorPlatform,
 } from "@/modules/creators";
 import { DEMO_NAMED_CREATORS } from "@/modules/demo-data";
 
@@ -29,16 +30,28 @@ export interface CreatorFormState {
   formError?: string;
   /** Set on success: the handle just added (or restored). */
   added?: string;
+  /** The platform of the creator just added. */
+  addedPlatform?: CreatorPlatform;
   restored?: boolean;
   saved?: boolean;
 }
 
-const ERROR_MESSAGES: Record<AddCreatorError, { field?: keyof NonNullable<CreatorFormState["fieldErrors"]>; message: string }> = {
-  USERNAME_REQUIRED: { field: "username", message: "Enter the creator's TikTok username." },
-  USERNAME_INVALID: {
-    field: "username",
-    message: "That isn't a TikTok username. Usernames use letters, numbers, underscores and periods, up to 24 characters.",
+const USERNAME_MESSAGES: Record<CreatorPlatform, Record<"USERNAME_REQUIRED" | "USERNAME_INVALID", string>> = {
+  TIKTOK: {
+    USERNAME_REQUIRED: "Enter the creator's TikTok username.",
+    USERNAME_INVALID: "That isn't a TikTok username. Usernames use letters, numbers, underscores and periods, up to 24 characters.",
   },
+  INSTAGRAM: {
+    USERNAME_REQUIRED: "Enter the creator's Instagram username.",
+    USERNAME_INVALID:
+      "That isn't an Instagram username. Usernames use letters, numbers, underscores and periods, up to 30 characters, without a period at the start or end.",
+  },
+};
+
+const ERROR_MESSAGES: Record<
+  Exclude<AddCreatorError, "USERNAME_REQUIRED" | "USERNAME_INVALID">,
+  { field?: keyof NonNullable<CreatorFormState["fieldErrors"]>; message: string }
+> = {
   DISPLAY_NAME_TOO_LONG: { field: "displayName", message: "Keep the display name under 80 characters." },
   COUNTRY_INVALID: { field: "country", message: "Choose a country from the list." },
   FOLLOWERS_INVALID: { field: "followerCount", message: "Enter a follower count, like 182000 or 182K." },
@@ -47,16 +60,21 @@ const ERROR_MESSAGES: Record<AddCreatorError, { field?: keyof NonNullable<Creato
   LIMIT_REACHED: { message: "Your plan's creator limit is reached. Pause a creator or upgrade to add more." },
 };
 
-function stateFor(error: AddCreatorError): CreatorFormState {
+function stateFor(error: AddCreatorError, platform: CreatorPlatform): CreatorFormState {
+  if (error === "USERNAME_REQUIRED" || error === "USERNAME_INVALID") {
+    return { fieldErrors: { username: USERNAME_MESSAGES[platform][error] } };
+  }
   const { field, message } = ERROR_MESSAGES[error];
   return field ? { fieldErrors: { [field]: message } } : { formError: message };
 }
 
 export async function addCreatorAction(_prev: CreatorFormState, formData: FormData): Promise<CreatorFormState> {
   const session = await requireCaseManager();
+  const platform: CreatorPlatform = formData.get("platform") === "INSTAGRAM" ? "INSTAGRAM" : "TIKTOK";
   const result = await addCreator(
     {
       workspaceId: session.workspace.id,
+      platform,
       username: String(formData.get("username") ?? ""),
       displayName: String(formData.get("displayName") ?? ""),
       country: String(formData.get("country") ?? ""),
@@ -64,13 +82,14 @@ export async function addCreatorAction(_prev: CreatorFormState, formData: FormDa
     },
     { creatorRepository: getCreatorStore().creators, allowance: await getCreatorAllowance(session.workspace.id) },
   );
-  if (!result.ok) return stateFor(result.error);
+  if (!result.ok) return stateFor(result.error, platform);
 
   await audit(session.workspace.id, session.user.id, result.restored ? "creator.restored" : "creator.added", result.creator.id, {
     handle: result.creator.handle,
+    platform,
   });
   revalidatePath("/workspace", "layout");
-  return { added: result.creator.handle, restored: result.restored };
+  return { added: result.creator.handle, addedPlatform: platform, restored: result.restored };
 }
 
 /**
@@ -159,7 +178,7 @@ export async function updateCreatorDetailsAction(_prev: CreatorFormState, formDa
   );
   if (!result.ok) {
     if (result.error === "NOT_FOUND") return { formError: "That creator isn't on your watchlist." };
-    return stateFor(result.error);
+    return stateFor(result.error, "TIKTOK");
   }
   await audit(session.workspace.id, session.user.id, "creator.updated", creatorId, { handle: result.creator.handle });
   revalidatePath("/workspace", "layout");

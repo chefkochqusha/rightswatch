@@ -9,7 +9,8 @@ export const metadata = { title: "Add a post — Bekvor" };
 
 /**
  * Adding a paid post by hand: for posts the TikTok connection doesn't
- * deliver (or before it is connected). Analyst and up.
+ * deliver (or before it is connected), and for every Instagram post (there
+ * is no Instagram connection). Analyst and up.
  */
 export default async function AddPostPage() {
   const session = await requireCaseManager();
@@ -38,7 +39,7 @@ export default async function AddPostPage() {
           .
         </p>
       ) : (
-        <AddPostForm creators={creators.map((c) => ({ id: c.id, handle: c.handle }))} today={today} />
+        <AddPostForm creators={creators.map((c) => ({ id: c.id, handle: c.handle, platform: c.platform }))} today={today} />
       )}
     </div>
   );

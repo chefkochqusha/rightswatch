@@ -9,8 +9,8 @@ import { addCreatorAction, type CreatorFormState } from "./actions";
 const initialState: CreatorFormState = {};
 
 /**
- * Adds a creator to the watchlist (Brief §8). Only the username is
- * required — pasted as "@name", "name" or a profile link. On success the
+ * Adds a creator to the watchlist (Brief §8). Only the platform and the
+ * username are required — pasted as "@name", "name" or a profile link. On success the
  * form clears for the next one and says who was added.
  */
 export function AddCreatorForm({ countries }: { countries: CountryOption[] }) {
@@ -23,9 +23,23 @@ export function AddCreatorForm({ countries }: { countries: CountryOption[] }) {
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.2fr_1fr_0.8fr]">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[0.9fr_1.4fr_1.2fr_1fr_0.8fr]">
+        <div>
+          <label htmlFor="platform" className="block text-[0.8125rem] font-medium text-tx">
+            Platform
+          </label>
+          <select
+            id="platform"
+            name="platform"
+            defaultValue="TIKTOK"
+            className="mt-1.5 block w-full min-w-0 rounded-lg border border-line bg-bg px-3 py-2 text-sm text-tx"
+          >
+            <option value="TIKTOK">TikTok</option>
+            <option value="INSTAGRAM">Instagram</option>
+          </select>
+        </div>
         <FormField
-          label="TikTok username"
+          label="Username"
           name="username"
           placeholder="@lena.creates"
           autoComplete="off"
@@ -60,7 +74,12 @@ export function AddCreatorForm({ countries }: { countries: CountryOption[] }) {
             <span className="text-mismatch">{state.formError}</span>
           ) : state.added ? (
             <span className="text-t2">
-              @{state.added} {state.restored ? "is back on your watchlist." : "is on your watchlist. The next scan includes them."}
+              @{state.added}{" "}
+              {state.restored
+                ? "is back on your watchlist."
+                : state.addedPlatform === "INSTAGRAM"
+                  ? "is on your watchlist. Add their Instagram posts by link: scans don't reach Instagram yet."
+                  : "is on your watchlist. The next scan includes them."}
             </span>
           ) : null}
         </p>
