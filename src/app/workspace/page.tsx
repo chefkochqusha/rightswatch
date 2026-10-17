@@ -123,7 +123,7 @@ export default async function WorkspacePage({ searchParams }: PageProps<"/worksp
 
   const steps = [
     { done: allowance.cap > 0, label: "Choose a plan", detail: "Every plan starts with a free 14-day trial.", href: "/workspace/billing" },
-    { done: monitored.length > 0, label: "Add the creators to monitor", detail: "Their TikTok usernames are enough.", href: "/workspace/creators" },
+    { done: monitored.length > 0, label: "Add the creators to monitor", detail: "Their TikTok or Instagram usernames are enough.", href: "/workspace/creators" },
     { done: items.length > 0, label: "Run your first scan", detail: "It checks their commercial posts for your music.", href: null },
   ];
   const nextStep = steps.findIndex((step) => !step.done);

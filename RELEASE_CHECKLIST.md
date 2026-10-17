@@ -32,6 +32,15 @@ or a business decision at release time, it gets a line here.
 - [ ] **TikTok API terms**: confirm commercial monitoring use is permitted
   (Master Brief §4: access and eligibility are an external dependency to be
   validated, never assumed).
+- [ ] **Meta Platform Terms** (lawyer, then Meta's app review): Meta forbids
+  tools for surveillance and building user profiles without consent (§ 3.a).
+  Confirm that showing a customer the public fields of the creators they added
+  is acceptable before the Instagram connector is built (`INSTAGRAM_APPLICATION.md`).
+- [ ] **Self-promotion as commercial use** (lawyer): is music in posts by a
+  creator who promotes their own paid offer (bio link, paywall, second
+  account) commercial use, and may a customer mark creators that way in Bekvor?
+  The mark is built and neutral; never label creators as adult or by platform
+  (GDPR Art. 9, `LEGAL_DE.md`).
 - [ ] **MusicBrainz and Cover Art Archive** (song search and cover art in the
   Rights Library): the core song data is public domain (CC0), but check the
   terms for commercial use — MetaBrainz asks commercial users of its web
@@ -228,6 +237,10 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   and tested with stubbed answers only, so expect the first live call to need a
   small fix; a failure shows as "couldn't be fetched" with the reason on the
   creator. The public demo workspace stays on fake data either way.
+- [ ] **Instagram (Meta)** — facts and steps: `INSTAGRAM_APPLICATION.md`. Bekvor's
+  own Instagram professional account and Facebook Page once the name is final, a
+  Meta developer account, business verification after registration, then app
+  review. No Instagram connector is built yet; Instagram posts are added by link.
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.

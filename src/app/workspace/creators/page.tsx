@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { buttonStyles } from "@/components/ui/button";
 import { SearchIcon } from "@/components/ui/icons";
 import { CreatorStatusBadge } from "@/components/creators/creator-status-badge";
+import { PLATFORM_LABELS } from "@/components/rights/labels";
 import { countryOptions } from "@/components/creators/country-options";
 import { CREATOR_STATUS_LABELS, countryName, formatFollowers } from "@/components/creators/labels";
 import { formatRelativeTime } from "@/components/ui/time";
@@ -53,16 +54,19 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
     statsByCreator.set(item.creatorId, stats);
   }
 
-  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || creator.status === statusFilter));
+  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || scanStatus(creator) === statusFilter));
   const countByStatus = new Map<CreatorStatus, number>();
-  for (const creator of creators) countByStatus.set(creator.status, (countByStatus.get(creator.status) ?? 0) + 1);
+  for (const creator of creators) {
+    const status = scanStatus(creator);
+    if (status) countByStatus.set(status, (countByStatus.get(status) ?? 0) + 1);
+  }
   const now = new Date();
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Creators"
-        description="The TikTok creators Bekvor checks for commercial posts. Each scan looks at what they've published since the last one."
+        description="The creators Bekvor checks for commercial posts. Each scan looks at what TikTok creators published since the last one; Instagram posts are added by link."
       />
 
       <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
@@ -106,7 +110,7 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
         {creators.length === 0 ? (
           <EmptyState
             title="No creators are being monitored yet."
-            description="Add the TikTok creators who might use your music in paid posts. Bekvor checks their commercial content on every scan."
+            description="Add the TikTok or Instagram creators who might use your music in paid posts. Bekvor checks TikTok creators' commercial content on every scan; Instagram posts are added by link."
           />
         ) : (
           <>
@@ -175,6 +179,12 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
                           <td className="px-5 py-3">
                             <Link href={`/workspace/creators/${creator.id}`} className="group block">
                               <span className="font-medium text-tx group-hover:text-accent">@{creator.handle}</span>
+                              {creator.platform !== "TIKTOK" && (
+                                <>
+                                  {" "}
+                                  <span className="ml-1 text-[0.75rem] text-t2">{PLATFORM_LABELS[creator.platform]}</span>
+                                </>
+                              )}
                               {creator.displayName && (
                                 <span className="block text-[0.8125rem] text-t2">{creator.displayName}</span>
                               )}
@@ -183,10 +193,14 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
                           <td className="px-4 py-3 text-t2">{countryName(creator.country)}</td>
                           <td className="px-4 py-3 text-right text-t2 tabular-nums">{formatFollowers(creator.followerCount)}</td>
                           <td className="px-4 py-3">
-                            <CreatorStatusBadge status={creator.status} />
+                            {creator.platform !== "TIKTOK" && creator.monitoringEnabled ? (
+                              <span className="text-[0.8125rem] text-t2">Posts by link</span>
+                            ) : (
+                              <CreatorStatusBadge status={creator.status} />
+                            )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-t2">
-                            {creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not yet"}
+                            {creator.platform !== "TIKTOK" ? "—" : creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not yet"}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums">
                             <span className="text-tx">{stats?.matches ?? 0}</span>
@@ -211,6 +225,13 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
       </section>
     </div>
   );
+}
+
+/** The status the filters count: none for a monitored creator on a platform
+ *  scans don't reach (Instagram, posts by link), so they never read as
+ *  "Pending" forever. A paused one is paused on any platform. */
+function scanStatus(creator: CreatorRecord): CreatorStatus | null {
+  return creator.platform !== "TIKTOK" && creator.monitoringEnabled ? null : creator.status;
 }
 
 function matchesQuery(creator: CreatorRecord, query: string): boolean {

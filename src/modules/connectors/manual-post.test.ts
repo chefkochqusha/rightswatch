@@ -29,10 +29,31 @@ describe("parseManualPost", () => {
       "https://www.tiktok.com.evil.example/@a/video/7301234567890123456",
       "http://www.tiktok.com/@abc/video/7301234567890123456",
       "https://www.instagram.com/p/abc",
+      "https://www.instagram.com/lena.creates/",
+      "https://www.instagram.com.evil.example/reel/C1a2B3c4D5e/",
+      "http://www.instagram.com/reel/C1a2B3c4D5e/",
       "not a link",
     ]) {
       const parsed = parseManualPost({ ...base, url }, now);
       assert.ok(!parsed.ok && parsed.fieldErrors.url, url);
+    }
+  });
+
+  it("reads Instagram post links, with or without the account in them", () => {
+    const cases: [string, string, string | null][] = [
+      ["https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=xyz", "https://www.instagram.com/reel/C1a2B3c4D5e/", null],
+      ["https://instagram.com/reels/C1a2B3c4D5e", "https://www.instagram.com/reel/C1a2B3c4D5e/", null],
+      ["https://www.instagram.com/p/DAbc_-12345/", "https://www.instagram.com/p/DAbc_-12345/", null],
+      ["https://www.instagram.com/Lena.Creates/reel/C1a2B3c4D5e/", "https://www.instagram.com/reel/C1a2B3c4D5e/", "lena.creates"],
+    ];
+    for (const [url, canonical, handle] of cases) {
+      const parsed = parseManualPost({ ...base, url }, now);
+      assert.ok(parsed.ok, url);
+      if (!parsed.ok) continue;
+      assert.equal(parsed.post.platform, "INSTAGRAM");
+      assert.equal(parsed.post.url, canonical);
+      assert.equal(parsed.post.handle, handle);
+      assert.equal(manualPostContent(parsed.post, { externalId: "lena.creates", handle: "lena.creates" }).platform, "INSTAGRAM");
     }
   });
 

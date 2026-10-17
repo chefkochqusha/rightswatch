@@ -5,7 +5,7 @@ import { getCreatorAllowance } from "./creator-allowance";
 import { getCreatorStore } from "./creator-store";
 import { getJobRunnerMode } from "./job-runner";
 import { getJobStore } from "./job-store";
-import { runWorkspaceScan, type RunWorkspaceScanResult } from "./workspace-scan-store";
+import { isScannable, runWorkspaceScan, type RunWorkspaceScanResult } from "./workspace-scan-store";
 
 /**
  * Starting a scan, wherever it runs (`job-runner.ts`).
@@ -66,5 +66,6 @@ async function scanRefusal(workspaceId: string): Promise<"NO_PLAN" | "NO_CREATOR
   const allowance = await getCreatorAllowance(workspaceId);
   if (allowance.cap <= 0) return "NO_PLAN";
   const monitored = (await getCreatorStore().creators.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
-  return monitored.length === 0 ? "NO_CREATORS" : null;
+  // Scans fetch TikTok only: Instagram creators' posts are added by link.
+  return monitored.slice(0, allowance.cap).some(isScannable) ? null : "NO_CREATORS";
 }

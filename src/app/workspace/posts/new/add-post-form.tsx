@@ -6,7 +6,7 @@ import { FormField } from "@/components/ui/form-field";
 import { buttonStyles } from "@/components/ui/button";
 import { addPostAction, type AddPostState } from "./actions";
 
-export function AddPostForm({ creators, today }: { creators: { id: string; handle: string }[]; today: string }) {
+export function AddPostForm({ creators, today }: { creators: { id: string; handle: string; platform: string }[]; today: string }) {
   const [state, formAction, pending] = useActionState(addPostAction, {} as AddPostState);
   const creatorError = state.fieldErrors?.creatorId;
   const v = state.values;
@@ -32,6 +32,7 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
           {creators.map((creator) => (
             <option key={creator.id} value={creator.id}>
               @{creator.handle}
+              {creator.platform === "INSTAGRAM" ? " (Instagram)" : ""}
             </option>
           ))}
         </select>
@@ -47,7 +48,7 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
         type="url"
         placeholder="https://www.tiktok.com/@name/video/7301234567890123456"
         autoComplete="off"
-        hint="The full link from the address bar or the share menu's “Copy link”."
+        hint="TikTok or Instagram: the full link from the address bar or the share menu's “Copy link”."
         defaultValue={v?.url}
         error={state.fieldErrors?.url}
       />
@@ -74,7 +75,16 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
         defaultValue={v?.brands}
         error={state.fieldErrors?.brands}
       />
-      <FormField label="Label on the post" name="label" optional placeholder="Paid partnership" autoComplete="off" maxLength={60} defaultValue={v?.label} />
+      <FormField
+        label="Label on the post"
+        name="label"
+        optional
+        placeholder="Paid partnership"
+        hint="Left empty: “Paid partnership”, or “Own paid offer” for a creator your team marked that way."
+        autoComplete="off"
+        maxLength={60}
+        defaultValue={v?.label}
+      />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <button type="submit" disabled={pending} className={buttonStyles("primary")}>

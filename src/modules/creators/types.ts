@@ -40,6 +40,10 @@ export interface CreatorRecord {
   /** Why the last scan couldn't, while `status` is ERROR. */
   lastError: string | null;
   removedAt: Date | null;
+  /** Marked by a member: this creator promotes their own paid offers
+   *  (subscription, shop, course), so their posts count as commercial use
+   *  even without a platform label. Never set by Bekvor itself. */
+  promotesOwnOffers: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +70,7 @@ export type CreatorChanges = Partial<
     | "lastSeenAt"
     | "lastError"
     | "removedAt"
+    | "promotesOwnOffers"
   >
 >;
 

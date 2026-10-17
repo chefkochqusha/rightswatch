@@ -129,7 +129,7 @@ model Membership {
 
 enum Platform {
   TIKTOK
-  INSTAGRAM // reserved — not built yet, see PlatformConnector (§5)
+  INSTAGRAM // creators and posts added by link; no connector yet (INSTAGRAM_APPLICATION.md)
   YOUTUBE // reserved — not built yet
 }
 
@@ -166,6 +166,11 @@ model Creator {
   // should preserve evidence"), and adding the same username restores it.
   lastError         String?
   removedAt         DateTime?
+  // A member's call, never Bekvor's: this creator sends viewers to their own
+  // paid offer (subscription, shop, course), so their posts are commercial
+  // use even without a platform label (LEGAL_DE.md, BGH 2021 self-promotion).
+  // Deliberately neutral: no category of offer or platform is ever stored.
+  promotesOwnOffers Boolean       @default(false)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
