@@ -185,12 +185,61 @@ def melody_agreement(query: np.ndarray, ref: np.ndarray, speed: float, shift: in
     return float(np.mean(distance <= 1))
 
 
+try:  # compiled when numba is installed (the Docker image has it); same results, several times faster
+    from numba import njit as _njit
+except ImportError:  # pragma: no cover - plain numpy below
+    _njit = None
+
+
+def _pair_hashes_loop(t, f, fanout, lookahead, dt_min, dt_max, df_max):
+    """The pairs `_pair_hashes_numpy` makes, in the same order (anchor, then
+    distance), without its (lookahead x peaks) temporary arrays and sort."""
+    n = len(t)
+    hashes = np.empty(n * fanout, np.int64)
+    times = np.empty(n * fanout, np.int64)
+    m = 0
+    for a in range(n):
+        fa = f[a]
+        if fa < 0 or fa >= 256:
+            continue
+        got = 0
+        for k in range(1, lookahead + 1):
+            j = a + k
+            if j >= n:
+                break
+            dt = t[j] - t[a]
+            df = f[j] - fa
+            if dt >= dt_min and dt <= dt_max and abs(df) <= df_max:
+                hashes[m] = (fa << 13) | ((df + 64) << 6) | dt
+                times[m] = t[a]
+                m += 1
+                got += 1
+                if got >= fanout:
+                    break
+    return hashes[:m], times[:m]
+
+
+_pair_hashes_fast = _njit(cache=True, nogil=True)(_pair_hashes_loop) if _njit else None
+
+
 def pair_hashes(pk: np.ndarray, fanout: int = FANOUT, lookahead: int = LOOKAHEAD) -> tuple[np.ndarray, np.ndarray]:
     """(hash, anchor frame) for landmark pairs; peaks may be fractional (after
     a transform) and are rounded first. Same pairs as the prototype: for each
     anchor, the first `fanout` later peaks within the time and pitch limits.
     Songs always use FANOUT; a post's second, denser pass (`match`) pairs
     more peaks so the song's pairs are still among them."""
+    if len(pk) < 2:
+        return np.zeros(0, np.int32), np.zeros(0, np.int32)
+    if _pair_hashes_fast is not None:
+        t = np.round(pk[:, 0]).astype(np.int64)
+        f = np.round(pk[:, 1]).astype(np.int64)
+        h, tt = _pair_hashes_fast(t, f, fanout, min(lookahead, len(t) - 1), DT_MIN, DT_MAX, DF_MAX)
+        return h.astype(np.int32), tt.astype(np.int32)
+    return _pair_hashes_numpy(pk, fanout, lookahead)
+
+
+def _pair_hashes_numpy(pk: np.ndarray, fanout: int = FANOUT, lookahead: int = LOOKAHEAD) -> tuple[np.ndarray, np.ndarray]:
+    """The plain numpy version of `pair_hashes` (no numba)."""
     if len(pk) < 2:
         return np.zeros(0, np.int32), np.zeros(0, np.int32)
     t = np.round(pk[:, 0]).astype(np.int64)
@@ -510,19 +559,28 @@ class Index:
         if not hit.any():
             return best, best_off
         start, cnt, tq = self.starts[pos[hit]], self.counts[pos[hit]], qt[hit].astype(np.int64)
-        total = int(cnt.sum())
-        base = np.repeat(start, cnt)
-        within = np.arange(total) - np.repeat(np.cumsum(cnt) - cnt, cnt)
-        idx = base + within
-        off = self.T[idx].astype(np.int64) - np.repeat(tq, cnt)
+        q_max = int(tq.max()) + 1
+        span = self.max_t + q_max + 2
+        dense = n * span <= DENSE_LIMIT
+        if not (dense and _dense_votes_fast is not None):
+            total = int(cnt.sum())
+            base = np.repeat(start, cnt)
+            within = np.arange(total) - np.repeat(np.cumsum(cnt) - cnt, cnt)
+            idx = base + within
+            off = self.T[idx].astype(np.int64) - np.repeat(tq, cnt)
         # Dense counting (one slot per song and offset) when that table is
         # small enough; otherwise sort the keys. Same result, the first is
         # several times faster.
-        q_max = int(tq.max()) + 1
-        span = self.max_t + q_max + 2
-        if n * span <= DENSE_LIMIT:
-            key = self.S[idx].astype(np.int64) * span + (off + q_max)
-            sums = np.bincount(key, weights=self.W[idx], minlength=n * span).reshape(n, span)
+        if dense:
+            if _dense_votes_fast is not None:
+                # the same sums, added in the same order, without the per-vote arrays,
+                # and the same smoothing and best offset, without copying the table
+                sums = _dense_votes_fast(start, cnt.astype(np.int64), tq, self.T, self.S, self.W, n, span, q_max)
+                best, at = _best_offsets_fast(sums, n, span)
+                return best, at - q_max
+            else:
+                key = self.S[idx].astype(np.int64) * span + (off + q_max)
+                sums = np.bincount(key, weights=self.W[idx], minlength=n * span).reshape(n, span)
             smoothed = sums.copy()
             smoothed[:, 1:] += sums[:, :-1]
             smoothed[:, :-1] += sums[:, 1:]
@@ -548,6 +606,47 @@ class Index:
         best[sid[first]] = smoothed[first]
         best_off[sid[first]] = offset[first]
         return best, best_off
+
+
+def _dense_votes_loop(start, cnt, tq, T, S, W, n, span, q_max):
+    """`Index.score`'s dense vote table: per (song, offset), the summed weights
+    of the matching pairs, added in the order np.bincount would add them."""
+    sums = np.zeros(n * span)
+    for h in range(len(start)):
+        q = tq[h]
+        for p in range(start[h], start[h] + cnt[h]):
+            sums[np.int64(S[p]) * span + (np.int64(T[p]) - q + q_max)] += W[p]
+    return sums
+
+
+_dense_votes_fast = _njit(cache=True, nogil=True)(_dense_votes_loop) if _njit else None
+
+
+def _best_offsets_loop(sums, n, span):
+    """Per song (a row of `span` offsets): the best offset after adding each
+    offset's neighbours, as `Index.score` does it with numpy (same additions
+    in the same order, the first offset on a tie)."""
+    best = np.zeros(n)
+    at = np.zeros(n, np.int64)
+    for s in range(n):
+        row = s * span
+        top = -1.0
+        where = 0
+        for i in range(span):
+            v = sums[row + i]
+            if i > 0:
+                v += sums[row + i - 1]
+            if i < span - 1:
+                v += sums[row + i + 1]
+            if v > top:
+                top = v
+                where = i
+        best[s] = top
+        at[s] = where
+    return best, at
+
+
+_best_offsets_fast = _njit(cache=True, nogil=True)(_best_offsets_loop) if _njit else None
 
 
 def _transforms(robust: bool = True) -> list[tuple[float, int]]:

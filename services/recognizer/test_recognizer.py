@@ -225,6 +225,53 @@ class LargeCatalogueTest(unittest.TestCase):
         self.assertEqual(list(SONGS)[int(sharded[0])], "t2")
 
 
+class CompiledPathsTest(unittest.TestCase):
+    """With numba installed, the hot loops run compiled. They must give exactly
+    the numpy results, not just close ones: the app's thresholds were set on them."""
+
+    def setUp(self):
+        if fp._pair_hashes_fast is None:
+            self.skipTest("numba not installed")
+
+    def test_pair_hashes_are_identical(self):
+        rng = np.random.default_rng(11)
+        for _ in range(60):
+            n = int(rng.integers(0, 2500))
+            pk = np.c_[np.sort(rng.uniform(0, 2500, n)) * rng.uniform(0.75, 1.35), rng.uniform(-20, 280, n)]
+            for fanout, lookahead in ((fp.FANOUT, fp.LOOKAHEAD), (fp.FANOUT * 2, fp.LOOKAHEAD * 2)):
+                fast, plain = fp.pair_hashes(pk, fanout, lookahead), fp._pair_hashes_numpy(pk, fanout, lookahead)
+                np.testing.assert_array_equal(fast[0], plain[0])
+                np.testing.assert_array_equal(fast[1], plain[1])
+                self.assertEqual(fast[0].dtype, plain[0].dtype)
+
+    def test_scores_and_shortlist_are_identical(self):
+        import shortlist as sl
+
+        songs = [(f"s{i}", fp.fingerprint(to_fs(make_song(i, seconds=30)))) for i in range(1, 9)]
+        index = fp.Index(songs, shortlist_from=4)
+        post = to_fs(make_song(3, seconds=30)[SR * 5: SR * 20])
+        pk = fp.peaks(post)
+        h, tq = fp.pair_hashes(pk)
+        fast = index.subset(index.candidates(pk, 8)).score(h, tq)
+        saved = fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast
+        try:
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast = None, None, None
+            plain = index.subset(index.candidates(pk, 8)).score(h, tq)
+            plain_match = fp.match(index, post)
+        finally:
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast = saved
+        np.testing.assert_array_equal(fast[0], plain[0])
+        np.testing.assert_array_equal(fast[1], plain[1])
+        self.assertEqual(json.dumps(fp.match(index, post), sort_keys=True), json.dumps(plain_match, sort_keys=True))
+
+        rng = np.random.default_rng(5)
+        for _ in range(50):
+            n, m = int(rng.integers(1, 40)), int(rng.integers(0, 4000))
+            cell = (rng.integers(0, n, m) * 64 + rng.integers(0, 40, m)) * (1 << 16) + (rng.integers(-300, 300, m) + (1 << 15))
+            uk, c = np.unique(cell, return_counts=True)
+            np.testing.assert_array_equal(sl._best_per_song_fast(uk, c, n), sl._best_per_song(uk, c, n))
+
+
 class ServerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
