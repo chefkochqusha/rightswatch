@@ -57,6 +57,13 @@ const INITIAL_LOOKBACK_DAYS = 30;
 const DAY_MS = 86_400_000;
 
 /** One stored scan item, as the workspace pages render it. */
+/** Creators a scan fetches: TikTok only, the one platform with a connector.
+ *  Instagram creators are on the watchlist for posts added by link
+ *  (`INSTAGRAM_APPLICATION.md`). */
+export function isScannable(creator: { platform: string }): boolean {
+  return creator.platform === "TIKTOK";
+}
+
 export type WorkspaceScanItem = StoredScanItem;
 
 export async function getWorkspaceScanItems(workspaceId: string): Promise<WorkspaceScanItem[]> {
@@ -92,8 +99,10 @@ export async function runWorkspaceScan(
 
   const creatorRepository = getCreatorStore().creators;
   const monitored = (await creatorRepository.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
-  if (monitored.length === 0) return { ok: false, error: "NO_CREATORS" };
-  const creators = monitored.slice(0, allowance.cap);
+  // The plan's limit counts every monitored creator; a scan then fetches the
+  // TikTok ones among them (Instagram posts are added by link).
+  const creators = monitored.slice(0, allowance.cap).filter(isScannable);
+  if (creators.length === 0) return { ok: false, error: "NO_CREATORS" };
 
   const workspace = await getAuthStore().workspaces.findById(workspaceId);
   if (!workspace) throw new Error("Workspace not found.");
@@ -104,7 +113,7 @@ export async function runWorkspaceScan(
     triggeredByUserId,
     connectorMode,
     creatorsTotal: creators.length,
-    skippedOverLimit: monitored.length - creators.length,
+    skippedOverLimit: Math.max(0, monitored.length - allowance.cap),
   });
 
   if (options.queuedJobId) {

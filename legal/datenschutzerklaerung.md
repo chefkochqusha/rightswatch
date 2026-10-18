@@ -20,9 +20,9 @@ Diese Erklärung betrifft die Daten, über die **wir** entscheiden: Besuche der
 Website, Ihr Benutzerkonto, die Abrechnung, Service-E-Mails und das
 Partnerprogramm.
 
-Die Inhalte, die unsere Kunden in ihrem Arbeitsbereich verwalten (Creator auf
-der Beobachtungsliste, deren Posts, hochgeladene Aufnahmen und Videos, Fälle,
-Notizen), verarbeiten wir **im Auftrag des jeweiligen Kunden** (Art. 28 DSGVO).
+Die Inhalte, die unsere Kunden in ihrem Arbeitsbereich verwalten (TikTok- und
+Instagram-Creator auf der Beobachtungsliste, Markierungen, die der Kunde zu
+ihnen setzt, deren Posts, hochgeladene Aufnahmen und Videos, Fälle, Notizen), verarbeiten wir **im Auftrag des jeweiligen Kunden** (Art. 28 DSGVO).
 Verantwortlich dafür ist der Kunde. Wenn Sie als Creator Fragen dazu haben,
 wenden Sie sich bitte an das Unternehmen, das Sie beobachtet; wir leiten
 Anfragen, die bei uns eingehen, an den Kunden weiter.

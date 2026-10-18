@@ -39,7 +39,7 @@ export async function runScanAction(_prev: ScanActionState, _formData: FormData)
       message:
         started.error === "NO_PLAN"
           ? "Choose a plan to start monitoring. Every plan starts with a free trial."
-          : "Add a creator to your watchlist first. A scan checks the creators you monitor.",
+          : "Add a TikTok creator to your watchlist first. A scan checks the TikTok creators you monitor; Instagram posts are added by link.",
     };
   }
   if (started.kind === "queued") return { status: "queued", alreadyQueued: started.alreadyQueued };

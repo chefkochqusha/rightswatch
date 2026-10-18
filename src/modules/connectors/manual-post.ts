@@ -3,10 +3,11 @@ import type { NormalizedCommercialContent } from "./types";
 /**
  * A commercial post entered by hand (Brief §1's manual path, beside the
  * connectors): for posts the TikTok API doesn't deliver — before API access
- * exists, or a post someone came across. It becomes the same
- * `NormalizedCommercialContent` a connector produces, keyed by TikTok's own
- * video id, so a later scan of the same post updates this row instead of
- * adding a second one.
+ * exists, or a post someone came across — and for every Instagram post,
+ * since there is no Instagram connector (`INSTAGRAM_APPLICATION.md`). It
+ * becomes the same `NormalizedCommercialContent` a connector produces, keyed
+ * by the platform's own id (TikTok's video id, Instagram's shortcode), so a
+ * later scan of the same post updates this row instead of adding a second one.
  */
 
 export interface ManualPostInput {
@@ -20,27 +21,59 @@ export interface ManualPostInput {
 export type ManualPostField = "url" | "publishedOn" | "brands" | "territory";
 
 export type ParsedManualPost =
-  | { ok: true; post: { url: string; videoId: string; handle: string; publishedAt: Date; brandNames: string[]; label: string | null; territory: string | null } }
+  | {
+      ok: true;
+      post: {
+        platform: "TIKTOK" | "INSTAGRAM";
+        url: string;
+        videoId: string;
+        /** The account in the link: always there for TikTok, only in some Instagram links. */
+        handle: string | null;
+        publishedAt: Date;
+        brandNames: string[];
+        label: string | null;
+        territory: string | null;
+      };
+    }
   | { ok: false; fieldErrors: Partial<Record<ManualPostField, string>> };
 
 const TIKTOK_POST = /^\/@([A-Za-z0-9._]{2,24})\/(?:video|photo)\/(\d{6,25})\/?$/;
+// instagram.com/reel/CODE/, /reels/CODE/, /p/CODE/, /tv/CODE/, optionally after /USERNAME.
+const INSTAGRAM_POST = /^\/(?:([A-Za-z0-9._]{1,30})\/)?(reels?|p|tv)\/([A-Za-z0-9_-]{5,40})\/?$/;
+
+type ParsedLink = { platform: "TIKTOK" | "INSTAGRAM"; url: string; videoId: string; handle: string | null };
+
+function parsePostLink(input: string): ParsedLink | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(input.trim());
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) return null;
+  if (/(^|\.)tiktok\.com$/.test(parsed.hostname)) {
+    const match = TIKTOK_POST.exec(parsed.pathname);
+    if (!match) return null;
+    const kind = parsed.pathname.includes("/photo/") ? "photo" : "video";
+    return { platform: "TIKTOK", url: `https://www.tiktok.com/@${match[1]}/${kind}/${match[2]}`, videoId: match[2], handle: match[1].toLowerCase() };
+  }
+  if (/(^|\.)instagram\.com$/.test(parsed.hostname)) {
+    const match = INSTAGRAM_POST.exec(parsed.pathname);
+    if (!match) return null;
+    const kind = match[2] === "reels" ? "reel" : match[2];
+    return { platform: "INSTAGRAM", url: `https://www.instagram.com/${kind}/${match[3]}/`, videoId: match[3], handle: match[1]?.toLowerCase() ?? null };
+  }
+  return null;
+}
 const EARLIEST = Date.UTC(2016, 0, 1);
 
 export function parseManualPost(input: ManualPostInput, now: Date = new Date()): ParsedManualPost {
   const fieldErrors: Partial<Record<ManualPostField, string>> = {};
 
-  let videoId = "";
-  let handle = "";
-  let url = "";
-  try {
-    const parsed = new URL(input.url.trim());
-    const match = TIKTOK_POST.exec(parsed.pathname);
-    if (parsed.protocol !== "https:" || !/(^|\.)tiktok\.com$/.test(parsed.hostname) || !match) throw new Error();
-    handle = match[1].toLowerCase();
-    videoId = match[2];
-    url = `https://www.tiktok.com/@${match[1]}/${parsed.pathname.includes("/photo/") ? "photo" : "video"}/${videoId}`;
-  } catch {
-    fieldErrors.url = "Paste the post's full TikTok link, like https://www.tiktok.com/@name/video/7301234567890123456.";
+  const link = parsePostLink(input.url);
+  if (!link) {
+    fieldErrors.url =
+      "Paste the post's full link, like https://www.tiktok.com/@name/video/7301234567890123456 or https://www.instagram.com/reel/C1a2B3c4D5e/.";
   }
 
   const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.publishedOn.trim());
@@ -64,9 +97,10 @@ export function parseManualPost(input: ManualPostInput, now: Date = new Date()):
   return {
     ok: true,
     post: {
-      url,
-      videoId,
-      handle,
+      platform: link!.platform,
+      url: link!.url,
+      videoId: link!.videoId,
+      handle: link!.handle,
       publishedAt: publishedAt!,
       brandNames: [...new Set(brandNames)],
       label: input.label.trim().slice(0, 60) || "Paid partnership",
@@ -80,7 +114,7 @@ export function manualPostContent(
   creator: { externalId: string; handle: string },
 ): NormalizedCommercialContent {
   return {
-    platform: "TIKTOK",
+    platform: post.platform,
     externalContentId: post.videoId,
     creatorExternalId: creator.externalId,
     creatorUsername: creator.handle,

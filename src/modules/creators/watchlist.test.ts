@@ -7,6 +7,7 @@ import {
   removeCreator,
   resumeCreator,
   scanOutcomeChanges,
+  setPromotesOwnOffers,
   updateCreatorDetails,
 } from "./watchlist";
 import type { CreatorAllowance } from "./types";
@@ -35,6 +36,23 @@ describe("addCreator", () => {
     assert.equal(result.creator.followerCount, 182_000);
     assert.equal(result.creator.status, "PENDING");
     assert.equal(result.creator.monitoringEnabled, true);
+  });
+
+  test("adds an Instagram creator with Instagram's rules and profile link", async () => {
+    const { deps } = setup();
+    const result = await addCreator({ workspaceId: "w1", username: "https://www.instagram.com/Lena.Creates/", platform: "INSTAGRAM" }, deps);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.creator.platform, "INSTAGRAM");
+    assert.equal(result.creator.handle, "lena.creates");
+    assert.equal(result.creator.profileUrl, "https://www.instagram.com/lena.creates/");
+    // The same name on TikTok is a different creator.
+    const tiktok = await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);
+    assert.equal(tiktok.ok && tiktok.creator.platform, "TIKTOK");
+    assert.deepEqual(await addCreator({ workspaceId: "w1", username: "@lena.creates", platform: "INSTAGRAM" }, deps), {
+      ok: false,
+      error: "ALREADY_ON_WATCHLIST",
+    });
   });
 
   test("refuses a creator already on the watchlist", async () => {
@@ -212,6 +230,34 @@ describe("scanOutcomeChanges", () => {
     assert.deepEqual(scanOutcomeChanges({ monitoringEnabled: false }, { at, error: null }), {
       lastSeenAt: at,
       lastError: null,
+    });
+  });
+});
+
+describe("setPromotesOwnOffers", () => {
+  test("is off for a new creator, switches on and off, and is idempotent", async () => {
+    const { deps } = setup();
+    const added = await addCreator({ workspaceId: "w1", username: "lena.creates", platform: "INSTAGRAM" }, deps);
+    assert.ok(added.ok);
+    if (!added.ok) return;
+    assert.equal(added.creator.promotesOwnOffers, false);
+    const ref = { workspaceId: "w1", creatorId: added.creator.id };
+    const on = await setPromotesOwnOffers({ ...ref, on: true }, deps);
+    assert.ok(on.ok && on.changed && on.creator.promotesOwnOffers);
+    const again = await setPromotesOwnOffers({ ...ref, on: true }, deps);
+    assert.ok(again.ok && !again.changed);
+    const off = await setPromotesOwnOffers({ ...ref, on: false }, deps);
+    assert.ok(off.ok && off.changed && !off.creator.promotesOwnOffers);
+  });
+
+  test("never touches another workspace's creator", async () => {
+    const { deps } = setup();
+    const added = await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);
+    assert.ok(added.ok);
+    if (!added.ok) return;
+    assert.deepEqual(await setPromotesOwnOffers({ workspaceId: "w2", creatorId: added.creator.id, on: true }, deps), {
+      ok: false,
+      error: "NOT_FOUND",
     });
   });
 });

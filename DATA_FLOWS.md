@@ -14,7 +14,7 @@ This is an engineering inventory, not legal advice.
 | Invites: invited email, role, who invited, dates (sent, expires, accepted, taken back) | People invited by a member | Postgres (`invites`) | The invite link works only while its row is open; owners and admins see open invites and can take them back. Links expire after 7 days; rows are deleted 30 days after they were used, taken back or expired |
 | Workspace name, plan, subscription status | The customer | Postgres, Stripe | Accounts, billing |
 | Company name, billing address, VAT ID and its VIES result | The customer (a business; a sole trader's name is personal data) | Postgres (`billing_profiles`), Stripe customer | Invoices (§ 14 UStG), the B2B check; Stripe asks VIES about EU VAT IDs |
-| Creators: TikTok username, display name, profile link, country, follower count | Creators (third parties, public data) | Postgres | The watchlist |
+| Creators: platform (TikTok or Instagram), username, display name, profile link, country, follower count; the mark "promotes their own paid offers" (set by a member, never by Bekvor; no kind or platform of offer is stored) | Creators (third parties, public data; the mark is the customer's assessment) | Postgres | The watchlist; the mark makes their posts count as commercial |
 | Posts: date, brand names, label, video link, territory, matched song | Creators (public data) | Postgres | Detections |
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |
 | Rate-limit counters: an HMAC of the email + IP address or the IP address, failure count, block time | Visitors, members | Postgres (`rate_limits`), on Vercel only | Brute-force and abuse defence. Not reversible without `SESSION_SECRET`; rows untouched for a day are removed |
@@ -36,7 +36,8 @@ analytics or advertising identifiers (none), keystroke or session recordings
 | **Neon** (Postgres) | All stored data | Always | Region still to be named by the owner. DPA to confirm. Backups: see `BACKUP_RESTORE.md` |
 | **Stripe** | Customer email, workspace id, plan; card data goes to Stripe directly | Once Stripe is on | Own controller for payment data. Webhook logs here hold ids only |
 | **Resend** (email) | Recipient address and the text of reset and confirmation emails | Once configured | Nothing is sent today. DPA to confirm |
-| **TikTok** Commercial Content API | The creator usernames on a watchlist | Each scan, once keys exist | Terms for commercial monitoring and storing the data are an open question (checklist) |
+| **TikTok** Commercial Content API | The TikTok creator usernames on a watchlist | Each scan, once keys exist | Terms for commercial monitoring and storing the data are an open question (checklist) |
+| **Instagram (Meta)** | Nothing: Instagram posts are entered by link, and Bekvor fetches nothing from Instagram. There is no Instagram connector | Not in use | Before one is built: Meta's app review and the lawyer (`INSTAGRAM_APPLICATION.md`) |
 | **Recognition service** (`services/recognizer`, our own) | Uploaded audio, a workspace's fingerprints | Each upload | Runs on our own server on the private network; keeps nothing on disk. Not a third party |
 | **MusicBrainz** | The text a member types into song search, sent by our server (not the member's browser) | Song search | Public data service. Searches are not linked to a member on their side |
 | **Cover Art Archive** (Internet Archive) | A release id | Cover art | Fetched by our server, so no member IP address goes there |

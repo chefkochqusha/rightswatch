@@ -21,6 +21,7 @@ export class InMemoryCreatorRepository implements CreatorRepository {
       lastSeenAt: null,
       lastError: null,
       removedAt: null,
+      promotesOwnOffers: false,
       createdAt: now,
       updatedAt: now,
     };

@@ -1,5 +1,5 @@
 import { parseCreatorDetails, type CreatorDetailsError, type CreatorDetailsInput } from "./details";
-import { normalizeTikTokUsername, tikTokProfileUrl } from "./username";
+import { normalizeUsername, profileUrlFor, type CreatorPlatform } from "./username";
 import type { CreatorAllowance, CreatorChanges, CreatorRecord, CreatorRepository } from "./types";
 
 /**
@@ -49,6 +49,10 @@ export interface AddCreatorInput extends CreatorDetailsInput {
   workspaceId: string;
   /** As typed: "@name", "name", or a profile link. */
   username: string;
+  /** TikTok when left out. An Instagram creator is on the watchlist for
+   *  posts a member adds by link: there is no Instagram connector, so scans
+   *  skip them (`INSTAGRAM_APPLICATION.md`). */
+  platform?: CreatorPlatform;
 }
 
 export type AddCreatorError =
@@ -63,19 +67,20 @@ export type AddCreatorResult =
   | { ok: false; error: AddCreatorError };
 
 /**
- * Adds a TikTok creator to the watchlist, monitored from the start. A
+ * Adds a TikTok or Instagram creator to the watchlist, monitored from the start. A
  * creator removed earlier comes back as the same record — with its
  * history — rather than as a second one.
  */
 export async function addCreator(input: AddCreatorInput, deps: MonitoringDependencies): Promise<AddCreatorResult> {
-  const username = normalizeTikTokUsername(input.username);
+  const platform = input.platform ?? "TIKTOK";
+  const username = normalizeUsername(platform, input.username);
   if (!username.ok) return { ok: false, error: username.error };
 
   const parsed = parseCreatorDetails(input);
   if (!parsed.ok) return { ok: false, error: parsed.error };
   const { details } = parsed;
 
-  const existing = await deps.creatorRepository.findByExternalId(input.workspaceId, "TIKTOK", username.username);
+  const existing = await deps.creatorRepository.findByExternalId(input.workspaceId, platform, username.username);
   if (existing && !existing.removedAt) return { ok: false, error: "ALREADY_ON_WATCHLIST" };
 
   const allowanceError = await checkAllowance(input.workspaceId, deps);
@@ -98,10 +103,10 @@ export async function addCreator(input: AddCreatorInput, deps: MonitoringDepende
   try {
     const creator = await deps.creatorRepository.create({
       workspaceId: input.workspaceId,
-      platform: "TIKTOK",
+      platform,
       externalId: username.username,
       handle: username.username,
-      profileUrl: tikTokProfileUrl(username.username),
+      profileUrl: profileUrlFor(platform, username.username),
       ...details,
     });
     return { ok: true, creator, restored: false };
@@ -184,6 +189,27 @@ export async function updateCreatorDetails(
   const parsed = parseCreatorDetails(input);
   if (!parsed.ok) return { ok: false, error: parsed.error };
   return { ok: true, creator: await deps.creatorRepository.update(creator.id, parsed.details) };
+}
+
+// --- Own paid offers ----------------------------------------------------
+
+export type SetPromotesOwnOffersResult =
+  | { ok: true; creator: CreatorRecord; changed: boolean }
+  | { ok: false; error: "NOT_FOUND" };
+
+/**
+ * A member marks (or unmarks) a creator as promoting their own paid offers.
+ * The mark is the team's judgement, recorded as such; Bekvor never infers
+ * it from a bio, a link or anything else (`LEGAL_DE.md`). Idempotent.
+ */
+export async function setPromotesOwnOffers(
+  input: CreatorRef & { on: boolean },
+  deps: WatchlistDependencies,
+): Promise<SetPromotesOwnOffersResult> {
+  const creator = await findOnWatchlist(input, deps);
+  if (!creator) return { ok: false, error: "NOT_FOUND" };
+  if (creator.promotesOwnOffers === input.on) return { ok: true, creator, changed: false };
+  return { ok: true, creator: await deps.creatorRepository.update(creator.id, { promotesOwnOffers: input.on }), changed: true };
 }
 
 // --- Scan outcome -------------------------------------------------------
