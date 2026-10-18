@@ -156,7 +156,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   TikTok.
 - [ ] **Server size** (measured 2026-10-11, `services/recognizer/README.md`,
   "Large catalogues"): about 100 KB of memory per catalogue song and 2–10 s of
-  CPU per post (2,000–20,000 songs). Set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY`
+  CPU per post (2,000–20,000 songs; 3–5 s since 2026-10-18). Set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY`
   to the plans sold: 2 GB covers Starter/Growth workspaces, one Agency
   workspace with 20,000 songs needs about 4 GB (8 GB server minimum, 16 GB to
   be comfortable).
@@ -168,9 +168,9 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   among 2,000 songs with real recordings it found 16 of 16 voice-overs at
   −12 dB and 12 of 16 worst-case edits (was 15 and 11), no false match, median
   2.5 s per post. At 20,000 songs (synthetic): 7 more hard posts found, no
-  false match, median 22 s per post (19.8 s without the pass; the search
-  itself is the slow part). One core: roughly 4,000 posts a day; size the
-  Agency server with that. Measure with real music first (round 2); if it holds,
+  false match, median 4.9 s per post since the compiled vote counting
+  (2026-10-18, was 22 s, same results). One core: roughly 17,000 posts a day;
+  size the Agency server with that. Measure with real music first (round 2); if it holds,
   build the second, learned stage (an own neural fingerprint, trained on a
   rented GPU with music Bekvor may use for training; licences of any
   pretrained model checked for commercial use).
