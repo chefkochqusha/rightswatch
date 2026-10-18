@@ -109,7 +109,7 @@ vor.
 
 | Kategorie betroffener Personen | Daten | Zweck | Speicherdauer |
 |---|---|---|---|
-| Creator (Dritte, deren öffentliche TikTok-Posts beobachtet werden) | Benutzername, Anzeigename, Profil-Link, Land, Followerzahl; Posts: Datum, Link, Kennzeichnung als bezahlte Partnerschaft, genannte Marken, Territorium, erkannter Song und Ergebnis | Beobachtung kommerzieller Posts und Abgleich mit Musikrechten | Bis der Kunde sie löscht oder der Vertrag endet (§ 8) |
+| Creator (Dritte, deren öffentliche TikTok-Posts beobachtet werden oder deren TikTok- und Instagram-Posts der Kunde per Link einträgt) | Plattform, Benutzername, Anzeigename, Profil-Link, Land, Followerzahl; die vom Kunden gesetzte Markierung „bewirbt eigene Bezahl-Angebote“ (eine Einschätzung des Kunden, ohne Angabe von Art oder Plattform des Angebots; Bekvor setzt sie nie selbst); Posts: Datum, Link, Kennzeichnung (z. B. bezahlte Partnerschaft, eigenes Bezahl-Angebot), genannte Marken, Territorium, erkannter Song und Ergebnis | Beobachtung kommerzieller Posts und Abgleich mit Musikrechten | Bis der Kunde sie löscht oder der Vertrag endet (§ 8) |
 | Creator und andere in Post-Videos erkennbare Personen | Bild und Stimme im hochgeladenen Video oder Ton | Song-Erkennung | **Datei wird nach der Prüfung gelöscht**, spätestens nach 24 Stunden; gespeichert bleibt nur das Ergebnis (Song, Übereinstimmungswerte) |
 | Mitwirkende an Songs (Künstlernamen, Rechteinhaber) | Namen in Song- und Rechte-Einträgen | Rechte-Katalog | Wie oben |
 | Teammitglieder des Kunden | Name und Rolle in Notizen, Fallzuweisungen und dem Aktivitätsprotokoll | Zusammenarbeit, Nachvollziehbarkeit | Wie oben |
@@ -158,6 +158,7 @@ vorgesehen; der Kunde gibt solche nicht in Freitextfelder ein.
 | [[E-Mail-Versanddienst]] | Fall-Benachrichtigungen an Teammitglieder | [[…]] | [[…]] |
 
 Nicht als Unterauftragsverarbeiter geführt: TikTok (Datenquelle, nicht
-beauftragt), MusicBrainz und Cover Art Archive (erhalten nur Suchtexte und
+beauftragt), Instagram/Meta (derzeit keine Verbindung: Instagram-Posts trägt der
+Kunde per Link ein; Bekvor ruft bei Instagram nichts ab), MusicBrainz und Cover Art Archive (erhalten nur Suchtexte und
 Release-Kennungen vom Server, keine personenbezogenen Daten der Kunden),
 Stripe (Abrechnung, eigene Verantwortlichkeit von Bekvor).
