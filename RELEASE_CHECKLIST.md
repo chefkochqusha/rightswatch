@@ -11,6 +11,16 @@ or a business decision at release time, it gets a line here.
 
 ## Business & legal (owner, with a tax advisor / lawyer where needed)
 
+- [ ] **Waitlist until the business is registered** (optional, built and off):
+  set `WAITLIST_MODE=on` in Vercel together with a working email provider and
+  `APP_URL`, then redeploy. Sign-up closes, the website's buttons say "Join the
+  waitlist", the privacy page shows the waitlist section. Confirmed addresses:
+  `SELECT email, company, "confirmedAt" FROM waitlist_entries WHERE "confirmedAt"
+  IS NOT NULL ORDER BY "confirmedAt";` in the database console. The invitation
+  email is not written yet (with the lawyer; consent covers only "your access is
+  ready", nothing else). Turning it off opens sign-up again; delete the list once
+  everyone was invited (`LEGAL_DE.md`).
+
 - [ ] **Business registration and tax status** (e.g. small-business VAT
   exemption or not). Decides what goes into the imprint, Stripe and invoices.
 - [ ] **Name "Bekvor" (domain bekvor.com bought 2026-10-09)**: a web search found

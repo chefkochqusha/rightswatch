@@ -104,4 +104,15 @@ describe("email texts", () => {
     assert.match(m.text, /https:\/\/b\/login/);
     assert.match(m.text, /Nothing about your account changed/);
   });
+
+  test("waitlist confirmation: the confirm and leave links, the 7 days, the sender, and nothing promotional", async () => {
+    const { waitlistConfirmEmail } = await import("./templates");
+    const m = waitlistConfirmEmail({ to: "a@x.com", confirmLink: "https://b/waitlist/confirm?token=t", leaveLink: "https://b/waitlist/leave?token=t", imprintLink: "https://b/imprint" });
+    assert.match(m.text, /confirm\?token=t/);
+    assert.match(m.text, /Leave the waitlist at any time: https:\/\/b\/waitlist\/leave\?token=t/);
+    assert.match(m.text, /7 days/);
+    assert.match(m.text, /Who we are: https:\/\/b\/imprint/);
+    // An advertising line in a double opt-in email is unlawful (LEGAL_DE.md).
+    assert.doesNotMatch(m.text, /discount|offer|free trial|% off|follow us|instagram|tiktok|newsletter|price/i);
+  });
 });

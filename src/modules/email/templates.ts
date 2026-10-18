@@ -61,3 +61,30 @@ export function newCasesEmail(input: { to: string; workspaceName: string; cases:
     ].join("\n"),
   };
 }
+
+/** Bumped whenever the wording below changes: each waitlist entry records which version it was sent. */
+export const WAITLIST_CONFIRM_TEMPLATE = "waitlist-confirm@1";
+
+/**
+ * The double opt-in email. Only the request to confirm, what confirming means,
+ * how to leave, and who sends it: no slogan, offer or other advertising, which
+ * courts have held unlawful in such an email (LG Stendal, 22 S 87/20).
+ */
+export function waitlistConfirmEmail(input: { to: string; confirmLink: string; leaveLink: string; imprintLink: string }): EmailMessage {
+  return {
+    to: input.to,
+    subject: "Please confirm your place on the Bekvor waitlist",
+    text: [
+      "Someone, hopefully you, asked to join the Bekvor waitlist with this email address.",
+      "",
+      "Confirm it here, and Bekvor will email you when your access is ready (an invitation and the date it starts):",
+      input.confirmLink,
+      "",
+      "The link works for 7 days. Without a confirmation, your address is deleted after that and you won't hear from us again.",
+      "",
+      `Leave the waitlist at any time: ${input.leaveLink}`,
+      "",
+      `Sent by Bekvor. Who we are: ${input.imprintLink}`,
+    ].join("\n"),
+  };
+}

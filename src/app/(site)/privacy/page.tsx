@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { legalDetailsFromEnv } from "@/app/_lib/legal-details";
+import { isWaitlistMode } from "@/app/_lib/waitlist-mode";
 
 export const metadata = { title: "Privacy — Bekvor", robots: { index: false } };
 
@@ -99,6 +100,15 @@ export default function Page() {
           or click tracking (Art. 6(1)(b) GDPR; invites Art. 6(1)(f)).{" "}
           {emailProvider ? `They are sent through ${emailProvider}, which processes them on our behalf.` : "They are sent through an email provider that processes them on our behalf."}
         </p>
+        {isWaitlistMode() && (
+          <p>
+            <strong className="text-tx">Waitlist.</strong> If you join the waitlist, we keep your email address, the company name if you give one,
+            the consent text you ticked, and when you agreed and confirmed the address (double opt-in). We only email you when your access is ready
+            (an invitation and the start date). Legal basis: your consent (Art. 6(1)(a) GDPR, § 7(2) UWG); we keep the proof of it under Art. 6(1)(c)
+            with Art. 7(1). Unconfirmed addresses are deleted after 7 days; confirmed ones when you leave (the link is in every email), when your
+            account opens or when we close the waitlist. You can withdraw your consent at any time.
+          </p>
+        )}
       </Section>
 
       <Section title="7. Billing">

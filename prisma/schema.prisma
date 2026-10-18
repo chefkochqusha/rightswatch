@@ -932,3 +932,23 @@ model Invite {
   @@index([workspaceId, email])
   @@map("invites")
 }
+
+/// The waitlist (modules/waitlist): addresses that asked to hear when their
+/// access is ready. Double opt-in; each row keeps the consent wording, when the
+/// confirmation email went out (and which version) and when it was confirmed.
+/// Unconfirmed rows are deleted after 7 days; leaving deletes the row.
+model WaitlistEntry {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  company              String?
+  consentText          String
+  consentVersion       String
+  tokenHash            String    @unique
+  confirmationTemplate String
+  confirmationSentAt   DateTime
+  confirmedAt          DateTime?
+  createdAt            DateTime  @default(now())
+
+  @@index([confirmedAt, confirmationSentAt])
+  @@map("waitlist_entries")
+}

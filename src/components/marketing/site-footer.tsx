@@ -26,7 +26,7 @@ const NAME_WIDTH = BRAND.name.length * 91;
 
 const linkClass = "text-[0.9375rem] text-t2 transition-colors hover:text-tx";
 
-export function SiteFooter() {
+export function SiteFooter({ signupLabel = "Sign up" }: { signupLabel?: string }) {
   return (
     <motion.footer variants={container} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.15 }} className="relative overflow-hidden border-t border-line bg-surface-2">
       <div className="mx-auto flex max-w-[80rem] flex-col px-5 pt-16 sm:px-8 lg:pt-24">
@@ -54,7 +54,7 @@ export function SiteFooter() {
               <p className="text-sm font-medium">Account</p>
               <ul className="mt-4 space-y-2.5">
                 <li><Link href="/login" className={linkClass}>Log in</Link></li>
-                <li><Link href="/signup" className={linkClass}>Sign up</Link></li>
+                <li><Link href="/signup" className={linkClass}>{signupLabel}</Link></li>
                 <li><Link href="/partner-terms" className={linkClass}>Partner programme</Link></li>
               </ul>
             </motion.div>

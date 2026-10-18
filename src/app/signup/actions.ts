@@ -11,6 +11,7 @@ import { recordReferral } from "@/modules/referrals";
 import { accountExistsEmail } from "@/modules/email";
 import { getAppBaseUrl, getEmailSender } from "@/app/_lib/email";
 import { clientIpFrom, spendRequest } from "@/app/_lib/request-limit";
+import { isWaitlistMode } from "@/app/_lib/waitlist-mode";
 
 export interface SignUpFormState {
   fieldErrors?: Partial<Record<"workspaceName" | "email" | "password" | "confirmBusiness", string>>;
@@ -33,6 +34,11 @@ export async function signUpAction(
   const password = String(formData.get("password") ?? "");
   const name = String(formData.get("name") ?? "");
   const workspaceName = String(formData.get("workspaceName") ?? "");
+
+  // Sign-up is closed while the waitlist is on: the form isn't shown, and a direct post is refused too.
+  if (isWaitlistMode()) {
+    return { fieldErrors: { email: "Sign-up is closed for now. Join the waitlist on this page instead." } };
+  }
 
   // Bekvor is sold to businesses (publishers, labels, agencies), not to consumers or children.
   if (formData.get("confirmBusiness") !== "on") {
