@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
  */
 const COPY: Record<Platform, string> = {
   TIKTOK: "Posts creators label as paid partnerships or ads, from the creators on your watchlist.",
-  INSTAGRAM: "Paid partnerships on posts and reels, checked with the same catalogue, rights records and cases.",
+  INSTAGRAM: "Add paid posts and reels by link and upload their sound: checked with the same catalogue, rights records and cases. Bekvor doesn't watch Instagram automatically.",
   YOUTUBE: "Videos that disclose paid promotion, handled the same way.",
 };
 
 const STAGE: Record<ChannelStage, { label: string; chip: string }> = {
   BETA: { label: "Live in beta", chip: "bg-cleared-bg text-cleared" },
+  BY_LINK: { label: "Posts by link", chip: "bg-accent/10 text-accent" },
   NEXT: { label: "Next", chip: "bg-review-bg text-review" },
   PLANNED: { label: "Planned, no date", chip: "bg-surface-2 text-t2" },
 };
@@ -30,7 +31,7 @@ export function Channels() {
           TikTok first. More channels next.
         </h2>
         <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-t2">
-          The beta watches TikTok. Songs, rights records, verdicts and cases don&rsquo;t depend on the channel, so another one plugs in without changing how your team works.
+          The beta watches TikTok, and Instagram posts can be checked by link. Songs, rights records, verdicts and cases don&rsquo;t depend on the channel, so another one plugs in without changing how your team works.
         </p>
 
         <ul className="mt-12 grid gap-4 md:grid-cols-3">

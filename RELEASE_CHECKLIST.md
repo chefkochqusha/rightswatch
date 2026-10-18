@@ -309,9 +309,11 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   browser console after adding any third-party script, font or embed (Stripe
   Checkout redirects are already allowed).
 - [ ] **Accessibility by hand** (axe passes in CI for the public pages and the
-  demo workspace, light and dark: `e2e/accessibility.spec.ts`). Still needed
-  once: the whole flow with only a keyboard and with VoiceOver, signup to
-  closing a case. B2B-only keeps the BFSG out of scope, but customers' public
+  demo workspace, light and dark: `e2e/accessibility.spec.ts`; a keyboard-only
+  walk runs in CI too: every control reachable with Tab, a visible focus ring,
+  no stuck focus, "Skip to content" first: `e2e/keyboard.spec.ts`. Checked by
+  hand on 2026-10-18 in a workspace with its forms as well: no findings). Still
+  needed once: the whole flow with VoiceOver, signup to closing a case. B2B-only keeps the BFSG out of scope, but customers' public
   bodies and large companies ask for it.
 - [ ] **Security re-check before real customer data**: `SECURITY.md` has the
   audit and what is still open (`SESSION_SECRET` as Sensitive, dev/prod

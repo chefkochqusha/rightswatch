@@ -4,7 +4,7 @@ import { CHANNEL_STAGES, isChannelLive, orderedChannels } from "./channels";
 
 test("every platform has a stage and the beta channel comes first", () => {
   assert.deepEqual(Object.keys(CHANNEL_STAGES).sort(), ["INSTAGRAM", "TIKTOK", "YOUTUBE"]);
-  assert.equal(orderedChannels()[0], "TIKTOK");
+  assert.deepEqual(orderedChannels(), ["TIKTOK", "INSTAGRAM", "YOUTUBE"]);
 });
 
 test("only TikTok is live in the beta", () => {
