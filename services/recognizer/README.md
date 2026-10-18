@@ -246,7 +246,8 @@ room); no wrong MATCH, and 0 MATCH and 0 suggestions for the 48 posts without
 a catalogue song either way. Median 19.8 → 22.1 s, p95 30.2 → 34.2 s per
 post. So at this size the time goes into the search itself (the shortlist
 and its second round), not into the second pass: one core handles roughly
-4,000 posts a day. `RECOGNIZER_DENSE_PASS=0` turns the pass off.
+4,000 posts a day (about 17,000 since the compiled vote counting, see
+below). `RECOGNIZER_DENSE_PASS=0` turns the pass off.
 
 Four real recordings (`real_test.py --edits --voice`, 84 cases): posts
 missed 4 → 2 of 42, found or suggested 38 → 40, still no false match, no
@@ -291,12 +292,34 @@ and 20,000, rank of the right song among the 400 best):
   usually on top of the precise check, but under the minimum score.
 - **The shortlist is the slow part at 20,000 songs: 11 of the ~20 s per
   post.** Half of it is sorting and looking up vote cells (`np.unique` and
-  `searchsorted` in `ShortlistIndex.scores`). A compiled vote count could
-  roughly halve it; worth doing once a customer has that many songs.
+  `searchsorted` in `ShortlistIndex.scores`). Now compiled (see "Compiled
+  vote counting" below): about 5 s per post in all.
 - The worst case (sped up + voice + phone + AAC) is out of reach for
   landmarks at this size. That, and the sped-up posts, is the case for a
   learned second stage (nearest-neighbour search over embeddings scales to
   large catalogues by design).
+
+## Compiled vote counting (2026-10-18)
+
+The vote counting of the shortlist, the dense score table of the precise
+check, the search for each song's best offset and the pair hashing run as
+compiled loops when numba is installed (the Docker image has it); the numpy
+code stays as the fallback and gives the same numbers
+(`CompiledPathsTest` checks hashes, scores, match results and shortlist with
+the compiled paths on and off).
+
+`scale_bench.py 20000 20`, before → after, on this 2-core machine:
+
+| | Before | After |
+|---|---|---|
+| Time per post, median | 22.1 s | 4.9 s |
+| Time per post, p95 | 34.2 s | 7.3 s |
+| Index build | 461 s | 170 s |
+| Index in memory / peak while building | 2.0 GB / 3.4 GB | same |
+| Results (every edit, 48 posts without a catalogue song) | | identical |
+
+At 2,000 songs (12 posts): median 7.2 → 3.0 s, build 37 → 16 s, identical
+results. One core now handles roughly 17,000 posts a day at 20,000 songs.
 
 ## Your own music: `real_test.py` (round 2)
 

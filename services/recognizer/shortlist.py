@@ -182,28 +182,96 @@ class ShortlistIndex:
         total = int(cnt.sum())
         if total == 0:
             return none
-        idx = np.repeat(start, cnt) + (np.arange(total) - np.repeat(np.cumsum(cnt) - cnt, cnt))
-        speed = self.P[idx] / np.repeat(sq, cnt)
-        ok = (speed > SPEED_MIN) & (speed < SPEED_MAX)
-        idx, speed = idx[ok], speed[ok]
-        tqr = np.repeat(tq, cnt)[ok]
-        song = self.S[idx].astype(np.int64)
+        if _votes_fast is not None:
+            # the same votes as below, without the repeated per-posting arrays
+            song, speed, offset = _votes_fast(start, cnt, tq.astype(np.int64), sq.astype(np.int64), self.P, self.S, self.T, total, SPEED_MIN, SPEED_MAX, OFFSET_FRAMES)
+        else:
+            idx = np.repeat(start, cnt) + (np.arange(total) - np.repeat(np.cumsum(cnt) - cnt, cnt))
+            speed = self.P[idx] / np.repeat(sq, cnt)
+            ok = (speed > SPEED_MIN) & (speed < SPEED_MAX)
+            idx, speed = idx[ok], speed[ok]
+            tqr = np.repeat(tq, cnt)[ok]
+            song = self.S[idx].astype(np.int64)
+            offset = np.floor((self.T[idx] - tqr * speed) / OFFSET_FRAMES).astype(np.int64)
         sbin = np.round(np.log2(speed) * SPEED_BINS_PER_OCTAVE).astype(np.int64) + 16
-        offset = np.floor((self.T[idx] - tqr * speed) / OFFSET_FRAMES).astype(np.int64)
         cell = (song * 64 + sbin) * (1 << 16) + (offset + (1 << 15))
         uk, c = np.unique(cell, return_counts=True)
-        score = c.astype(np.float64)
-        # a neighbouring speed or position cell of the same song counts half
-        for d in (1, -1, 1 << 16, -(1 << 16)):
-            p = np.searchsorted(uk, uk + d)
-            okp = (p < len(uk)) & (uk[np.minimum(p, len(uk) - 1)] == uk + d)
-            score[okp] += 0.5 * c[p[okp]]
-        sid = uk // (64 * (1 << 16))
-        best = np.zeros(self.n)
-        np.maximum.at(best, sid, score)
+        best = (_best_per_song_fast or _best_per_song)(uk, c, self.n)
         order = np.argsort(-best)[:top]
         order = order[best[order] > 0]
         return order, best[order]
+
+
+def _votes_loop(start, cnt, tq, sq, P, S, T, total, speed_min, speed_max, offset_frames):
+    """Per matching posting within the speed range: its song, the speed it
+    implies and the song position (in `OFFSET_FRAMES` cells), with the same
+    arithmetic as the numpy version in `ShortlistIndex.scores`."""
+    song = np.empty(total, np.int64)
+    speed = np.empty(total, np.float64)
+    offset = np.empty(total, np.int64)
+    m = 0
+    for h in range(len(start)):
+        span_q = np.float64(sq[h])
+        tqh = tq[h]
+        for p in range(start[h], start[h] + cnt[h]):
+            s = np.float64(P[p]) / span_q
+            if s > speed_min and s < speed_max:
+                song[m] = S[p]
+                speed[m] = s
+                offset[m] = np.int64(np.floor((np.float64(T[p]) - tqh * s) / offset_frames))
+                m += 1
+    return song[:m], speed[:m], offset[:m]
+
+
+_votes_fast = njit(cache=True, nogil=True)(_votes_loop) if njit else None
+
+
+def _best_per_song(uk: np.ndarray, c: np.ndarray, n: int) -> np.ndarray:
+    """Per song, its best cell's votes, where a neighbouring speed or position
+    cell of the same song counts half. `uk`: the sorted, distinct cells."""
+    score = c.astype(np.float64)
+    for d in (1, -1, 1 << 16, -(1 << 16)):
+        p = np.searchsorted(uk, uk + d)
+        okp = (p < len(uk)) & (uk[np.minimum(p, len(uk) - 1)] == uk + d)
+        score[okp] += 0.5 * c[p[okp]]
+    sid = uk // (64 * (1 << 16))
+    best = np.zeros(n)
+    np.maximum.at(best, sid, score)
+    return best
+
+
+def _best_per_song_loop(uk, c, n):
+    """`_best_per_song` in one pass: `uk` is sorted, so the cell one position
+    over is the next or previous entry, and the cell one speed step over is
+    found by a pointer that only moves forward. Adds the halves in the same
+    order, so the scores are identical."""
+    m = len(uk)
+    best = np.zeros(n)
+    up = 0
+    down = 0
+    step = np.int64(1) << 16
+    for i in range(m):
+        key = uk[i]
+        s = np.float64(c[i])
+        if i + 1 < m and uk[i + 1] == key + 1:
+            s += 0.5 * c[i + 1]
+        if i > 0 and uk[i - 1] == key - 1:
+            s += 0.5 * c[i - 1]
+        while up < m and uk[up] < key + step:
+            up += 1
+        if up < m and uk[up] == key + step:
+            s += 0.5 * c[up]
+        while down < m and uk[down] < key - step:
+            down += 1
+        if down < m and uk[down] == key - step:
+            s += 0.5 * c[down]
+        sid = key // (64 * step)
+        if s > best[sid]:
+            best[sid] = s
+    return best
+
+
+_best_per_song_fast = njit(cache=True, nogil=True)(_best_per_song_loop) if njit else None
 
 
 def query_keys(pk: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
