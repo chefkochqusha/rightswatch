@@ -138,19 +138,20 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         )
       )}
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-5 rounded-[1.125rem] border border-line bg-surface p-5 sm:grid-cols-4 sm:p-6">
-        <Fact label="Country" value={countryName(creator.country)} />
-        <Fact label="Followers" value={formatFollowers(creator.followerCount)} />
-        <Fact
-          label="Last scan"
-          value={creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not scanned yet"}
-          title={creator.lastSeenAt ? dateTimeFormatter.format(creator.lastSeenAt) : undefined}
-        />
-        <Fact label="On the watchlist since" value={dateFormatter.format(creator.createdAt)} />
-        {!creator.removedAt && (
-          <p className="col-span-full text-[0.8125rem] text-t2">{CREATOR_STATUS_DESCRIPTIONS[creator.status]}</p>
-        )}
-      </dl>
+      <div className="space-y-5 rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+          <Fact label="Country" value={countryName(creator.country)} />
+          <Fact label="Followers" value={formatFollowers(creator.followerCount)} />
+          <Fact
+            label="Last scan"
+            value={creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not scanned yet"}
+            title={creator.lastSeenAt ? dateTimeFormatter.format(creator.lastSeenAt) : undefined}
+          />
+          <Fact label="On the watchlist since" value={dateFormatter.format(creator.createdAt)} />
+        </dl>
+        {/* Outside the <dl>: a definition list may only hold dt/dd groups (axe "definition-list"). */}
+        {!creator.removedAt && <p className="text-[0.8125rem] text-t2">{CREATOR_STATUS_DESCRIPTIONS[creator.status]}</p>}
+      </div>
 
       <Section title="Music matches" count={matches.length}>
         {matches.length === 0 ? (
