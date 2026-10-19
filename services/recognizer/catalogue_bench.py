@@ -35,12 +35,12 @@ sys.path.insert(0, RESEARCH)
 
 import bekvor_fp as fp  # noqa: E402
 
-_argv, sys.argv = sys.argv, sys.argv[:1]  # bench.py reads its own arguments on import
+_argv, sys.argv = sys.argv, sys.argv[:1]  # bench.py and scale_bench.py read their own arguments on import
 from bench import ff, mix_db, pink  # noqa: E402
+from scale_bench import decide  # noqa: E402
 
 sys.argv = _argv
 from make_catalogue import load as load_cached  # noqa: E402
-from scale_bench import decide  # noqa: E402
 from synth import make_voice  # noqa: E402
 from synth2 import SR, make_song  # noqa: E402
 
