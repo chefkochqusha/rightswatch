@@ -139,7 +139,9 @@ def run(index: fp.Index, qs: list[dict], detail: bool = False, matcher=fp.match)
                    right=q["song"] is not None and track == q["song"],
                    top_right=top is not None and top["trackId"] == q["song"],
                    top=top and top["trackId"], score=top and top["score"], next=top and top["nextScore"],
-                   dense=bool(r.get("densePass")))
+                   dense=bool(r.get("densePass")),
+                   melody=top and top.get("melodyAgreement"),
+                   share=top and r["windows"] and round(top["windowsWon"] / r["windows"], 2))
         if detail and q["kind"] == "pos":
             row["shortlist_rank"] = shortlist_rank(index, y, q["song"])
             right = [c for c in r["candidates"] if c["trackId"] == q["song"]]
