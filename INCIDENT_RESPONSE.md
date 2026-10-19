@@ -40,13 +40,20 @@ rows (`/workspace/audit`) of the affected workspace.
 | Who | When | How |
 |---|---|---|
 | **The customer** (workspace owner), as processor | Without undue delay, same day if their data is touched | Email from the support address: what happened, what data, what we did, what they must do |
-| **The data protection authority** (the one for the company's seat; for a seat in Schleswig-Holstein that is the ULD, `datenschutzzentrum.de`) | Within **72 hours of becoming aware**, unless the breach is unlikely to result in a risk. A late report states the reason for the delay | The authority's online breach form |
+| **The data protection authority** (the one for the company's seat; for a seat in Schleswig-Holstein that is the ULD, `datenschutzzentrum.de`) | Within **72 hours of becoming aware**, unless the breach is unlikely to result in a risk. A late report states the reason for the delay | The ULD's breach form ("Meldung einer Datenpanne", ODT or RTF on datenschutzzentrum.de), filled in and sent to the address below; the ULD offers PGP for confidential mail |
 | **The people concerned** | Without undue delay if the risk is **high** (Art. 34) | Plain language: what, which data, what to do (change passwords), who to ask |
 | Stripe / TikTok / mail provider | If their credentials or data are involved | Their security contacts |
 | Insurance, lawyer | Early | Phone call first |
 
-Fill in before launch: lawyer ____ · authority ____ · support address ____ ·
-who decides (owner) ____ · phone number ____.
+**The authority** (looked up 2026-10-19 in the ULD's own privacy notice of
+09.04.2026; check it again when the seat is registered): Unabhängiges
+Landeszentrum für Datenschutz Schleswig-Holstein (ULD), Holstenstraße 98, 24103
+Kiel (post: Postfach 71 16, 24171 Kiel), +49 431 988-1200,
+mail@datenschutzzentrum.de. Breach form:
+https://www.datenschutzzentrum.de/uploads/formular/Meldung-Datenpanne.odt
+
+Fill in before launch: lawyer ____ · support address ____ (e.g. the mailbox on
+bekvor.com) · who decides: the owner, Lennart Schwanke · phone number ____.
 
 ## 4. Record it (even if nobody has to be told)
 

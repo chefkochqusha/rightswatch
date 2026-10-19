@@ -113,7 +113,7 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
 
 - [ ] **Hosting decision: own EU server (prepared) or Vercel Pro.** `SELF_HOSTING.md`
   and `deploy/` hold a ready Docker setup (app, Postgres, HTTPS, daily scan,
-  encrypted backups). Owner: EU server account (about 10–40 €/month), DPA with
+  encrypted backups). Owner: EU server account (Hetzner raised prices on 15.06.2026; its price page lists e.g. CX33 8.49 €, CX43 15.99 €, CAX31 20.99 €, CPX42 69.49 € a month excl. VAT and IPv4, some lines at times sold out), DPA with
   the provider, domain, an age key pair for backups; then SSH access for the
   first deploy and the move from Neon.
 
@@ -276,8 +276,9 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
 - [ ] **Vercel spend limit** and pause rule (Spend Management is a Pro feature,
   see above), and know where attack-challenge mode
   is (a flood bills by usage even on static pages).
-- [ ] **Fill in `INCIDENT_RESPONSE.md`**: lawyer, data protection authority,
-  support address, who decides.
+- [ ] **Fill in `INCIDENT_RESPONSE.md`**: lawyer, support address, phone number.
+  The authority (ULD Kiel, with its breach form) and who decides (the owner)
+  are filled in (2026-10-19).
 
 ## Final
 
