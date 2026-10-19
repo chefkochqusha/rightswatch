@@ -168,7 +168,7 @@ def _make_song(seed: int, seconds: float) -> np.ndarray:
     # song form: sections with their own progression, chord rate, drums, melody
     names = ["intro", "verse", "chorus", "verse", "chorus", "bridge", "chorus", "outro"]
     sections = {}
-    for name in set(names):
+    for name in dict.fromkeys(names):  # not set(): its order changes between processes
         plen = int(rng.choice([2, 3, 4, 4, 4, 6, 8]))
         sections[name] = dict(
             prog=_progression(rng, len(scale), plen),
