@@ -1,0 +1,189 @@
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
+import { InMemoryWaitlistRepository } from "./in-memory-repository";
+import { CONFIRMATION_TTL_MS, INVITE_MAX_AGE_MS, WAITLIST_CONSENT, confirmWaitlist, hashToken, inviteWaitlist, joinWaitlist, leaveWaitlist } from "./waitlist";
+
+function setup(start = new Date("2026-10-18T12:00:00Z")) {
+  const repository = new InMemoryWaitlistRepository();
+  const sent: { to: string; confirm: string; leave: string }[] = [];
+  let clock = start;
+  let n = 0;
+  const deps = {
+    repository,
+    sendConfirmation: async (to: string, links: { confirm: string; leave: string }) => {
+      sent.push({ to, ...links });
+      return { template: "waitlist-confirm@1" };
+    },
+    linkFor: (kind: "confirm" | "leave", token: string) => `https://bekvor.test/waitlist/${kind}?token=${token}`,
+    now: () => clock,
+    newToken: () => `token-${++n}`,
+  };
+  return { repository, sent, deps, advance: (ms: number) => (clock = new Date(clock.getTime() + ms)) };
+}
+
+const ok = { email: " Lena@Example.COM ", company: "  Northside   Records ", consent: true, business: true };
+
+describe("waitlist", () => {
+  test("joining stores the proof of consent and sends one confirmation email", async () => {
+    const { repository, sent, deps } = setup();
+    assert.deepEqual(await joinWaitlist(ok, deps), { ok: true });
+    const entry = await repository.findByEmail("lena@example.com");
+    assert.ok(entry);
+    assert.equal(entry.company, "Northside Records");
+    assert.equal(entry.consentText, WAITLIST_CONSENT.text);
+    assert.equal(entry.consentVersion, WAITLIST_CONSENT.version);
+    assert.equal(entry.confirmationTemplate, "waitlist-confirm@1");
+    assert.equal(entry.confirmedAt, null);
+    assert.equal(entry.tokenHash, hashToken("token-1"));
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].confirm, "https://bekvor.test/waitlist/confirm?token=token-1");
+  });
+
+  test("refuses without consent, without the business box, with a bad address or an overlong company", async () => {
+    const { deps, sent } = setup();
+    assert.deepEqual(await joinWaitlist({ ...ok, consent: false }, deps), { ok: false, error: "CONSENT_REQUIRED" });
+    assert.deepEqual(await joinWaitlist({ ...ok, business: false }, deps), { ok: false, error: "BUSINESS_REQUIRED" });
+    assert.deepEqual(await joinWaitlist({ ...ok, email: "not-an-address" }, deps), { ok: false, error: "INVALID_EMAIL" });
+    assert.deepEqual(await joinWaitlist({ ...ok, company: "x".repeat(121) }, deps), { ok: false, error: "COMPANY_TOO_LONG" });
+    assert.equal(sent.length, 0);
+  });
+
+  test("the link confirms, works only for 7 days, and the old link dies when a new one is sent", async () => {
+    const { deps, advance, repository } = setup();
+    await joinWaitlist(ok, deps);
+    await joinWaitlist(ok, deps); // asked again before confirming: a fresh link
+    assert.deepEqual(await confirmWaitlist("token-1", deps), { ok: false, error: "UNKNOWN_OR_EXPIRED" });
+    advance(CONFIRMATION_TTL_MS + 1000);
+    assert.deepEqual(await confirmWaitlist("token-2", deps), { ok: false, error: "UNKNOWN_OR_EXPIRED" });
+
+    await joinWaitlist(ok, deps); // the expired entry is purged and a new one made
+    assert.equal(repository.entries.size, 1);
+    const confirmed = await confirmWaitlist("token-3", deps);
+    assert.ok(confirmed.ok && confirmed.entry.confirmedAt);
+    assert.equal((await confirmWaitlist("token-3", deps)).ok, true); // idempotent
+  });
+
+  test("a confirmed address gets no new email, and the answer doesn't tell", async () => {
+    const { deps, sent } = setup();
+    await joinWaitlist(ok, deps);
+    await confirmWaitlist("token-1", deps);
+    assert.deepEqual(await joinWaitlist(ok, deps), { ok: true });
+    assert.equal(sent.length, 1);
+  });
+
+  test("unconfirmed addresses are deleted after 7 days, confirmed ones stay", async () => {
+    const { deps, advance, repository } = setup();
+    await joinWaitlist(ok, deps);
+    await joinWaitlist({ ...ok, email: "kai@example.com" }, deps);
+    await confirmWaitlist("token-2", deps);
+    advance(CONFIRMATION_TTL_MS + 1);
+    await joinWaitlist({ ...ok, email: "mo@example.com" }, deps);
+    assert.deepEqual([...repository.entries.values()].map((e) => e.email).sort(), ["kai@example.com", "mo@example.com"]);
+  });
+
+  test("leaving deletes the entry, confirmed or not", async () => {
+    const { deps, repository } = setup();
+    await joinWaitlist(ok, deps);
+    await confirmWaitlist("token-1", deps);
+    assert.deepEqual(await leaveWaitlist("token-1", deps), { ok: true });
+    assert.equal(repository.entries.size, 0);
+    assert.deepEqual(await leaveWaitlist("token-1", deps), { ok: false });
+  });
+
+  describe("the invitation", () => {
+    function inviter(deps: ReturnType<typeof setup>["deps"], fail: Set<string> = new Set()) {
+      const invites: { to: string; leave: string }[] = [];
+      let n = 0;
+      const inviteDeps = {
+        repository: deps.repository,
+        now: deps.now,
+        newToken: () => `invite-${++n}`,
+        linkFor: (kind: "leave", token: string) => `https://bekvor.test/waitlist/${kind}?token=${token}`,
+        sendInvitation: async (to: string, links: { leave: string }) => {
+          if (fail.has(to)) throw new Error("mailbox unavailable");
+          invites.push({ to, ...links });
+          return { template: "waitlist-invite@1" };
+        },
+      };
+      return { invites, inviteDeps };
+    }
+
+    test("goes once to each confirmed address, never to an unconfirmed one", async () => {
+      const { deps, repository } = setup();
+      await joinWaitlist(ok, deps);
+      await confirmWaitlist("token-1", deps);
+      await joinWaitlist({ ...ok, email: "kai@example.com" }, deps); // never confirmed
+      const { invites, inviteDeps } = inviter(deps);
+      const first = await inviteWaitlist({ dryRun: false }, inviteDeps);
+      assert.deepEqual(first.invited, ["lena@example.com"]);
+      assert.deepEqual(invites.map((i) => i.to), ["lena@example.com"]);
+      const entry = await repository.findByEmail("lena@example.com");
+      assert.equal(entry?.inviteTemplate, "waitlist-invite@1");
+      assert.ok(entry?.invitedAt);
+      assert.deepEqual((await inviteWaitlist({ dryRun: false }, inviteDeps)).invited, []);
+      assert.equal(invites.length, 1);
+    });
+
+    test("a dry run sends and changes nothing; the limit caps a run", async () => {
+      const { deps, repository } = setup();
+      for (const [i, email] of ["a@example.com", "b@example.com", "c@example.com"].entries()) {
+        await joinWaitlist({ ...ok, email }, deps);
+        await confirmWaitlist(`token-${i + 1}`, deps);
+      }
+      const { invites, inviteDeps } = inviter(deps);
+      const dry = await inviteWaitlist({ dryRun: true }, inviteDeps);
+      assert.deepEqual(dry.wouldInvite, ["a@example.com", "b@example.com", "c@example.com"]);
+      assert.equal(invites.length, 0);
+      assert.ok([...repository.entries.values()].every((e) => !e.invitedAt && !e.inviteTokenHash));
+      assert.deepEqual((await inviteWaitlist({ dryRun: false, limit: 2 }, inviteDeps)).invited, ["a@example.com", "b@example.com"]);
+      assert.deepEqual((await inviteWaitlist({ dryRun: false, limit: 2 }, inviteDeps)).invited, ["c@example.com"]);
+    });
+
+    test("skips consents older than two years", async () => {
+      const { deps, advance } = setup();
+      await joinWaitlist(ok, deps);
+      await confirmWaitlist("token-1", deps);
+      advance(INVITE_MAX_AGE_MS + 1000);
+      const { invites, inviteDeps } = inviter(deps);
+      const report = await inviteWaitlist({ dryRun: false }, inviteDeps);
+      assert.deepEqual(report.stale, ["lena@example.com"]);
+      assert.equal(invites.length, 0);
+    });
+
+    test("a failed send stays uninvited and is retried", async () => {
+      const { deps, repository } = setup();
+      await joinWaitlist(ok, deps);
+      await confirmWaitlist("token-1", deps);
+      const fail = new Set(["lena@example.com"]);
+      const { invites, inviteDeps } = inviter(deps, fail);
+      const report = await inviteWaitlist({ dryRun: false }, inviteDeps);
+      assert.deepEqual(report.failed.map((f) => f.email), ["lena@example.com"]);
+      assert.equal((await repository.findByEmail("lena@example.com"))?.invitedAt, null);
+      fail.clear();
+      assert.deepEqual((await inviteWaitlist({ dryRun: false }, inviteDeps)).invited, ["lena@example.com"]);
+      assert.equal(invites.length, 1);
+    });
+
+    test("the invitation's leave link deletes the entry, and so does the one from the confirmation email", async () => {
+      const { deps, repository } = setup();
+      await joinWaitlist(ok, deps);
+      await confirmWaitlist("token-1", deps);
+      await joinWaitlist({ ...ok, email: "kai@example.com" }, deps);
+      await confirmWaitlist("token-2", deps);
+      const { invites, inviteDeps } = inviter(deps);
+      await inviteWaitlist({ dryRun: false }, inviteDeps);
+      const leaveToken = new URL(invites[0].leave).searchParams.get("token")!;
+      assert.deepEqual(await leaveWaitlist(leaveToken, deps), { ok: true });
+      assert.equal(await repository.findByEmail("lena@example.com"), null);
+      assert.deepEqual(await leaveWaitlist("token-2", deps), { ok: true });
+      assert.equal(repository.entries.size, 0);
+    });
+
+    test("opening an account removes the entry", async () => {
+      const { deps, repository } = setup();
+      await joinWaitlist(ok, deps);
+      await repository.deleteByEmail("lena@example.com");
+      assert.equal(repository.entries.size, 0);
+    });
+  });
+});

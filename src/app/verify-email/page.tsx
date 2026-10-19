@@ -4,6 +4,7 @@ import { verifyEmail } from "@/modules/auth";
 import { getAuthStore } from "@/app/_lib/auth-store";
 import { getSessionSecret } from "@/app/_lib/session-cookie";
 import { getCurrentSession } from "@/app/_lib/current-user";
+import { getWaitlistRepository } from "@/app/_lib/waitlist";
 
 export const metadata = { title: "Confirm your email — Bekvor", robots: { index: false } };
 
@@ -16,6 +17,9 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
   const { token } = await searchParams;
   const value = typeof token === "string" ? token : "";
   const result = value ? await verifyEmail(value, { userRepository: getAuthStore().users, secret: getSessionSecret() }) : { ok: false as const };
+  // A waitlist entry has done its job once its owner has a confirmed account
+  // (privacy policy, "Warteliste"). Best effort: it must not stop the page.
+  if (result.ok) await getWaitlistRepository().deleteByEmail(result.email).catch(() => undefined);
   const signedIn = (await getCurrentSession()) !== null;
 
   return (

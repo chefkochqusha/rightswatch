@@ -27,7 +27,7 @@ const POPULAR = "GROWTH";
  * so the page can't drift from what the app charges. `terms` is the legal
  * line shown under the plans; `salesEmail` the Enterprise contact, if set.
  */
-export function Pricing({ terms, salesEmail }: { terms: React.ReactNode; salesEmail?: string | null }) {
+export function Pricing({ terms, salesEmail, ctaLabel = "Start free trial" }: { terms: React.ReactNode; salesEmail?: string | null; ctaLabel?: string }) {
   const [yearly, setYearly] = useState(false);
   const id = useId();
   const maxMonth = monthOfMaxDiscount();
@@ -94,7 +94,7 @@ export function Pricing({ terms, salesEmail }: { terms: React.ReactNode; salesEm
                       popular ? "bg-ultra text-white hover:opacity-90" : "border border-line bg-surface-2 text-tx hover:bg-hover"
                     }`}
                   >
-                    Start free trial
+                    {ctaLabel}
                   </Link>
                 </div>
               </div>

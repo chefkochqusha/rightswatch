@@ -91,6 +91,20 @@ lit. f DSGVO (Interesse des Kunden, sein Team einzuladen).
 **Empfänger:** unser E-Mail-Versanddienst [[Anbieter, Sitz]] als
 Auftragsverarbeiter.
 
+**Warteliste (nur solange sie geöffnet ist).** Wenn Sie sich auf die Warteliste
+setzen, speichern wir Ihre E-Mail-Adresse, optional den Firmennamen, den Text
+der Einwilligung, die Sie angehakt haben, und wann Sie eingewilligt und die
+Adresse bestätigt haben (Double-Opt-in). Wir schreiben Ihnen einmal, wenn Ihr
+Zugang bereit ist (Einladung und Starttermin), und speichern, wann diese
+E-Mail verschickt wurde. **Rechtsgrundlage:** Ihre
+Einwilligung, Art. 6 Abs. 1 lit. a DSGVO und § 7 Abs. 2 UWG; den Nachweis der
+Einwilligung speichern wir nach Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1
+DSGVO. **Speicherdauer:** Unbestätigte Adressen löschen wir nach 7 Tagen,
+bestätigte, sobald Sie die Warteliste verlassen (Link in jeder E-Mail), Sie
+die Adresse Ihres neuen Kontos bestätigt haben oder wir die Warteliste
+schließen. Sie können die
+Einwilligung jederzeit widerrufen.
+
 ## 7. Abrechnung
 
 **Was:** Firma, Rechnungsanschrift, USt-IdNr., E-Mail, gebuchter Plan,

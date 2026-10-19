@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/marketing/site-header";
+import { isWaitlistMode } from "@/app/_lib/waitlist-mode";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { MotionProvider } from "@/components/marketing/motion-provider";
 
@@ -24,7 +25,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         <main id="main" className="flex-1">
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter signupLabel={isWaitlistMode() ? "Join the waitlist" : "Sign up"} />
       </div>
     </MotionProvider>
   );

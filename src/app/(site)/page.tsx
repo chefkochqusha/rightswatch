@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isWaitlistMode, signupCtaLabel } from "@/app/_lib/waitlist-mode";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { HeroFeed } from "@/components/marketing/hero-feed";
@@ -83,7 +84,7 @@ export default function LandingPage() {
         actions={
           <>
             <Link href="/signup" className={`${buttonStyles("primary")} !h-12 !bg-ultra !text-white !px-6 !text-base hover:!opacity-90`}>
-              Start monitoring
+              {signupCtaLabel()}
             </Link>
             <DemoButton className={`${buttonStyles("secondary")} !h-12 !px-6 !text-base`} />
           </>
@@ -134,6 +135,7 @@ export default function LandingPage() {
       <Channels />
 
       <Pricing
+        ctaLabel={isWaitlistMode() ? "Join the waitlist" : "Start free trial"}
         salesEmail={process.env.SALES_EMAIL?.trim() || null}
         terms={
           <p>

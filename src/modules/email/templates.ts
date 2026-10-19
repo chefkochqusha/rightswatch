@@ -61,3 +61,61 @@ export function newCasesEmail(input: { to: string; workspaceName: string; cases:
     ].join("\n"),
   };
 }
+
+/** Bumped whenever the wording below changes: each waitlist entry records which version it was sent. */
+export const WAITLIST_CONFIRM_TEMPLATE = "waitlist-confirm@1";
+
+/**
+ * The double opt-in email. Only the request to confirm, what confirming means,
+ * how to leave, and who sends it: no slogan, offer or other advertising, which
+ * courts have held unlawful in such an email (LG Stendal, 22 S 87/20).
+ */
+export function waitlistConfirmEmail(input: { to: string; confirmLink: string; leaveLink: string; imprintLink: string }): EmailMessage {
+  return {
+    to: input.to,
+    subject: "Please confirm your place on the Bekvor waitlist",
+    text: [
+      "Someone, hopefully you, asked to join the Bekvor waitlist with this email address.",
+      "",
+      "Confirm it here, and Bekvor will email you when your access is ready (an invitation and the date it starts):",
+      input.confirmLink,
+      "",
+      "The link works for 7 days. Without a confirmation, your address is deleted after that and you won't hear from us again.",
+      "",
+      `Leave the waitlist at any time: ${input.leaveLink}`,
+      "",
+      `Sent by Bekvor. Who we are: ${input.imprintLink}`,
+    ].join("\n"),
+  };
+}
+
+/** Bumped whenever the wording below changes: each waitlist entry records which version it was sent. */
+export const WAITLIST_INVITE_TEMPLATE = "waitlist-invite@1";
+
+/**
+ * The one invitation a confirmed waitlist entry gets. The consent covers
+ * exactly this, "an invitation and the date it starts" (`WAITLIST_CONSENT`),
+ * so the email says that and nothing more: no prices, offers or other
+ * products. The subject names the sender and says what it is (§ 6(2) DDG);
+ * it says how to withdraw the consent and gives a working address for it
+ * (§ 7(2) no. 3 UWG, GDPR Art. 7(3)): the leave link, and replies to the
+ * sending address, which must be a mailbox someone reads.
+ */
+export function waitlistInviteEmail(input: { to: string; startDate: string; signupLink: string; leaveLink: string; imprintLink: string }): EmailMessage {
+  return {
+    to: input.to,
+    subject: `Bekvor: your access starts on ${input.startDate}`,
+    text: [
+      "You asked Bekvor to email you when your access is ready.",
+      "",
+      `It starts on ${input.startDate}. From then on, you can create your account here:`,
+      input.signupLink,
+      "",
+      "This is the only email you get from the waitlist. When you open your account, your waitlist entry is deleted; if you don't, it is deleted when we close the waitlist.",
+      "",
+      `You can withdraw your consent at any time: leave the waitlist here, ${input.leaveLink}, or reply to this email.`,
+      "",
+      `Sent by Bekvor. Who we are: ${input.imprintLink}`,
+    ].join("\n"),
+  };
+}

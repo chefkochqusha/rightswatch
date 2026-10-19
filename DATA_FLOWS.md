@@ -23,6 +23,7 @@ This is an engineering inventory, not legal advice.
 | Song fingerprints (landmark hashes, not playable), file name, length | The customer | Postgres | Own song recognition (our own server only) |
 | Uploaded song recordings and post videos/sounds | The customer; post videos show creators (face, voice) | Upload disk on our own server (`UPLOAD_DIR`), **only until read**: deleted after the fingerprint or the check, at the latest after 24 hours | Own song recognition |
 | Audio-check results (song, match strength, the service's scores) | The customer | Postgres | Suggestions on the post, audit trail |
+| Waitlist (only while `WAITLIST_MODE=on`): email, optional company, the consent text and version, when the confirmation email went out (and its template version), when it was confirmed, when the invitation went out (and its template version), hashes of the link secrets | People who joined the waitlist | Postgres (`waitlist_entries`) | Double opt-in proof; one email when access is ready. Unconfirmed rows are deleted after 7 days, a row is deleted when the person leaves or confirms the address of a new account |
 
 Not held: card numbers (Stripe), uploaded files after they are read,
 analytics or advertising identifiers (none), keystroke or session recordings

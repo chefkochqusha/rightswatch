@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { DemoButton } from "./demo-button";
+import { signupCtaLabel } from "@/app/_lib/waitlist-mode";
 
 /**
  * The closing call to action, after Watermelon UI's cta-1: a blue card with
@@ -35,7 +36,7 @@ export function ClosingCta() {
             href="/signup"
             className="group inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-base font-medium text-black shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-2px_5px_rgba(0,0,0,0.1),0_8px_20px_rgba(0,0,0,0.15)] transition active:scale-[0.97]"
           >
-            Start monitoring
+            {signupCtaLabel()}
             <ArrowRight className="h-4 w-4 transition-transform motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
           <DemoButton className="inline-flex h-12 items-center rounded-full px-6 text-base font-medium text-white ring-1 ring-white/50 ring-inset transition hover:bg-white/10 active:scale-[0.97]" />

@@ -11,6 +11,22 @@ or a business decision at release time, it gets a line here.
 
 ## Business & legal (owner, with a tax advisor / lawyer where needed)
 
+- [ ] **Waitlist until the business is registered** (optional, built and off):
+  set `WAITLIST_MODE=on` in Vercel together with a working email provider and
+  `APP_URL`, then redeploy. Sign-up closes, the website's buttons say "Join the
+  waitlist", the privacy page shows the waitlist section. Confirmed addresses:
+  `SELECT email, company, "confirmedAt" FROM waitlist_entries WHERE "confirmedAt"
+  IS NOT NULL ORDER BY "confirmedAt";` in the database console.
+  **Inviting** (when the business is registered and the lawyer has read the
+  email, `waitlistInviteEmail`): `EMAIL_FROM` must be a mailbox you read (replies
+  are a way to withdraw). With the production values in your shell, run
+  `npx tsx scripts/waitlist/send-invites.mts --start YYYY-MM-DD` (a dry run that
+  lists who would get it), then once with `--send --limit 1` and your own
+  confirmed address to see the email, then with `--send`. Each address gets it
+  once; consents older than two years are skipped. Turn `WAITLIST_MODE` off
+  before the start date (sign-up opens again), and delete the remaining list when
+  you close the waitlist (`DELETE FROM waitlist_entries;`, `LEGAL_DE.md`).
+
 - [ ] **Business registration and tax status** (e.g. small-business VAT
   exemption or not). Decides what goes into the imprint, Stripe and invoices.
 - [ ] **Name "Bekvor" (domain bekvor.com bought 2026-10-09)**: a web search found

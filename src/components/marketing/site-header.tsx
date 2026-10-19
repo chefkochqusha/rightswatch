@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { LogoMark } from "@/components/brand/logo-mark";
+import { signupCtaLabel } from "@/app/_lib/waitlist-mode";
 
 const LINKS = [
   { href: "/#how", label: "How it works" },
@@ -31,7 +32,7 @@ export function SiteHeader() {
             Log in
           </Link>
           <Link href="/signup" className={buttonStyles("primary")}>
-            Start monitoring
+            {signupCtaLabel()}
           </Link>
         </div>
       </div>
