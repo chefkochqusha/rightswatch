@@ -138,7 +138,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         )
       )}
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-5 rounded-[1.125rem] border border-line bg-surface p-5 sm:grid-cols-4 sm:p-6">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 rounded-[1.125rem] border border-line bg-surface p-5 sm:grid-cols-4 sm:p-6">
         <Fact label="Country" value={countryName(creator.country)} />
         <Fact label="Followers" value={formatFollowers(creator.followerCount)} />
         <Fact
@@ -150,7 +150,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         {!creator.removedAt && (
           <p className="col-span-full text-[0.8125rem] text-t2">{CREATOR_STATUS_DESCRIPTIONS[creator.status]}</p>
         )}
-      </dl>
+      </div>
 
       <Section title="Music matches" count={matches.length}>
         {matches.length === 0 ? (
@@ -316,14 +316,19 @@ function plural(count: number, singular: string, pluralForm = `${singular}s`): s
   return `${count} ${count === 1 ? singular : pluralForm}`;
 }
 
+/**
+ * One term and its value, each in its own <dl>: the card around the facts also
+ * holds a sentence about the creator's status, and a <dl> may only contain
+ * dt/dd groups (axe "definition-list").
+ */
 function Fact({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div>
+    <dl>
       <dt className="text-[0.8125rem] text-t2">{label}</dt>
       <dd className="mt-1 text-[1.0625rem] font-semibold tracking-[-0.01em] text-tx" title={title}>
         {value}
       </dd>
-    </div>
+    </dl>
   );
 }
 
