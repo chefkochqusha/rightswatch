@@ -2,17 +2,22 @@
 music, real speech over it, and TikTok-style edits?
 
 Uses the openly licensed recordings in librosa's example data
-(github.com/librosa/data): four songs (Brahms' Hungarian Dance No. 5 by the
-US Army Strings, public domain; "Let's Go Fishin'" by Karissa Hobbs, CC BY 3.0;
-"Dance of the Sugar Plum Fairy" and "Vibe Ace" by Kevin MacLeod, CC BY 3.0)
-and three LibriVox readings (CC BY 4.0) as the voice-over. Non-commercial
-(NC) files are not used.
+(github.com/librosa/data), checked against each file's .toml licence entry
+on 2026-10-19: four pieces (Brahms' Hungarian Dance No. 5 by the US Army
+Strings, public domain mark; "Dance of the Sugar Plum Fairy" and "Vibe Ace"
+by Kevin MacLeod, CC BY 4.0; "Jesu geh voran" from the ChoraleBricks
+multitrack set, CC BY 4.0) and three LibriVox readings (CC BY 4.0) as the
+voice-over. Files marked NC (non-commercial) are not used: "Let's Go
+Fishin'" by Karissa Hobbs, used here until 2026-10-19, is CC BY-NC-SA 4.0
+according to its entry, so it was replaced.
 
     git clone --depth 1 https://github.com/librosa/data /tmp/realmusic/data
-    REAL_AUDIO=/tmp/realmusic/data/audio python3 research/fingerprint/real_music.py [distractors]
+    REAL_AUDIO=/tmp/realmusic/data/audio python3 research/fingerprint/real_music.py [distractors] [--distinct]
 
-The catalogue is the four songs plus `distractors` composed songs (0 = 30
-composed songs only; 2000 = the shortlist path). Prints one JSON line.
+The catalogue is the four pieces plus `distractors` composed songs (0 = 30
+composed songs only; 2000 = the shortlist path). With --distinct the
+distractors are distinct synth2 songs from the fingerprint cache
+(make_catalogue.py) instead of re-timed copies of 60 songs. Prints one JSON line.
 """
 from __future__ import annotations
 
@@ -37,7 +42,7 @@ sys.argv = _argv
 AUDIO = os.environ.get("REAL_AUDIO", "/tmp/realmusic/data/audio")
 SONGS = {
     "hungarian-dance": "Hungarian_Dance_number_5_-_Allegro_in_F_sharp_minor_(string_orchestra).hq.ogg",
-    "lets-go-fishin": "Karissa_Hobbs_-_Let's_Go_Fishin'.hq.ogg",
+    "jesu-geh-voran": "drese-midi.hq.ogg",
     "sugar-plum": "Kevin_MacLeod_-_P_I_Tchaikovsky_Dance_of_the_Sugar_Plum_Fairy.hq.ogg",
     "vibe-ace": "Kevin_MacLeod_-_Vibe_Ace.hq.ogg",
 }
@@ -62,11 +67,17 @@ def speech_bed(seconds: float, start: int) -> np.ndarray:
 
 
 def main():
-    distractors = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    distractors = int(args[0]) if args else 0
+    distinct = "--distinct" in sys.argv
     songs = {k: load(v) for k, v in SONGS.items()}
     tracks = [(k, fp.fingerprint(sb.to_fs(v))) for k, v in songs.items()]
     if distractors == 0:
         tracks += [(f"song-{s}", fp.fingerprint(sb.song_audio(s))) for s in range(1, 31)]
+    elif distinct:
+        from make_catalogue import load as load_cached
+
+        tracks += [(f"d-{s}", load_cached(s)) for s in range(100_000, 100_000 + distractors)]
     else:
         rng = np.random.default_rng(5)
         bases = list(range(10_001, 10_061))
