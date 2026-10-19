@@ -30,7 +30,7 @@ describe("email verification", () => {
     assert.deepEqual(await send(), { ok: true });
     assert.equal(sent[0].to, "nina@northstar.test");
 
-    assert.deepEqual(await verifyEmail(tokenFrom(sent[0].link), { userRepository, secret: SECRET }), { ok: true });
+    assert.deepEqual(await verifyEmail(tokenFrom(sent[0].link), { userRepository, secret: SECRET }), { ok: true, email: user.email });
     assert.ok((await userRepository.findById(user.id))!.emailVerifiedAt instanceof Date);
   });
 
@@ -40,7 +40,7 @@ describe("email verification", () => {
     const token = tokenFrom(sent[0].link);
     await verifyEmail(token, { userRepository, secret: SECRET, now: Date.now() });
     const first = (await userRepository.findById(user.id))!.emailVerifiedAt;
-    assert.deepEqual(await verifyEmail(token, { userRepository, secret: SECRET, now: Date.now() + 1000 }), { ok: true });
+    assert.equal((await verifyEmail(token, { userRepository, secret: SECRET, now: Date.now() + 1000 })).ok, true);
     assert.equal((await userRepository.findById(user.id))!.emailVerifiedAt?.getTime(), first?.getTime());
   });
 

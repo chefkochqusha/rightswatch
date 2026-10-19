@@ -103,10 +103,10 @@ export default function Page() {
         {isWaitlistMode() && (
           <p>
             <strong className="text-tx">Waitlist.</strong> If you join the waitlist, we keep your email address, the company name if you give one,
-            the consent text you ticked, and when you agreed and confirmed the address (double opt-in). We only email you when your access is ready
+            the consent text you ticked, and when you agreed and confirmed the address (double opt-in). We email you once, when your access is ready
             (an invitation and the start date). Legal basis: your consent (Art. 6(1)(a) GDPR, § 7(2) UWG); we keep the proof of it under Art. 6(1)(c)
-            with Art. 7(1). Unconfirmed addresses are deleted after 7 days; confirmed ones when you leave (the link is in every email), when your
-            account opens or when we close the waitlist. You can withdraw your consent at any time.
+            with Art. 7(1). Unconfirmed addresses are deleted after 7 days; confirmed ones when you leave (the link is in every email), when you
+            confirm the address of your new account or when we close the waitlist. You can withdraw your consent at any time.
           </p>
         )}
       </Section>

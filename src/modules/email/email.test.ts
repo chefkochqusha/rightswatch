@@ -115,4 +115,17 @@ describe("email texts", () => {
     // An advertising line in a double opt-in email is unlawful (LEGAL_DE.md).
     assert.doesNotMatch(m.text, /discount|offer|free trial|% off|follow us|instagram|tiktok|newsletter|price/i);
   });
+
+  test("waitlist invitation: what was consented to and nothing else, how to withdraw, the sender", async () => {
+    const { waitlistInviteEmail } = await import("./templates");
+    const m = waitlistInviteEmail({ to: "a@x.com", startDate: "2 November 2026", signupLink: "https://b/signup", leaveLink: "https://b/waitlist/leave?token=t", imprintLink: "https://b/imprint" });
+    assert.match(m.subject, /^Bekvor: /); // § 6(2) DDG: the sender is clear before opening
+    assert.match(m.subject, /2 November 2026/);
+    assert.match(m.text, /It starts on 2 November 2026\. From then on, you can create your account here:\nhttps:\/\/b\/signup/);
+    assert.match(m.text, /withdraw your consent at any time: leave the waitlist here, https:\/\/b\/waitlist\/leave\?token=t, or reply to this email/);
+    assert.match(m.text, /only email you get from the waitlist/);
+    assert.match(m.text, /Who we are: https:\/\/b\/imprint/);
+    // The consent covers the invitation and its date, not advertising for anything else (LEGAL_DE.md).
+    assert.doesNotMatch(m.text, /discount|offer|free trial|% off|follow us|instagram|tiktok|newsletter|price|€|\$/i);
+  });
 });

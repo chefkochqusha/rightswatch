@@ -947,6 +947,9 @@ model WaitlistEntry {
   confirmationTemplate String
   confirmationSentAt   DateTime
   confirmedAt          DateTime?
+  invitedAt            DateTime?
+  inviteTemplate       String?
+  inviteTokenHash      String?   @unique
   createdAt            DateTime  @default(now())
 
   @@index([confirmedAt, confirmationSentAt])

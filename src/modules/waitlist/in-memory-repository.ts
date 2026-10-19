@@ -9,10 +9,10 @@ export class InMemoryWaitlistRepository implements WaitlistRepository {
     return [...this.entries.values()].find((e) => e.email === email) ?? null;
   }
   async findByTokenHash(tokenHash: string) {
-    return [...this.entries.values()].find((e) => e.tokenHash === tokenHash) ?? null;
+    return [...this.entries.values()].find((e) => e.tokenHash === tokenHash || e.inviteTokenHash === tokenHash) ?? null;
   }
   async create(entry: NewWaitlistEntry) {
-    const row: WaitlistEntry = { ...entry, id: randomUUID(), createdAt: entry.confirmationSentAt, confirmedAt: null };
+    const row: WaitlistEntry = { ...entry, id: randomUUID(), createdAt: entry.confirmationSentAt, confirmedAt: null, invitedAt: null, inviteTemplate: null, inviteTokenHash: null };
     this.entries.set(row.id, row);
     return { ...row };
   }
@@ -23,6 +23,9 @@ export class InMemoryWaitlistRepository implements WaitlistRepository {
   }
   async delete(id: string) {
     this.entries.delete(id);
+  }
+  async deleteByEmail(email: string) {
+    for (const [id, e] of this.entries) if (e.email === email) this.entries.delete(id);
   }
   async deleteUnconfirmedBefore(before: Date) {
     let count = 0;

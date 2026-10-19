@@ -6,7 +6,7 @@ export class PrismaWaitlistRepository implements WaitlistRepository {
     return getPrisma().waitlistEntry.findUnique({ where: { email } });
   }
   async findByTokenHash(tokenHash: string): Promise<WaitlistEntry | null> {
-    return getPrisma().waitlistEntry.findUnique({ where: { tokenHash } });
+    return getPrisma().waitlistEntry.findFirst({ where: { OR: [{ tokenHash }, { inviteTokenHash: tokenHash }] } });
   }
   async create(entry: NewWaitlistEntry): Promise<WaitlistEntry> {
     return getPrisma().waitlistEntry.create({ data: entry });
@@ -16,6 +16,9 @@ export class PrismaWaitlistRepository implements WaitlistRepository {
   }
   async delete(id: string): Promise<void> {
     await getPrisma().waitlistEntry.deleteMany({ where: { id } });
+  }
+  async deleteByEmail(email: string): Promise<void> {
+    await getPrisma().waitlistEntry.deleteMany({ where: { email } });
   }
   async deleteUnconfirmedBefore(before: Date): Promise<number> {
     const { count } = await getPrisma().waitlistEntry.deleteMany({ where: { confirmedAt: null, confirmationSentAt: { lt: before } } });

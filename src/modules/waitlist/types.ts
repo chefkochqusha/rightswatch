@@ -19,17 +19,24 @@ export interface WaitlistEntry {
   confirmationTemplate: string;
   confirmationSentAt: Date;
   confirmedAt: Date | null;
+  /** The one invitation: when it went out, which template version, and the hash of its own leave link's secret. */
+  invitedAt: Date | null;
+  inviteTemplate: string | null;
+  inviteTokenHash: string | null;
   createdAt: Date;
 }
 
-export type NewWaitlistEntry = Omit<WaitlistEntry, "id" | "createdAt" | "confirmedAt">;
+export type NewWaitlistEntry = Omit<WaitlistEntry, "id" | "createdAt" | "confirmedAt" | "invitedAt" | "inviteTemplate" | "inviteTokenHash">;
 
 export interface WaitlistRepository {
   findByEmail(email: string): Promise<WaitlistEntry | null>;
+  /** The entry whose confirmation-email link or invitation link has this secret hash. */
   findByTokenHash(tokenHash: string): Promise<WaitlistEntry | null>;
   create(entry: NewWaitlistEntry): Promise<WaitlistEntry>;
-  update(id: string, changes: Partial<Pick<WaitlistEntry, "tokenHash" | "confirmationSentAt" | "confirmationTemplate" | "consentText" | "consentVersion" | "company" | "confirmedAt">>): Promise<WaitlistEntry>;
+  update(id: string, changes: Partial<Pick<WaitlistEntry, "tokenHash" | "confirmationSentAt" | "confirmationTemplate" | "consentText" | "consentVersion" | "company" | "confirmedAt" | "invitedAt" | "inviteTemplate" | "inviteTokenHash">>): Promise<WaitlistEntry>;
   delete(id: string): Promise<void>;
+  /** Removes the entry for this (lowercased) address, if any: done when its owner opens an account. */
+  deleteByEmail(email: string): Promise<void>;
   /** Removes entries never confirmed whose confirmation email is older than `before`. Returns how many. */
   deleteUnconfirmedBefore(before: Date): Promise<number>;
   /** Confirmed entries, oldest first: the list to invite from. */

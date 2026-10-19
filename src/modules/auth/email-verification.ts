@@ -74,7 +74,7 @@ export async function sendEmailVerification(userId: string, deps: SendVerificati
   return { ok: true };
 }
 
-export type VerifyEmailResult = { ok: true } | { ok: false; error: "INVALID_TOKEN" };
+export type VerifyEmailResult = { ok: true; email: string } | { ok: false; error: "INVALID_TOKEN" };
 
 /** Confirms the address a link was sent to. */
 export async function verifyEmail(
@@ -87,5 +87,5 @@ export async function verifyEmail(
   // The address must still be the one the link was sent to.
   if (!user || user.email !== payload.email) return { ok: false, error: "INVALID_TOKEN" };
   await deps.userRepository.markEmailVerified(user.id, new Date(deps.now ?? Date.now()));
-  return { ok: true };
+  return { ok: true, email: user.email };
 }
