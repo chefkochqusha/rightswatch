@@ -66,8 +66,10 @@ security updates (`unattended-upgrades`).
   the server** regularly (another provider's storage box, or a scheduled
   download), otherwise losing the server loses the backups too.
 - Restore: `age -d -i key.txt rightswatch-<date>.dump.age > r.dump`, then
-  `pg_restore` as above. Practise it once before the first customer
-  (`BACKUP_RESTORE.md`).
+  `pg_restore` as above. Drilled locally on 2026-10-19 (`BACKUP_RESTORE.md`);
+  practise it once on the real server before the first customer.
+- A failed night logs `backup: FAILED …` (`docker compose -f deploy/compose.yml
+  logs backup`) and writes no file; look at the newest file's date once a week.
 
 ## Still the same as on Vercel
 
