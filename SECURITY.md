@@ -86,7 +86,11 @@ writing its outcome.
    through `@prisma/adapter-pg`), and `eslint-config-next`'s lint-only
    dependencies. None is in the running application or sees untrusted input;
    the only automatic "fix" is a downgrade to Prisma 6, which is worse. Wait
-   for Prisma 8; Dependabot will propose it. New dependency: `nodemailer`
+   for Prisma 8; Dependabot will propose it. **Update 2026-10-19:** `npm audit`
+   now offers Prisma 7.10.1 (released 15.10.2026), a patch release that fixes
+   all four. Under the two-week rule for new releases, update `prisma`,
+   `@prisma/client` and `@prisma/adapter-pg` to 7.10.1 from 29.10.2026 on (or
+   merge Dependabot's PR for it). New dependency: `nodemailer`
    10.0.10 (MIT-0, picked as a release more than two weeks old).
 2. ~~Rate limits live in the app's memory.~~ **Fixed 2026-10-10:** on Vercel
    (or with `RATE_LIMIT_STORE=postgres`) login, password reset, email
