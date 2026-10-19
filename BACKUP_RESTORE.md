@@ -57,7 +57,23 @@ written after the chosen moment.
 A backup that has never been restored is a hope. **Run steps 1–2 once** (they
 change nothing) and put the date here:
 
-- Last drill: **not done yet** — to do before the first customer, with the owner at the Neon console.
+- **Neon** (today's hosting): **not done yet** — to do before the first customer, with the owner at the Neon console.
+- **Own server** (`deploy/backup.sh`), drilled locally on 2026-10-19 with a copy of
+  the development database (38 tables): `backup.sh` wrote an age-encrypted dump,
+  `age -d -i key.txt` decrypted it, `pg_restore --clean --if-exists` loaded it into
+  a fresh database whose schema had been pushed first (as the `migrate` container
+  does), every table had the same row count as the source, the `users` rows were
+  byte-identical, and the app started against the restored database (health
+  check and login page). The drill found one bug, fixed the same day: when
+  `pg_dump` failed, the script still reported a backup and left a ~200-byte file
+  (POSIX `sh` doesn't stop on a failure inside a pipe). Now a failed dump or
+  encryption exits non-zero with `backup: FAILED …`, writes nothing and prunes
+  nothing. Repeat this on the real server once, with the real key, before the
+  first customer.
+
+**Watch the backups**: a failure shows only in `docker compose -f
+deploy/compose.yml logs backup`. Once a week, check that `deploy/backups/` has a
+file from last night (and that the copy off the server has it too).
 
 ## Deleted data and backups
 
