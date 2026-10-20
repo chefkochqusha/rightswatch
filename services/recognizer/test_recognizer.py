@@ -145,9 +145,9 @@ class LargeCatalogueTest(unittest.TestCase):
         tracks.append(("legacy", fp.Fingerprint(old.hashes, old.times, old.duration_sec, old.melody)))
         cls.index = fp.Index(tracks, shortlist_from=2)
 
-    def test_the_second_pass_rescores_the_shortlisted_songs(self):
-        """In a large catalogue the dense pass re-scores the songs the first
-        pass narrowed the post to (no new search), and leaks nothing internal."""
+    def test_a_hard_post_is_found_by_the_wider_passes(self):
+        """A post the first 50 don't settle goes on to the wider and the dense
+        pass, and the result leaks nothing internal."""
         import real_test
 
         clip = to_fs(SONGS["t2"][SR * 20: SR * 45])
@@ -173,6 +173,39 @@ class LargeCatalogueTest(unittest.TestCase):
         top = fp.match(self.index, to_fs(sped))["candidates"][0]
         self.assertEqual(top["trackId"], "t2")
         self.assertAlmostEqual(top["speed"], 1.25, delta=0.03)
+
+    def test_the_shortlist_knows_the_speed(self):
+        from shortlist import speed_of_bin
+
+        sped = resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5)  # played 1.25x as fast
+        found = dict(self.index.candidates_with_speed(fp.peaks(to_fs(sped)), 5))
+        t2 = self.index.ids.index("t2")
+        self.assertAlmostEqual(speed_of_bin(found[t2]), 1.25, delta=0.04)
+        self.assertIsNone(found[self.index.ids.index("legacy")], "no peaks, no speed: every transform")
+
+    def test_transforms_near_a_speed(self):
+        from shortlist import SPEED_BIN_ZERO
+
+        fast = fp._transforms_near(SPEED_BIN_ZERO + 8)  # bin of speed 1.26
+        self.assertTrue(fast and all(abs(np.log(s / 1.26)) <= fp.SPEED_WINDOW for s, _ in fast))
+        self.assertTrue(any(abs(s - 1.25) < 0.005 for s, _ in fast), "the grid point at the real speed")
+        self.assertFalse(any(s == 1.0 for s, _ in fast))
+        normal = fp._transforms_near(SPEED_BIN_ZERO)
+        self.assertEqual({k for s, k in normal if s == 1.0}, set(range(-8, 9)), "pitch-only changes live at speed 1")
+        self.assertEqual(fp._transforms_near(None), fp.TRANSFORMS)
+
+    def test_guided_scores_equal_a_full_search_for_the_right_song(self):
+        """The transforms near the shortlist's speed hold the best one: the
+        right song scores the same as when every transform is tried."""
+        for post in (to_fs(SONGS["t2"][SR * 20: SR * 45]), to_fs(resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5))):
+            pk = fp.peaks(post)
+            t2 = self.index.ids.index("t2")
+            guided = {self.index.ids[p]: None for p, _ in self.index.candidates_with_speed(pk, 5)}
+            parts = fp._guided_parts(self.index, pk, 5, 1, {})
+            score = {tid: w for part, whole, _ in parts for tid, w in zip(part.ids, whole)}
+            full = fp._query_peaks(self.index.subset([t2]), pk, fp.TRANSFORMS)[0][0]
+            self.assertIn("t2", guided)
+            self.assertAlmostEqual(score["t2"], full, places=6)
 
     def test_finds_a_legacy_song(self):
         top = fp.match(self.index, to_fs(make_song(9)[SR * 20: SR * 45]))["candidates"][0]
@@ -269,7 +302,10 @@ class CompiledPathsTest(unittest.TestCase):
             n, m = int(rng.integers(1, 40)), int(rng.integers(0, 4000))
             cell = (rng.integers(0, n, m) * 64 + rng.integers(0, 40, m)) * (1 << 16) + (rng.integers(-300, 300, m) + (1 << 15))
             uk, c = np.unique(cell, return_counts=True)
-            np.testing.assert_array_equal(sl._best_per_song_fast(uk, c, n), sl._best_per_song(uk, c, n))
+            fast_best, fast_cell = sl._best_per_song_fast(uk, c, n)
+            plain_best, plain_cell = sl._best_per_song(uk, c, n)
+            np.testing.assert_array_equal(fast_best, plain_best)
+            np.testing.assert_array_equal(fast_cell, plain_cell)
 
 
 class ServerTest(unittest.TestCase):

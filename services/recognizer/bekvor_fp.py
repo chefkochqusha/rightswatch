@@ -373,8 +373,14 @@ DENSE_LIMIT = 4_000_000
 # and the precise check runs on the shortlist only.
 SHORTLIST_FROM = int(os.environ.get("RECOGNIZER_SHORTLIST_FROM", "200"))
 SHORTLIST_SIZE = int(os.environ.get("RECOGNIZER_SHORTLIST_SIZE", "50"))
-# ... and how far down it goes when no song stood out among the first.
-SHORTLIST_WIDE = int(os.environ.get("RECOGNIZER_SHORTLIST_WIDE", "200"))
+# ... and how far down it goes when no song stood out among the first (and
+# again with twice the peaks). Each song is checked only near the speed the
+# shortlist found for it, which is what makes 400 affordable.
+SHORTLIST_WIDE = int(os.environ.get("RECOGNIZER_SHORTLIST_WIDE", "400"))
+# How far from the shortlist's speed estimate (natural log of the speed
+# ratio) the precise check still tries: the estimate's own bin is 3 % wide
+# and can be one bin off, so about ±4.5 %.
+SPEED_WINDOW = 0.045
 
 # Pair hashes are below 2**21 (frequency bin < 256 in the top bits), so how
 # many songs have each hash fits a plain table: 2**21 entries, 8 MB.
@@ -524,15 +530,33 @@ class Index:
         found = self.shortlist_index.shortlist(pk, size) if len(self.with_peaks) else []
         return list(dict.fromkeys([int(i) for i in found] + list(self.legacy)))
 
-    def subset(self, positions: list[int]) -> "Index":
-        """A small index of these songs (positions in this index), for the precise check."""
+    def candidates_with_speed(self, pk: np.ndarray, size: int = SHORTLIST_SIZE) -> list[tuple[int, int | None]]:
+        """(position, speed bin) of the shortlisted songs, best first, then the
+        songs that can't be shortlisted (no peaks stored) with None: they are
+        checked at every speed."""
+        if len(self.with_peaks):
+            found, bins = self.shortlist_index.shortlist_with_speed(pk, size)
+            out = [(int(i), int(b)) for i, b in zip(found, bins)]
+        else:
+            out = []
+        return out + [(i, None) for i in self.legacy]
+
+    def subset(self, positions: list[int], cache: dict | None = None) -> "Index":
+        """A small index of these songs (positions in this index), for the
+        precise check. `cache` (position -> Fingerprint) keeps each song's
+        pair hashes for the other subsets of the same post."""
         tracks = []
         for i in positions:
             if i in self.legacy:
                 tracks.append((self.ids[i], self.legacy[i]))
-            else:
+                continue
+            f = cache.get(i) if cache is not None else None
+            if f is None:
                 pk = np.stack([self.peak_t[i], self.peak_f[i]], axis=1).astype(np.float64)
-                tracks.append((self.ids[i], Fingerprint.from_peaks(pk, self.durations[i], self.melodies[i])))
+                f = Fingerprint.from_peaks(pk, self.durations[i], self.melodies[i])
+                if cache is not None:
+                    cache[i] = f
+            tracks.append((self.ids[i], f))
         return Index(tracks, shortlist_from=len(tracks) + 1, weights=self.weights)
 
     def nbytes(self) -> int:
@@ -708,11 +732,8 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     evidence a decision needs: score, the next song's score, how many
     windows of the post each song wins, and the speed/pitch it was found at.
 
-    Large catalogues: the precise check runs on the shortlist's best
-    `SHORTLIST_SIZE` songs; when no song stands out clearly there, on the next
-    ones up to `SHORTLIST_WIDE` too. Hard posts (music quiet under speech,
-    several edits at once) often have the right song just below the first
-    cut, while clear posts are settled in the first round.
+    Small catalogues: every song at every speed and pitch (`TRANSFORMS`).
+    Large catalogues: see `_match_large`.
 
     When no song is clearly ahead in at least half the post, a second pass
     reads the post with twice the peaks (`DENSE_FACTOR`): under a voice-over
@@ -726,18 +747,53 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     result = {"algorithm": ALGORITHM, "durationSec": round(duration, 2), "peaks": int(len(pk)), "windows": 0, "candidates": []}
     if len(index.ids) == 0 or len(pk) < 10:
         return result
+    if index.large:
+        return _match_large(index, y, bands, pk, query_melody, top, result)
     first = _match_peaks(index, pk, query_melody, top, {**result, "candidates": []}, 1)
     if _decisive(first) or not DENSE_PASS:
-        first.pop("_parts", None)
         return first
     dense = peaks(y, per_sec=PEAKS_PER_SEC * DENSE_FACTOR, bands=bands)
-    second = _match_peaks(
-        index, dense, query_melody, top, {**result, "peaks": int(len(dense)), "candidates": []},
-        # small catalogues: every transform (cheap); large ones: only near the first pass's best
-        DENSE_FACTOR, first.get("_parts"), _near(first["candidates"]) if index.large else None,
-    )
-    first.pop("_parts", None)
-    second.pop("_parts", None)
+    second = _match_peaks(index, dense, query_melody, top, {**result, "peaks": int(len(dense)), "candidates": []}, DENSE_FACTOR)
+    return _dense_if_clearer(first, second)
+
+
+def _match_large(index: Index, y: np.ndarray, bands: np.ndarray, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict) -> dict:
+    """Large catalogues: the shortlist (shortlist.py) names the likely songs
+    and, for each, the speed at which it matched; the precise check then
+    tries only the transforms near that speed for that song (`_guided_parts`).
+
+    1. The shortlist's best `SHORTLIST_SIZE` songs. Clear posts end here.
+    2. Otherwise its best `SHORTLIST_WIDE` (400): hard posts (music quiet under
+       speech, several edits at once) often have the right song far down.
+    3. And the shortlist of the post read with twice the peaks, also 400
+       deep: under a voice-over that one often has the right song near the
+       top when the normal one doesn't have it at all.
+    The pass with the clearer leader is kept. Songs checked in an earlier
+    pass keep their pair hashes (`cache`)."""
+    cache: dict = {}
+
+    def check(points: np.ndarray, size: int, density: int, base: dict) -> dict:
+        parts = _guided_parts(index, points, size, density, cache)
+        return _evaluate(parts, points, query_melody, top, {**base, "candidates": []}, density)
+
+    def done(out: dict) -> dict:
+        out["shortlisted"] = len(cache) + len(index.legacy)  # songs checked, all passes
+        return out
+
+    first = check(pk, SHORTLIST_SIZE, 1, result)
+    if _decisive(first):
+        return done(first)
+    wide = check(pk, SHORTLIST_WIDE, 1, result)
+    best = wide if _lead(wide) >= _lead(first) else first
+    if not DENSE_PASS:
+        return done(best)
+    dense = peaks(y, per_sec=PEAKS_PER_SEC * DENSE_FACTOR, bands=bands)
+    return done(_dense_if_clearer(best, check(dense, SHORTLIST_WIDE, DENSE_FACTOR, {**result, "peaks": int(len(dense))})))
+
+
+def _dense_if_clearer(first: dict, second: dict) -> dict:
+    """The dense pass's result when its leader is clearer, its scores scaled
+    back to the normal pass's (`DENSE_SCORE_SCALE`); else the first."""
     if _lead(second) > _lead(first):
         for c in second["candidates"]:
             c["score"] = round(c["score"] / DENSE_SCORE_SCALE, 2)
@@ -747,16 +803,34 @@ def match(index: Index, y: np.ndarray, top: int = 3) -> dict:
     return first
 
 
-def _near(candidates: list[dict]) -> list[tuple[float, int]]:
-    """The speed/pitch transforms close to where the first pass found its best
-    songs (and the original), for the dense pass: trying all of them again
-    with twice the peaks cost as much as the rest of the search."""
-    wanted = [(1.0, 0)] + [(c["speed"], int(round(c["pitchSemitones"] * 2))) for c in candidates]
-    out = []
-    for s, k in TRANSFORMS:
-        if any(abs(np.log(s / s0)) <= 0.04 and abs(k - k0) <= 1 for s0, k0 in wanted):
-            out.append((s, k))
-    return out
+def _transforms_near(sbin: int | None) -> list[tuple[float, int]]:
+    """The transforms (`TRANSFORMS`, the same grid as small catalogues use:
+    being one grid step off the real speed halves the score) within
+    `SPEED_WINDOW` of a speed bin's speed. Pitch-only transforms belong to
+    speed 1. No bin (a song without peaks): all of them."""
+    if sbin is None:
+        return TRANSFORMS
+    from shortlist import SPEED_BIN_ZERO, speed_of_bin
+
+    s0 = speed_of_bin(sbin)
+    out = [(s, k) for s, k in TRANSFORMS if abs(np.log(s / s0)) <= SPEED_WINDOW]
+    if abs(sbin - SPEED_BIN_ZERO) > 1:
+        out = [(s, k) for s, k in out if s != 1.0 or k == 0]
+    return out or [(1.0, 0)]
+
+
+def _guided_parts(index: Index, pk: np.ndarray, size: int, density: int, cache: dict):
+    """The shortlist's `size` best songs, scored in groups of the same speed
+    bin, each group at the transforms near its speed: (part, scores, transforms) per group."""
+    groups: dict = {}
+    for i, sbin in index.candidates_with_speed(pk, size):
+        groups.setdefault(sbin, []).append(i)
+    parts = []
+    for sbin, members in groups.items():
+        part = index.subset(members, cache)
+        whole, _, tf = _query_peaks(part, pk, _transforms_near(sbin), density)
+        parts.append((part, whole, tf))
+    return parts
 
 
 def _lead(result: dict) -> float:
@@ -770,52 +844,18 @@ def _decisive(result: dict) -> bool:
     return bool(c) and _lead(result) >= 3.0 and c[0]["windowsWon"] * 2 >= result["windows"] > 0
 
 
-def _match_peaks(
-    index: Index, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int,
-    parts: list[Index] | None = None, transforms: list[tuple[float, int]] | None = None,
-) -> dict:
-    """One pass over the catalogue. In a large catalogue the dense pass gets
-    `parts`, the small indexes of the songs the first pass already narrowed
-    the post to, and re-scores only those: searching 20,000 songs again with
-    twice the peaks took 40-50 s per post instead of about 10."""
-    tfs = transforms or TRANSFORMS
-    if not index.large:
-        return _evaluate([_scored(index, pk, density, tfs)], pk, query_melody, top, result, density)
-    if parts:
-        result["shortlisted"] = sum(len(part.ids) for part in parts)
-        return _evaluate([_scored(part, pk, density, tfs) for part in parts], pk, query_melody, top, result, density)
-
-    ranked = index.candidates(pk, SHORTLIST_WIDE)  # shortlist order, then songs that can't be shortlisted
-    legacy = [i for i in ranked if i in index.legacy]
-    found = [i for i in ranked if i not in index.legacy]
-    first, rest = found[:SHORTLIST_SIZE] + legacy, found[SHORTLIST_SIZE:]
-    if not first:
-        return result
-    scored = [_scored(index.subset(first), pk, density)]
-    if rest and not _stands_out(scored[0][1]):
-        scored.append(_scored(index.subset(rest), pk, density))
-    result["shortlisted"] = sum(len(part.ids) for part, _, _ in scored)
-    result["_parts"] = [part for part, _, _ in scored]
-    return _evaluate(scored, pk, query_melody, top, result, density)
-
-
-def _scored(part: Index, pk: np.ndarray, density: int = 1, transforms=None):
-    whole, _, tf = _query_peaks(part, pk, transforms or TRANSFORMS, density)
-    return part, whole, tf
-
-
-def _stands_out(whole: np.ndarray, ratio: float = 3.0, floor: float = 20.0) -> bool:
-    """The best song is clearly ahead (as the app's decision rule reads it)."""
-    if len(whole) < 2:
-        return len(whole) == 1 and whole[0] > floor
-    first, second = np.sort(whole)[-2:][::-1]
-    return first / max(second, floor) >= ratio
+def _match_peaks(index: Index, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int) -> dict:
+    """One pass over a small catalogue: every song at every transform."""
+    whole, _, tf = _query_peaks(index, pk, TRANSFORMS, density)
+    return _evaluate([(index, whole, tf)], pk, query_melody, top, result, density)
 
 
 def _evaluate(parts, pk: np.ndarray, query_melody: np.ndarray, top: int, result: dict, density: int = 1) -> dict:
     """The candidates from one or more scored parts of the catalogue (songs
     are scored independently, with the catalogue's weights, so parts can be
     put side by side)."""
+    if not parts:
+        return result
     ids = [track_id for part, _, _ in parts for track_id in part.ids]
     melodies = [m for part, _, _ in parts for m in part.melodies]
     whole = np.concatenate([w for _, w, _ in parts])
