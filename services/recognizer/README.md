@@ -371,7 +371,7 @@ Results, before → after (2-core development machine):
 
 By edit, 2,000 distinct songs, right song on top before → after: voice −6 dB
 19 → 20, voice −12 dB 15 → 17, sped up 18 → 19, tempo 1.2× 19 → 20, worst
-case 6 → 12; automatic matches (MATCH) 153 → 162, among them slowed 15 → 18
+case 6 → 12; automatic matches (MATCH) 133 → 142, among them slowed 15 → 18
 and worst case 0 → 2. Real recordings: voice −6 dB 15 → 16, voice −12 dB 10 →
 14, slowed 13 → 16, worst case 1 → 7 of 16.
 
