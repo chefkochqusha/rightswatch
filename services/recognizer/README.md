@@ -366,7 +366,7 @@ Results, before → after (2-core development machine):
 |---|---|---|---|
 | 2,000 distinct songs, 200 posts | 177 → **188** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → **1.7 / 13.3 s** |
 | 5,000 distinct songs (after only) | run pending | | |
-| 4 real recordings among 2,000 distinct, 160 posts | 151 → **165** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 9 | 1.1 → 1.0 s |
+| 4 real recordings among 2,000 distinct, 160 posts | 135 → **149** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 9 | 1.1 → 1.0 s |
 | 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
 
 By edit, 2,000 distinct songs, right song on top before → after: voice −6 dB
