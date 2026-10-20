@@ -102,7 +102,10 @@ TikTok posts): re-run the calibration on them and set the thresholds through
 `research/fingerprint/real_music.py`: four openly licensed real songs
 (Brahms' Hungarian Dance No. 5 by the US Army Strings, public domain;
 "Let's Go Fishin'" by Karissa Hobbs, a sung song; "Dance of the Sugar Plum
-Fairy" and "Vibe Ace" by Kevin MacLeod; CC BY) from librosa's example data,
+Fairy" and "Vibe Ace" by Kevin MacLeod; CC BY) from librosa's example data
+(**correction 2026-10-19:** "Let's Go Fishin'" is CC BY-NC-SA 4.0 according to
+its licence entry, not CC BY; it was replaced by "Jesu geh voran", CC BY 4.0,
+and the runs from 2026-10-20 on use that set),
 real speech (LibriVox readings, CC BY) as the voice-over, 4 posts per song
 and edit. Right song on top, of 16:
 
@@ -321,6 +324,72 @@ the compiled paths on and off).
 At 2,000 songs (12 posts): median 7.2 → 3.0 s, build 37 → 16 s, identical
 results. One core now handles roughly 17,000 posts a day at 20,000 songs.
 
+## Distinct songs, speed-guided search, aligned grids (2026-10-20)
+
+**The large-catalogue test was harsher than real catalogues.** `scale_bench.py`
+fills the catalogue with ~330 transposed and re-timed copies of each of 60
+songs. The shortlist ignores speed and pitch, so to it those copies are one
+song 330 times, and a sped-up post is crowded out by copies of other songs.
+`catalogue_bench.py` uses distinct songs instead (`research/fingerprint/synth2.py`:
+each with its own key, mode, form, progressions, tempo, instruments and
+melodies; `make_catalogue.py` caches their fingerprints), ten edits per post
+(adds tempo-only and pitch-only) and 48 posts of songs outside the catalogue.
+
+With the search as it was (2,000 songs, compiled code from 2026-10-18), right
+song on top: sped up 18 of 20 (was 48 % in the copy test), slowed 20 (43 %),
+voice −6 dB 19 (73 %), voice −12 dB 15 (55 %), worst case 6 (3 %). Every miss
+was a song the shortlist didn't reach in its 200; once there, the precise
+check put it on top. Two changes followed.
+
+**1. Speed-guided search.** The shortlist knows at which speed each candidate
+matched (the speed bin of its best vote cell). The precise check now tries
+only the transforms near that speed for that song (`SPEED_WINDOW`, ±4.5 %, on
+the same transform grid as before, since being one grid step off the real
+speed halves the score) instead of all 76. That makes a deeper search
+affordable: the best 50 first; when no song stands out, the best 400
+(`RECOGNIZER_SHORTLIST_WIDE`, was 200); and the shortlist of the post read
+with twice the peaks, also 400 deep. The pass with the clearer leader is kept.
+
+**2. Aligned grids.** A post played faster or slower with the pitch following
+(1.2× is 6.3 log bins up) sits a fraction of a bin off the song's grid, so
+its peaks round differently and about half the frequency steps between peaks
+come out one bin off. Speed alone survives that; speed plus a voice-over did
+not (four real recordings, 1.2× + voice at −9 dB: right song at a median
+rank of ~800 of 2,000 in the shortlist). The post is now also read on grids
+moved by a third and two thirds of a bin; each transform uses the grid
+nearest its fractional shift, and the deeper shortlist passes look the post
+up on all three. Fingerprints stay on the plain grid, byte for byte.
+
+Results, before → after (2-core development machine):
+
+| Test | Right song on top | Missed | Time per post (median / p95) |
+|---|---|---|---|
+| 2,000 distinct songs, 200 posts | 177 → **188** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → **1.7 / 13.3 s** |
+| 5,000 distinct songs (after only) | run pending | | |
+| 4 real recordings among 2,000 distinct, 160 posts | 151 → **165** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 9 | 1.1 → 1.0 s |
+| 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
+
+By edit, 2,000 distinct songs, right song on top before → after: voice −6 dB
+19 → 20, voice −12 dB 15 → 17, sped up 18 → 19, tempo 1.2× 19 → 20, worst
+case 6 → 12; automatic matches (MATCH) 153 → 162, among them slowed 15 → 18
+and worst case 0 → 2. Real recordings: voice −6 dB 15 → 16, voice −12 dB 10 →
+14, slowed 13 → 16, worst case 1 → 7 of 16.
+
+**No wrong MATCH in any run.** Suggestions for posts of songs outside the
+catalogue (a person dismisses them): 1 → 3 of 48 at 2,000 distinct songs,
+13 → 14 of 75 in the calibration, 1 of 10 for the real recordings either way.
+The thresholds stay as they are: the calibration's look-alike songs (same
+chords, same instruments) still need them.
+
+Hard posts take longer (p95 4.5 → 13 s): they are searched far deeper.
+Clear posts end after the first 50 and got a little faster. Still weak:
+the worst case (1.2× + voice + phone + AAC) is found as a suggestion in about
+half the posts and missed in the rest, and music 12 dB under a voice is
+mostly a suggestion, because the melody check (which a MATCH needs) hears the
+voice. The 20,000-song run with distinct songs needs its fingerprint cache
+built first (`make_catalogue.py 100000 20000`, about 8 hours on 2 cores; 5,408
+were built).
+
 ## Your own music: `real_test.py` (round 2)
 
 The test to run before relying on recognition: the songs you have the rights
@@ -356,7 +425,7 @@ score of 60 is what keeps wrong songs out, so lowering it isn't safe.
 ## Run and test
 
 ```bash
-python3 -m unittest discover -s services/recognizer -p "test_*.py"   # 21 tests
+python3 -m unittest discover -s services/recognizer -p "test_*.py"   # 38 tests
 RECOGNIZER_TOKEN=dev PORT=8090 python3 services/recognizer/server.py
 ```
 
