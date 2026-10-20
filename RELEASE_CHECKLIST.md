@@ -169,8 +169,9 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   of 160 posts (was 135); no false automatic match in any run.
   Still weak: sped up + voice-over + phone + AAC together (found as a
   suggestion in about half, missed in the rest) and music 12 dB under a voice
-  (found, but mostly a suggestion for a person). Hard posts take longer (p95
-  about 13 s at 2,000 songs). Measure with real music first (round 2); if the
+  (found, but mostly a suggestion for a person). Hard posts take longer: p95
+  about 10 s at 2,000 songs, 17-30 s at 20,000 (about 5,000 hard posts a day
+  per core; size the Agency server with that, `SELF_HOSTING.md`). Measure with real music first (round 2); if the
   combined edits matter in practice, build the second, learned stage (an own
   neural fingerprint, trained on a rented GPU with music Bekvor may use for
   training; licences of any pretrained model checked for commercial use).
