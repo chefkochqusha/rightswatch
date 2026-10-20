@@ -431,6 +431,10 @@ SHORTLIST_WIDE = int(os.environ.get("RECOGNIZER_SHORTLIST_WIDE", "400"))
 # ratio) the precise check still tries: the estimate's own bin is 3 % wide
 # and can be one bin off, so about ±4.5 %.
 SPEED_WINDOW = 0.045
+# Which deeper passes look the post up on all three grids (`GRID_THIRDS`):
+# "dense" (default) or "both" (also the wide pass: a few more hard posts
+# found, about twice the shortlist time at 20,000 songs).
+SHORTLIST_GRIDS = os.environ.get("RECOGNIZER_SHORTLIST_GRIDS", "dense")
 
 # Pair hashes are below 2**21 (frequency bin < 256 in the top bits), so how
 # many songs have each hash fits a plain table: 2**21 entries, 8 MB.
@@ -827,12 +831,12 @@ def _match_large(index: Index, spectrum: np.ndarray, post: dict, query_melody: n
     tries only the transforms near that speed for that song (`_guided_parts`).
 
     1. The shortlist's best `SHORTLIST_SIZE` songs. Clear posts end here.
-    2. Otherwise its best `SHORTLIST_WIDE` (400), looked up with the post read
-       on all three grids (`GRID_THIRDS`): hard posts (music quiet under
-       speech, several edits at once) often have the right song far down.
-    3. And the same with the post read with twice the peaks: under a
-       voice-over that one often has the right song near the top when the
-       normal one doesn't have it at all.
+    2. Otherwise its best `SHORTLIST_WIDE` (400): hard posts (music quiet
+       under speech, several edits at once) often have the right song far down.
+    3. And the shortlist of the post read with twice the peaks, on all three
+       grids (`GRID_THIRDS`), also 400 deep: under a voice-over that one often
+       has the right song near the top when the normal one doesn't have it at
+       all. `SHORTLIST_GRIDS` "both" reads pass 2 on all three grids as well.
     The pass with the clearer leader is kept. Songs checked in an earlier
     pass keep their pair hashes (`cache`)."""
     cache: dict = {}
@@ -848,7 +852,7 @@ def _match_large(index: Index, spectrum: np.ndarray, post: dict, query_melody: n
     first = check(post, SHORTLIST_SIZE, 1, False, result)
     if _decisive(first):
         return done(first)
-    wide = check(post, SHORTLIST_WIDE, 1, True, result)
+    wide = check(post, SHORTLIST_WIDE, 1, SHORTLIST_GRIDS == "both", result)
     best = wide if _lead(wide) >= _lead(first) else first
     if not DENSE_PASS:
         return done(best)
