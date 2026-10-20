@@ -210,11 +210,11 @@ class LargeCatalogueTest(unittest.TestCase):
     def test_a_sped_up_post_is_read_on_the_grid_nearest_its_pitch(self):
         """1.25x moves the pitch 7.73 log bins: the two-thirds grid, 7 bins over."""
         grids = {0: np.zeros((1, 2)), 1: np.ones((1, 2)), 2: np.full((1, 2), 2.0)}
-        pk, k = fp._aligned(grids, 1.25, 8)
+        pk, k, shown = fp._aligned(grids, 1.25, 8)
         self.assertIs(pk, grids[2])
-        self.assertEqual(k, 7)
+        self.assertEqual((k, shown), (7, 8), "7 bins on that grid, shown as the nearest whole shift")
         self.assertIs(fp._aligned(grids, 1.25, 0)[0], grids[0], "tempo only: the plain grid")
-        self.assertEqual(fp._aligned(grids, 1.0, -6), (grids[0], -6), "pitch only, whole bins")
+        self.assertEqual(fp._aligned(grids, 1.0, -6), (grids[0], -6, -6), "pitch only, whole bins")
         self.assertEqual(fp._aligned(grids, 0.85, -6)[1], -6, "0.85x: -5.63 bins = 6 bins down on the one-third grid")
         self.assertIs(fp._aligned(grids, 0.85, -6)[0], grids[1])
 

@@ -147,21 +147,23 @@ def post_peaks(spectrum: np.ndarray, per_sec: int = PEAKS_PER_SEC, bands: np.nda
     return out
 
 
-def _aligned(post, s: float, k: int) -> tuple[np.ndarray, int]:
-    """The post's peaks to use for transform (speed s, shift k), and the shift
-    on that grid. A pitch that follows the speed (k near BPO*log2(s)) is read
-    on the grid nearest to its fractional part; tempo-only and pitch-only
+def _aligned(post, s: float, k: int) -> tuple[np.ndarray, int, int]:
+    """The post's peaks to use for transform (speed s, shift k), the shift on
+    that grid, and the shift to report (whole bins on the plain grid, for the
+    pitch shown and the melody check). A pitch that follows the speed (k near
+    BPO*log2(s)) is read on the grid nearest to its fractional part, where
+    the floor and ceiling transforms become one; tempo-only and pitch-only
     transforms (whole bins) on the plain grid. Plain arrays are used as they are."""
     if not isinstance(post, dict):
-        return post, k
+        return post, k, k
     if s == 1.0 or k == 0:
-        return post[0], k
+        return post[0], k, k
     shift = BPO * np.log2(s)
     whole = int(np.floor(shift))
     third = int(round((shift - whole) * GRID_THIRDS))
     if third == GRID_THIRDS:
         whole, third = whole + 1, 0
-    return post[third], whole
+    return post[third], whole, int(round(shift))
 
 
 def peaks(y: np.ndarray, per_sec: int = PEAKS_PER_SEC, bands: np.ndarray | None = None) -> np.ndarray:
@@ -760,7 +762,7 @@ def _query_peaks(index: Index, pk, transforms, density: int = 1) -> tuple[np.nda
     best_tf: list = [None] * n
     done = set()
     for s, k in transforms:
-        grid_pk, kk = _aligned(pk, s, k)
+        grid_pk, kk, k_report = _aligned(pk, s, k)
         if (s, id(grid_pk), kk) in done:  # floor and ceil of a shift land on one grid
             continue
         done.add((s, id(grid_pk), kk))
@@ -771,7 +773,7 @@ def _query_peaks(index: Index, pk, transforms, density: int = 1) -> tuple[np.nda
         sc, off = index.score(h, t)
         better = sc > best
         for i in np.nonzero(better)[0]:
-            best_tf[i] = (s, k, int(off[i]))
+            best_tf[i] = (s, k_report, int(off[i]))
         best = np.maximum(best, sc)
     return best, len(pk), best_tf
 
