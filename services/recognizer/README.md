@@ -365,7 +365,7 @@ Results, before → after (2-core development machine):
 | Test | Right song on top | Missed | Time per post (median / p95) |
 |---|---|---|---|
 | 2,000 distinct songs, 200 posts | 177 → **188** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → **1.7 / 13.3 s** |
-| 5,000 distinct songs (after only) | run pending | | |
+| 5,000 distinct songs (after only) | 184 of 200 | worst case 9, voice −12 dB 3, 3 others | 2.3 / 16.4 s |
 | 4 real recordings among 2,000 distinct, 160 posts | 135 → **149** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 9 | 1.1 → 1.0 s |
 | 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
 
