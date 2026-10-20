@@ -340,6 +340,11 @@ class ShardedShortlist:
 
     def shortlist_with_speed(self, pk: np.ndarray, top: int = 50) -> tuple[np.ndarray, np.ndarray]:
         """As `shortlist`, plus each song's speed bin (`speed_of_bin`)."""
+        found, bins, _ = self.shortlist_scored(pk, top)
+        return found, bins
+
+    def shortlist_scored(self, pk: np.ndarray, top: int = 50) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """As `shortlist_with_speed`, plus each song's vote score."""
         query = query_keys(pk)
         found, scores, bins = [], [], []
         for positions, shard in self.shards:
@@ -348,7 +353,7 @@ class ShardedShortlist:
             scores.append(sc)
             bins.append(sb)
         if not found:
-            return np.zeros(0, np.int64), np.zeros(0, np.int64)
+            return np.zeros(0, np.int64), np.zeros(0, np.int64), np.zeros(0)
         found, scores, bins = np.concatenate(found), np.concatenate(scores), np.concatenate(bins)
         order = np.argsort(-scores, kind="stable")[:top]
-        return found[order], bins[order]
+        return found[order], bins[order], scores[order]

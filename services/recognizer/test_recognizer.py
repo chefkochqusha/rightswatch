@@ -198,14 +198,25 @@ class LargeCatalogueTest(unittest.TestCase):
         """The transforms near the shortlist's speed hold the best one: the
         right song scores the same as when every transform is tried."""
         for post in (to_fs(SONGS["t2"][SR * 20: SR * 45]), to_fs(resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5))):
-            pk = fp.peaks(post)
+            grids = fp.post_peaks(fp._tonal_spectrum(post))
             t2 = self.index.ids.index("t2")
-            guided = {self.index.ids[p]: None for p, _ in self.index.candidates_with_speed(pk, 5)}
-            parts = fp._guided_parts(self.index, pk, 5, 1, {})
+            guided = {self.index.ids[p]: None for p, _ in self.index.candidates_with_speed(grids[0], 5)}
+            parts = fp._guided_parts(self.index, grids, 5, 1, {})
             score = {tid: w for part, whole, _ in parts for tid, w in zip(part.ids, whole)}
-            full = fp._query_peaks(self.index.subset([t2]), pk, fp.TRANSFORMS)[0][0]
+            full = fp._query_peaks(self.index.subset([t2]), grids, fp.TRANSFORMS)[0][0]
             self.assertIn("t2", guided)
             self.assertAlmostEqual(score["t2"], full, places=6)
+
+    def test_a_sped_up_post_is_read_on_the_grid_nearest_its_pitch(self):
+        """1.25x moves the pitch 7.73 log bins: the two-thirds grid, 7 bins over."""
+        grids = {0: np.zeros((1, 2)), 1: np.ones((1, 2)), 2: np.full((1, 2), 2.0)}
+        pk, k = fp._aligned(grids, 1.25, 8)
+        self.assertIs(pk, grids[2])
+        self.assertEqual(k, 7)
+        self.assertIs(fp._aligned(grids, 1.25, 0)[0], grids[0], "tempo only: the plain grid")
+        self.assertEqual(fp._aligned(grids, 1.0, -6), (grids[0], -6), "pitch only, whole bins")
+        self.assertEqual(fp._aligned(grids, 0.85, -6)[1], -6, "0.85x: -5.63 bins = 6 bins down on the one-third grid")
+        self.assertIs(fp._aligned(grids, 0.85, -6)[0], grids[1])
 
     def test_finds_a_legacy_song(self):
         top = fp.match(self.index, to_fs(make_song(9)[SR * 20: SR * 45]))["candidates"][0]
