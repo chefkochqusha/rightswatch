@@ -165,12 +165,12 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   aligned grids"): the old 20,000-song test filled the catalogue with ~330
   copies of each of 60 songs, which made edited posts look much worse than a
   real catalogue would. With 2,000 distinct songs the right song is now on top
-  in 188 of 200 edited posts (was 177); four real recordings among them: 149
+  in 190 of 200 edited posts (was 177); four real recordings among them: 146
   of 160 posts (was 135); no false automatic match in any run.
   Still weak: sped up + voice-over + phone + AAC together (found as a
   suggestion in about half, missed in the rest) and music 12 dB under a voice
   (found, but mostly a suggestion for a person). Hard posts take longer: p95
-  about 10 s at 2,000 songs, 17-30 s at 20,000 (about 5,000 hard posts a day
+  about 9 s at 2,000 songs, 12-20 s at 20,000 (about 7,000 hard posts a day
   per core; size the Agency server with that, `SELF_HOSTING.md`). Measure with real music first (round 2); if the
   combined edits matter in practice, build the second, learned stage (an own
   neural fingerprint, trained on a rented GPU with music Bekvor may use for

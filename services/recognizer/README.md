@@ -365,32 +365,44 @@ post up on the plain grid, `RECOGNIZER_SHORTLIST_GRIDS=dense`, the default):
 
 | Test | Right song on top | Missed | Time per post (median / p95) |
 |---|---|---|---|
-| 2,000 distinct songs, 200 posts | 177 → **187** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → 1.5 / 9.8 s |
-| 5,000 distinct songs (after only, with `=both`) | 184 of 200 | worst case 9, voice −12 dB 3, 3 others | 2.3 / 16.4 s |
-| 20,000 songs, copy-based test (`scale_bench.py`), 160 posts | 104 → **126** | sped up 14 → 5, voice −12 dB 9 → 7 | 4.9 / 7.3 s → **17.1 / 29.5 s** |
-| 4 real recordings among 2,000 distinct, 160 posts | 135 → **147** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 11 | 1.1 → 0.9 s |
+| 2,000 distinct songs, 200 posts | 177 → **190** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → **1.2 / 9.0 s** |
+| 5,000 distinct songs (after only; measured before the key cap below, with `=both`) | 184 of 200 | worst case 9, voice −12 dB 3, 3 others | 2.3 / 16.4 s |
+| 20,000 songs, copy-based test (`scale_bench.py`), 160 posts | 104 → **125** | sped up 14 → 4, voice −12 dB 9 → 7 | 4.9 / 7.3 s → **12.2 / 20.2 s** |
+| 4 real recordings among 2,000 distinct, 160 posts | 135 → **146** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 12 | 1.1 → 0.8 s |
 | 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
 
 By edit, 2,000 distinct songs, right song on top before → after: voice −6 dB
-19 → 20, voice −12 dB 15 → 17, sped up 18 → 19, tempo 1.2× 19 → 20, worst
-case 6 → 11; automatic matches (MATCH) 133 → 142, among them slowed 15 → 18
+19 → 20, voice −12 dB 15 → 17, sped up 18 → 20, tempo 1.2× 19 → 20, worst
+case 6 → 13; automatic matches (MATCH) 133 → 144, among them slowed 15 → 19
 and worst case 0 → 2. Real recordings: voice −6 dB 15 → 16, voice −12 dB 10 →
-14, slowed 13 → 16, worst case 1 → 5 of 16. At 20,000 songs: sped up 6 → 15,
-slowed 12 → 15, voice −6 dB 15 → 18, voice −12 dB 11 → 16, worst case 0 → 2 of 20.
-Looking the wide pass up on all three grids too (`=both`) found 2 more
-worst-case real posts (7 of 16) and 1 more synthetic one, and cost 10 % more
-time at 20,000 songs (median 18.8 s, p95 36.2 s).
+14, slowed 13 → 16, worst case 1 → 4 of 16. At 20,000 songs: sped up 6 → 16,
+slowed 12 → 15, voice −6 dB 15 → 18, voice −12 dB 11 → 15, worst case 0 → 1 of 20.
+Looking the wide pass up on all three grids too (`=both`) found 1-2 more
+worst-case posts and cost about 10 % more time at 20,000 songs.
+
+**Common keys capped (2026-10-22).** The shortlist skipped only keys with more
+than 50,000 postings in a 2,000-song shard; now it skips keys with more than
+one posting per song (`shortlist.POSTINGS_PER_SONG`). In a shard the 7 % most
+common keys of a post gave 42 % of its votes, nearly all by chance. The cap
+made lookups 1.75x faster and found more hard posts, not fewer (in the
+shortlist's first 50: voice −12 dB 12 → 16 of 20; worst case within 400:
+14 → 17); half the cap lost posts. With it the numbers above (2,000 songs
+187 → 190 on top, false suggestions 3 → 1 of 48; 20,000 songs median 17.1 →
+12.2 s). The shortlist's counting itself is also compiled in one pass now
+(votes counted per song instead of sorting millions of cells; identical
+scores), and an index of shortlisted songs is built from hash-sorted pairs
+(about 4x faster to sort, identical arrays).
 
 **No wrong MATCH in any run.** Suggestions for posts of songs outside the
-catalogue (a person dismisses them): 1 → 3 of 48 at 2,000 distinct songs,
-13 → 14 of 75 in the calibration, 1 of 10 for the real recordings either way.
+catalogue (a person dismisses them): 1 of 48 at 2,000 distinct songs either
+way, 1 → 0 of 10 for the real recordings, 13 → 14 of 75 in the calibration.
 The thresholds stay as they are: the calibration's look-alike songs (same
 chords, same instruments) still need them.
 
 **Hard posts take longer**: they are searched far deeper. Clear posts end
 after the first 50 and got a little faster. In the 20,000-song test, where
-almost every post is a hard one, the median went from 4.9 to 17 s: one core
-then handles about 5,000 such posts a day instead of 17,000. Where speed
+almost every post is a hard one, the median went from 4.9 to 12 s: one core
+then handles about 7,000 such posts a day instead of 17,000. Where speed
 matters more than the hardest posts, `RECOGNIZER_DENSE_PASS=0` and
 `RECOGNIZER_SHORTLIST_WIDE=200` bring the old cost back. Still weak:
 the worst case (1.2× + voice + phone + AAC) is found as a suggestion in about
