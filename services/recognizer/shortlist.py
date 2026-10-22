@@ -35,7 +35,14 @@ QUERY_PER_ANCHOR = 8  # ... and looked up for a post
 SPEED_MIN, SPEED_MAX = 0.74, 1.36
 SPEED_BINS_PER_OCTAVE = 24
 OFFSET_FRAMES = 16  # ~0.5 s cells for the song position
-MAX_POSTINGS = 50_000  # keys this common say nothing and cost time
+# Keys found more often than this many times per song in a shard are skipped:
+# they are almost all chance votes. In a 2,000-song shard the 7 % most common
+# keys of a post gave 42 % of the votes; skipping keys above one posting per
+# song made the lookup 1.75x faster and found more hard posts, not fewer
+# (2,000 distinct songs, 2026-10-22: voice -12 dB in the first 50 12 -> 16 of
+# 20, worst case in the first 400 14 -> 17). Half that lost posts.
+POSTINGS_PER_SONG = 1.0
+MIN_POSTINGS = 200  # small shards keep at least this
 
 
 try:  # compiled when numba is installed (the Docker image has it): ~25x faster
@@ -165,6 +172,10 @@ class ShortlistIndex:
     def nbytes(self) -> int:
         return sum(a.nbytes for a in (self.T, self.P, self.S, self.Ku, self.starts, self.counts))
 
+    def max_postings(self) -> int:
+        """Keys with more postings than this say nothing (`POSTINGS_PER_SONG`)."""
+        return max(MIN_POSTINGS, int(POSTINGS_PER_SONG * self.n))
+
     def shortlist(self, pk: np.ndarray, top: int = 50) -> np.ndarray:
         """Song numbers (positions in `songs`), most likely first."""
         return self.scores(query_keys(pk), top)[0]
@@ -183,7 +194,7 @@ class ShortlistIndex:
             return none
         keys, tq, sq = query
         pos = np.minimum(np.searchsorted(self.Ku, keys), len(self.Ku) - 1)
-        hit = (self.Ku[pos] == keys) & (self.counts[pos] <= MAX_POSTINGS)
+        hit = (self.Ku[pos] == keys) & (self.counts[pos] <= self.max_postings())
         start, cnt = self.starts[pos[hit]], self.counts[pos[hit]].astype(np.int64)
         tq, sq = tq[hit], sq[hit]
         total = int(cnt.sum())
