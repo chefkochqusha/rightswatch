@@ -76,7 +76,7 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
                 rel="noreferrer"
                 className="mt-4 inline-block text-[0.8125rem] font-medium text-accent hover:underline"
               >
-                Open on TikTok ↗
+                Open on {PLATFORM_LABELS[item.content.platform]} ↗
               </a>
             )}
           </section>
@@ -97,7 +97,7 @@ export function AssessmentSummary({ item }: { item: ScanItemResult }) {
 
       <details className="mt-4 rounded-lg border border-line bg-surface p-5">
         <summary className="cursor-pointer text-[0.8125rem] font-medium text-t2">
-          What TikTok sent for this post (kept for your records; the rights check doesn&apos;t use it)
+          What {PLATFORM_LABELS[item.content.platform]} sent for this post (kept for your records; the rights check doesn&apos;t use it)
         </summary>
         <pre className="mt-3 overflow-x-auto rounded-md bg-surface-2 p-3 text-xs text-t2">
           {JSON.stringify(item.content.rawPayload, null, 2)}

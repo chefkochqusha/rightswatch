@@ -30,6 +30,9 @@ export interface ScanJobPayload {
   creatorsTotal: number;
   /** Monitored creators past the plan's limit, left out (Brief §19). */
   skippedOverLimit: number;
+  /** Monitored creators on a platform that isn't connected, left out (their
+   *  posts are added by hand). Missing on scans from before Instagram. */
+  skippedNotConnected?: number;
   videosChecked: number;
   matches: number;
   /** Matches no earlier scan had found. */
@@ -43,6 +46,7 @@ export function emptyScanPayload(input: {
   connectorMode: "DEMO" | "REAL";
   creatorsTotal: number;
   skippedOverLimit: number;
+  skippedNotConnected?: number;
 }): ScanJobPayload {
   return { ...input, videosChecked: 0, matches: 0, newMatches: 0, casesOpened: 0, creators: [] };
 }

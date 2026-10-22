@@ -17,7 +17,9 @@ export type ChannelStage = "BETA" | "NEXT" | "PLANNED";
 
 export const CHANNEL_STAGES: Record<Platform, ChannelStage> = {
   TIKTOK: "BETA",
-  INSTAGRAM: "NEXT",
+  // Since 2026-10-22: creators and posts by hand, and a Business Discovery
+  // connector that scans once Meta's app review allows it.
+  INSTAGRAM: "BETA",
   YOUTUBE: "PLANNED",
 };
 

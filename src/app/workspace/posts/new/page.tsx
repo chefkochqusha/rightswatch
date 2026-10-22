@@ -8,8 +8,8 @@ import { AddPostForm } from "./add-post-form";
 export const metadata = { title: "Add a post — Bekvor" };
 
 /**
- * Adding a paid post by hand: for posts the TikTok connection doesn't
- * deliver (or before it is connected). Analyst and up.
+ * Adding a paid post by hand, on TikTok or Instagram: for posts a platform
+ * connection doesn't deliver (or before it is connected). Analyst and up.
  */
 export default async function AddPostPage() {
   const session = await requireCaseManager();
@@ -38,7 +38,7 @@ export default async function AddPostPage() {
           .
         </p>
       ) : (
-        <AddPostForm creators={creators.map((c) => ({ id: c.id, handle: c.handle }))} today={today} />
+        <AddPostForm creators={creators.map((c) => ({ id: c.id, handle: c.handle, platform: c.platform === "INSTAGRAM" ? "Instagram" : "TikTok" }))} today={today} />
       )}
     </div>
   );

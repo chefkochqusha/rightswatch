@@ -36,7 +36,8 @@ const day = (n: number) => new Date(Date.UTC(2026, 8, n));
 function item(partial: Record<string, unknown>): StoredScanItem {
   return partial as unknown as StoredScanItem;
 }
-const content = (externalContentId: string, publishedAt: Date, brands = ["Volt Coffee"]) => ({
+const content = (externalContentId: string, publishedAt: Date, brands = ["Volt Coffee"], platform = "TIKTOK") => ({
+  platform,
   externalContentId,
   publishedAt,
   brandNames: brands,
@@ -47,7 +48,7 @@ const match = (trackId: string, title: string) => ({ trackId, title, artist: "Ri
 
 const items: StoredScanItem[] = [
   item({ kind: "ASSESSED", creatorId: "c1", creatorUsername: "maxstudio", rightsAssessmentId: "ra1", content: content("p1", day(10)), musicMatch: match("t1", "Golden Hour"), assessment: { status: "POTENTIAL_MISMATCH", reason: "TERM_EXPIRED", explanation: "Term ended." } }),
-  item({ kind: "ASSESSED", creatorId: "c2", creatorUsername: "lena.creates", rightsAssessmentId: "ra2", content: content("p2", day(20)), musicMatch: match("t2", "Midnight Run"), assessment: { status: "CLEARED", reason: null, explanation: "Covered." } }),
+  item({ kind: "ASSESSED", creatorId: "c2", creatorUsername: "lena.creates", rightsAssessmentId: "ra2", content: content("p2", day(20), ["Volt Coffee"], "INSTAGRAM"), musicMatch: match("t2", "Midnight Run"), assessment: { status: "CLEARED", reason: null, explanation: "Covered." } }),
   item({ kind: "OTHER_MUSIC", creatorId: "c1", creatorUsername: "maxstudio", rightsAssessmentId: null, content: content("p3", day(25)), musicMatch: match("t9", "Unlisted") }),
   item({ kind: "NO_MUSIC_MATCH", creatorId: "c3", creatorUsername: "danbuilds", rightsAssessmentId: null, content: content("p4", day(26)) }),
 ];
@@ -70,23 +71,25 @@ describe("detections report", () => {
     assert.equal(rows.length, 4); // header + 3 posts with a song
     const first = rows[1];
     assert.equal(first[0], "2026-09-10");
-    assert.equal(first[1], "maxstudio");
-    assert.equal(first[7], 94.1);
-    assert.equal(first[11], "WAITING");
-    assert.equal(first[13], "Nina Schneider");
+    assert.equal(first[1], "TikTok");
+    assert.equal(first[2], "maxstudio");
+    assert.equal(first[8], 94.1);
+    assert.equal(first[12], "WAITING");
+    assert.equal(first[14], "Nina Schneider");
+    assert.equal(rows[2][1], "Instagram");
   });
 
   test("demo posts carry no made-up link", () => {
-    const real = detectionRows(items, lookups)[1][14];
-    const demo = detectionRows(items, { ...lookups, isDemo: true })[1][14];
+    const real = detectionRows(items, lookups)[1][15];
+    const demo = detectionRows(items, { ...lookups, isDemo: true })[1][15];
     assert.match(String(real), /^https:/);
     assert.equal(demo, "Demo data: not a real post");
   });
 
   test("a song outside the catalogue is listed as not checked", () => {
     const rows = detectionRows(items, lookups);
-    assert.match(String(rows[3][8]), /Not checked/);
-    assert.equal(rows[3][11], "");
+    assert.match(String(rows[3][9]), /Not checked/);
+    assert.equal(rows[3][12], "");
   });
 
   test("periods cut by publication date", () => {

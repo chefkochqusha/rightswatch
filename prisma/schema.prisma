@@ -129,7 +129,7 @@ model Membership {
 
 enum Platform {
   TIKTOK
-  INSTAGRAM // reserved — not built yet, see PlatformConnector (§5)
+  INSTAGRAM // since 2026-10-22: creators, posts by hand, Business Discovery connector
   YOUTUBE // reserved — not built yet
 }
 

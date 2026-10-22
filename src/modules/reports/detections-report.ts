@@ -27,9 +27,12 @@ export interface DetectionLookups {
   isDemo?: boolean;
 }
 
+const PLATFORM_NAMES: Record<StoredScanItem["content"]["platform"], string> = { TIKTOK: "TikTok", INSTAGRAM: "Instagram", YOUTUBE: "YouTube" };
+
 export const DETECTION_COLUMNS = [
   "Published",
-  "Creator (TikTok username)",
+  "Platform",
+  "Creator (username)",
   "Brand",
   "Disclosure label",
   "Song",
@@ -58,6 +61,7 @@ export function detectionRows(items: readonly StoredScanItem[], lookups: Detecti
     const existingCase = item.rightsAssessmentId ? lookups.caseByAssessment.get(item.rightsAssessmentId) : undefined;
     rows.push([
       content.publishedAt.toISOString().slice(0, 10),
+      PLATFORM_NAMES[content.platform],
       item.creatorUsername,
       content.brandNames.join("; "),
       content.label ?? "",

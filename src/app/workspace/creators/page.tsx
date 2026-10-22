@@ -3,7 +3,7 @@ import { requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
-import { dataModeFor } from "@/app/_lib/connector-mode";
+import { connectedPlatforms, dataModeFor } from "@/app/_lib/connector-mode";
 import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,6 +12,7 @@ import { SearchIcon } from "@/components/ui/icons";
 import { CreatorStatusBadge } from "@/components/creators/creator-status-badge";
 import { countryOptions } from "@/components/creators/country-options";
 import { CREATOR_STATUS_LABELS, countryName, formatFollowers } from "@/components/creators/labels";
+import { PLATFORM_LABELS } from "@/components/rights/labels";
 import { formatRelativeTime } from "@/components/ui/time";
 import type { CreatorRecord, CreatorStatus } from "@/modules/creators";
 import { AddCreatorForm } from "./add-creator-form";
@@ -57,12 +58,15 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
   const countByStatus = new Map<CreatorStatus, number>();
   for (const creator of creators) countByStatus.set(creator.status, (countByStatus.get(creator.status) ?? 0) + 1);
   const now = new Date();
+  // In real mode, a platform without a connection isn't fetched: say so where its creators are listed.
+  const connected = new Set(connectedPlatforms());
+  const notFetched = (creator: CreatorRecord) => dataModeFor(session.workspace) === "REAL" && !connected.has(creator.platform);
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Creators"
-        description="The TikTok creators Bekvor checks for commercial posts. Each scan looks at what they've published since the last one."
+        description="The TikTok and Instagram creators Bekvor checks for paid posts. Each scan looks at what they've published since the last one."
       />
 
       <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
@@ -106,7 +110,7 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
         {creators.length === 0 ? (
           <EmptyState
             title="No creators are being monitored yet."
-            description="Add the TikTok creators who might use your music in paid posts. Bekvor checks their commercial content on every scan."
+            description="Add the TikTok and Instagram creators who might use your music in paid posts. Bekvor checks their paid posts on every scan."
           />
         ) : (
           <>
@@ -151,10 +155,11 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
               </EmptyState>
             ) : (
               <div className="relative overflow-x-auto">
-                <table className="w-full min-w-[46rem] text-left text-sm">
+                <table className="w-full min-w-[52rem] text-left text-sm">
                   <thead>
                     <tr className="text-xs text-t2">
                       <th scope="col" className="px-5 py-2.5 font-medium">Creator</th>
+                      <th scope="col" className="px-4 py-2.5 font-medium">Platform</th>
                       <th scope="col" className="px-4 py-2.5 font-medium">Country</th>
                       <th scope="col" className="px-4 py-2.5 text-right font-medium">Followers</th>
                       <th scope="col" className="px-4 py-2.5 font-medium">Status</th>
@@ -179,6 +184,10 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
                                 <span className="block text-[0.8125rem] text-t2">{creator.displayName}</span>
                               )}
                             </Link>
+                          </td>
+                          <td className="px-4 py-3 text-t2">
+                            {PLATFORM_LABELS[creator.platform]}
+                            {notFetched(creator) && <span className="block text-xs">Posts added by hand</span>}
                           </td>
                           <td className="px-4 py-3 text-t2">{countryName(creator.country)}</td>
                           <td className="px-4 py-3 text-right text-t2 tabular-nums">{formatFollowers(creator.followerCount)}</td>

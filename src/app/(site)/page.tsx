@@ -20,7 +20,7 @@ export const maxDuration = 120;
 export const metadata: Metadata = {
   title: "Bekvor: know where your music appears commercially",
   description:
-    "Bekvor watches the paid posts of the TikTok creators you follow, finds your songs in them and checks each one against your licences.",
+    "Bekvor watches the paid posts of the TikTok and Instagram creators you follow, finds your songs in them and checks each one against your licences.",
 };
 
 const WHO = ["Publishers", "Labels", "Licensing teams", "Sync agencies"] as const;
@@ -43,7 +43,7 @@ const VERDICTS = [
     status: "UNKNOWN",
     name: "Unknown",
     tone: "text-unknown",
-    text: "TikTok doesn't report a post's territory, and a post may name no campaign. If your records are limited to specific ones, the check can't tell either way.",
+    text: "Neither TikTok nor Instagram reports a post's territory, and a post may name no campaign. If your records are limited to specific ones, the check can't tell either way.",
   },
   {
     status: "POTENTIAL_MISMATCH",
@@ -60,11 +60,11 @@ const FAQ = [
   },
   {
     q: "What does it watch?",
-    a: "Commercial content: posts creators label as paid partnerships or ads, from the creators you add to your watchlist. It doesn't read private accounts and it doesn't scrape profiles.",
+    a: "Commercial content: posts creators label as paid partnerships or ads, from the TikTok and Instagram creators you add to your watchlist, and any post you add yourself. It doesn't read private accounts and it doesn't scrape profiles.",
   },
   {
     q: "Where does the data come from?",
-    a: "From TikTok's official Commercial Content API. That API lists a post and its brand, not the music in it, so Bekvor identifies the song separately. Until your workspace is connected, it runs on clearly labelled demo data.",
+    a: "From the platforms' official interfaces: TikTok's Commercial Content API and Meta's Instagram API, and from posts you paste yourself. Neither interface carries the music, so Bekvor identifies the song separately, from the post's video or sound. Until a platform is connected, posts on it are added by hand, and the workspace runs on clearly labelled demo data.",
   },
   {
     q: "How does it know which songs are mine?",

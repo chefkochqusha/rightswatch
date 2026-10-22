@@ -1,5 +1,5 @@
 import { getBillingStore } from "@/app/_lib/billing-store";
-import { dataModeFor } from "@/app/_lib/connector-mode";
+import { connectedPlatforms, dataModeFor } from "@/app/_lib/connector-mode";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-access";
 import { requireSession } from "@/app/_lib/current-user";
 import { getEmailSender } from "@/app/_lib/email";
@@ -54,6 +54,7 @@ export default async function SettingsPage() {
   const payments = getBillingStore().mode;
 
   const isRealData = dataModeFor(session.workspace) === "REAL";
+  const connected = connectedPlatforms();
   const emailAlerts = await emailAlertsEnabled(session.user.id);
 
   // Partner programme: link, referrals and commissions of the signed-in person.
@@ -65,12 +66,34 @@ export default async function SettingsPage() {
     {
       name: "TikTok",
       what: "Where paid and commercial posts come from",
-      ...(isRealData
+      ...(isRealData && connected.includes("TIKTOK")
         ? { state: "Connected", tone: "ok" as const, detail: "Scans read TikTok's Commercial Content data." }
+        : isRealData
+          ? {
+              state: "Not connected",
+              tone: "off" as const,
+              detail: "TikTok API access isn't connected, so scans skip TikTok creators. Their paid posts can be added by hand.",
+            }
+          : {
+              state: "Demo data",
+              tone: "demo" as const,
+              detail: "TikTok API access isn't connected yet, so scans run against fictional posts. Nothing in demo data is a real TikTok video.",
+            }),
+    },
+    {
+      name: "Instagram",
+      what: "Paid posts of Instagram creators",
+      ...(isRealData && connected.includes("INSTAGRAM")
+        ? {
+            state: "Connected",
+            tone: "ok" as const,
+            detail:
+              "Scans read the creators' public video posts through Meta's official API and keep those labelled as ads in the caption (Werbung, Anzeige, #ad and the like). Instagram's own “Paid partnership” label isn't readable there, so add other paid posts by hand.",
+          }
         : {
-            state: "Demo data",
-            tone: "demo" as const,
-            detail: "TikTok API access isn't connected yet, so scans run against fictional posts. Nothing in demo data is a real TikTok video.",
+            state: "Posts by hand",
+            tone: "off" as const,
+            detail: "Meta API access isn't connected yet. Add Instagram creators to your watchlist and their paid posts by hand; the song and rights check work the same way.",
           }),
     },
     {
@@ -87,13 +110,13 @@ export default async function SettingsPage() {
         ? {
             state: "Bekvor recognition",
             tone: "ok" as const,
-            detail: "Bekvor's own recognition, on its own server. Add reference audio to your songs, then upload a post's video or sound and Bekvor finds which of your songs it uses. Post audio isn't fetched from TikTok automatically.",
+            detail: "Bekvor's own recognition, on its own server. Add reference audio to your songs, then upload a post's video or sound and Bekvor finds which of your songs it uses. Post audio isn't fetched from TikTok or Instagram automatically.",
           }
         : isRealData
           ? {
               state: "Not on this server",
               tone: "off" as const,
-              detail: "TikTok's commercial data carries no music information. Bekvor's own recognition runs on its own server; until it's set up here, choose the song in each post yourself.",
+              detail: "Neither TikTok's nor Instagram's data carries the music. Bekvor's own recognition runs on its own server; until it's set up here, choose the song in each post yourself.",
             }
         : {
             state: "Demo",

@@ -22,6 +22,7 @@ export type ScanActionState =
       casesOpened: number;
       failedCreators: number;
       skippedOverLimit: number;
+      skippedNotConnected: number;
     }
   | { status: "queued"; alreadyQueued: boolean }
   | { status: "error"; message: string };
@@ -39,7 +40,9 @@ export async function runScanAction(_prev: ScanActionState, _formData: FormData)
       message:
         started.error === "NO_PLAN"
           ? "Choose a plan to start monitoring. Every plan starts with a free trial."
-          : "Add a creator to your watchlist first. A scan checks the creators you monitor.",
+          : started.error === "NO_CONNECTED_CREATORS"
+            ? "The creators you monitor are on a platform Bekvor isn't connected to yet. Add their paid posts by hand under Add a post."
+            : "Add a creator to your watchlist first. A scan checks the creators you monitor.",
     };
   }
   if (started.kind === "queued") return { status: "queued", alreadyQueued: started.alreadyQueued };
@@ -54,5 +57,6 @@ export async function runScanAction(_prev: ScanActionState, _formData: FormData)
     casesOpened: payload?.casesOpened ?? 0,
     failedCreators: payload?.creators.filter((creator) => creator.error).length ?? 0,
     skippedOverLimit: payload?.skippedOverLimit ?? 0,
+    skippedNotConnected: payload?.skippedNotConnected ?? 0,
   };
 }

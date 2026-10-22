@@ -13,7 +13,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   return (
     <AuthShell
       title="Create your workspace"
-      subtitle="Find where your songs are used in paid TikTok posts, and check each use against your licences."
+      subtitle="Find where your songs are used in paid TikTok and Instagram posts, and check each use against your licences."
       footer={
         <>
           Already have an account?{" "}

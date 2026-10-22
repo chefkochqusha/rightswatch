@@ -1,6 +1,6 @@
 import { PermanentJobError, SCAN_JOB_TYPE, emptyScanPayload, type JobRecord, type ScanJobPayload } from "@/modules/jobs";
 import { getAuthStore } from "./auth-store";
-import { dataModeFor } from "./connector-mode";
+import { connectedPlatforms, dataModeFor } from "./connector-mode";
 import { getCreatorAllowance } from "./creator-allowance";
 import { getCreatorStore } from "./creator-store";
 import { getJobRunnerMode } from "./job-runner";
@@ -19,7 +19,9 @@ import { runWorkspaceScan, type RunWorkspaceScanResult } from "./workspace-scan-
 export type StartScanResult =
   | { kind: "done"; result: RunWorkspaceScanResult }
   | { kind: "queued"; job: JobRecord<ScanJobPayload>; alreadyQueued: boolean }
-  | { kind: "refused"; error: "NO_PLAN" | "NO_CREATORS" };
+  | { kind: "refused"; error: ScanRefusal };
+
+export type ScanRefusal = "NO_PLAN" | "NO_CREATORS" | "NO_CONNECTED_CREATORS";
 
 export async function startWorkspaceScan(workspaceId: string, triggeredByUserId: string | null): Promise<StartScanResult> {
   if (getJobRunnerMode() === "inline") {
@@ -54,7 +56,11 @@ export async function runQueuedScan(job: JobRecord): Promise<ScanJobPayload | nu
   const result = await runWorkspaceScan(job.workspaceId, triggeredBy, { queuedJobId: job.id });
   if (!result.ok) {
     throw new PermanentJobError(
-      result.error === "NO_PLAN" ? "The workspace has no active plan." : "The workspace monitors no creators.",
+      result.error === "NO_PLAN"
+        ? "The workspace has no active plan."
+        : result.error === "NO_CONNECTED_CREATORS"
+          ? "None of the workspace's monitored creators is on a connected platform."
+          : "The workspace monitors no creators.",
     );
   }
   return result.job.payload;
@@ -62,9 +68,15 @@ export async function runQueuedScan(job: JobRecord): Promise<ScanJobPayload | nu
 
 /** The same checks `runWorkspaceScan` makes first, so a request is
  *  refused at once instead of queuing a job that can only fail. */
-async function scanRefusal(workspaceId: string): Promise<"NO_PLAN" | "NO_CREATORS" | null> {
+async function scanRefusal(workspaceId: string): Promise<ScanRefusal | null> {
   const allowance = await getCreatorAllowance(workspaceId);
   if (allowance.cap <= 0) return "NO_PLAN";
   const monitored = (await getCreatorStore().creators.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
-  return monitored.length === 0 ? "NO_CREATORS" : null;
+  if (monitored.length === 0) return "NO_CREATORS";
+  const workspace = await getAuthStore().workspaces.findById(workspaceId);
+  if (workspace && dataModeFor(workspace) === "REAL") {
+    const connected = new Set(connectedPlatforms());
+    if (!monitored.slice(0, allowance.cap).some((c) => connected.has(c.platform))) return "NO_CONNECTED_CREATORS";
+  }
+  return null;
 }

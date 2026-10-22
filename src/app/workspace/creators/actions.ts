@@ -8,12 +8,14 @@ import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
 import { dataModeFor } from "@/app/_lib/connector-mode";
 import { getAuditStore } from "@/app/_lib/audit-store";
 import {
+  isWatchablePlatform,
   addCreator,
   pauseCreator,
   removeCreator,
   resumeCreator,
   updateCreatorDetails,
   type AddCreatorError,
+  type WatchablePlatform,
 } from "@/modules/creators";
 import { DEMO_NAMED_CREATORS } from "@/modules/demo-data";
 
@@ -25,19 +27,28 @@ import { DEMO_NAMED_CREATORS } from "@/modules/demo-data";
  */
 
 export interface CreatorFormState {
-  fieldErrors?: Partial<Record<"username" | "displayName" | "country" | "followerCount", string>>;
+  fieldErrors?: Partial<Record<"platform" | "username" | "displayName" | "country" | "followerCount", string>>;
   formError?: string;
-  /** Set on success: the handle just added (or restored). */
+  /** Set on success: the handle just added (or restored), and its platform's name. */
   added?: string;
+  addedPlatform?: string;
   restored?: boolean;
   saved?: boolean;
 }
 
-const ERROR_MESSAGES: Record<AddCreatorError, { field?: keyof NonNullable<CreatorFormState["fieldErrors"]>; message: string }> = {
-  USERNAME_REQUIRED: { field: "username", message: "Enter the creator's TikTok username." },
-  USERNAME_INVALID: {
+const PLATFORM_NAMES: Record<WatchablePlatform, string> = { TIKTOK: "TikTok", INSTAGRAM: "Instagram" };
+
+const USERNAME_RULES: Record<WatchablePlatform, string> = {
+  TIKTOK: "TikTok usernames use letters, numbers, underscores and periods, up to 24 characters.",
+  INSTAGRAM: "Instagram usernames use letters, numbers, underscores and periods, up to 30 characters, and don't start or end with a period.",
+};
+
+const ERROR_MESSAGES = (platform: WatchablePlatform): Record<AddCreatorError, { field?: keyof NonNullable<CreatorFormState["fieldErrors"]>; message: string }> => ({
+  USERNAME_REQUIRED: { field: "username", message: `Enter the creator's ${PLATFORM_NAMES[platform]} username.` },
+  USERNAME_INVALID: { field: "username", message: `That isn't a ${PLATFORM_NAMES[platform]} username. ${USERNAME_RULES[platform]}` },
+  PLATFORM_MISMATCH: {
     field: "username",
-    message: "That isn't a TikTok username. Usernames use letters, numbers, underscores and periods, up to 24 characters.",
+    message: `That's a link to a profile on ${platform === "TIKTOK" ? "Instagram" : "TikTok"}. Choose that platform, or paste the ${PLATFORM_NAMES[platform]} profile.`,
   },
   DISPLAY_NAME_TOO_LONG: { field: "displayName", message: "Keep the display name under 80 characters." },
   COUNTRY_INVALID: { field: "country", message: "Choose a country from the list." },
@@ -45,18 +56,21 @@ const ERROR_MESSAGES: Record<AddCreatorError, { field?: keyof NonNullable<Creato
   ALREADY_ON_WATCHLIST: { field: "username", message: "This creator is already on your watchlist." },
   NO_PLAN: { message: "Choose a plan to start monitoring creators. Every plan starts with a free trial." },
   LIMIT_REACHED: { message: "Your plan's creator limit is reached. Pause a creator or upgrade to add more." },
-};
+});
 
-function stateFor(error: AddCreatorError): CreatorFormState {
-  const { field, message } = ERROR_MESSAGES[error];
+function stateFor(error: AddCreatorError, platform: WatchablePlatform = "TIKTOK"): CreatorFormState {
+  const { field, message } = ERROR_MESSAGES(platform)[error];
   return field ? { fieldErrors: { [field]: message } } : { formError: message };
 }
 
 export async function addCreatorAction(_prev: CreatorFormState, formData: FormData): Promise<CreatorFormState> {
   const session = await requireCaseManager();
+  const platform = String(formData.get("platform") ?? "TIKTOK");
+  if (!isWatchablePlatform(platform)) return { fieldErrors: { platform: "Choose TikTok or Instagram." } };
   const result = await addCreator(
     {
       workspaceId: session.workspace.id,
+      platform,
       username: String(formData.get("username") ?? ""),
       displayName: String(formData.get("displayName") ?? ""),
       country: String(formData.get("country") ?? ""),
@@ -64,13 +78,14 @@ export async function addCreatorAction(_prev: CreatorFormState, formData: FormDa
     },
     { creatorRepository: getCreatorStore().creators, allowance: await getCreatorAllowance(session.workspace.id) },
   );
-  if (!result.ok) return stateFor(result.error);
+  if (!result.ok) return stateFor(result.error, platform);
 
   await audit(session.workspace.id, session.user.id, result.restored ? "creator.restored" : "creator.added", result.creator.id, {
     handle: result.creator.handle,
+    platform,
   });
   revalidatePath("/workspace", "layout");
-  return { added: result.creator.handle, restored: result.restored };
+  return { added: result.creator.handle, addedPlatform: PLATFORM_NAMES[platform], restored: result.restored };
 }
 
 /**
@@ -125,7 +140,7 @@ export async function resumeCreatorAction(_prev: CreatorFormState, formData: For
   );
   if (!result.ok) {
     if (result.error === "NOT_FOUND") return { formError: "That creator isn't on your watchlist." };
-    return { formError: ERROR_MESSAGES[result.error].message };
+    return { formError: ERROR_MESSAGES("TIKTOK")[result.error].message };
   }
   await audit(session.workspace.id, session.user.id, "creator.resumed", creatorId, { handle: result.creator.handle });
   revalidatePath("/workspace", "layout");

@@ -8,7 +8,7 @@ import { Reveal, RevealItem } from "./reveal";
 
 const STEPS = [
   { icon: Music2, title: "Add your songs", text: "Search like in a music app, then record what each song's licences cover." },
-  { icon: Users, title: "Pick who to watch", text: "A TikTok username is enough. Pause or remove a creator any time." },
+  { icon: Users, title: "Pick who to watch", text: "A TikTok or Instagram username is enough. Pause or remove a creator any time." },
   { icon: ScanSearch, title: "Review what doesn't add up", text: "Every paid post with one of your songs gets a verdict and the reason for it." },
 ] as const;
 

@@ -13,6 +13,8 @@ import { RejectSongForm } from "./reject-song-form";
 import { PostAudioCheck, hasAudioSuggestion } from "@/components/recognition/post-audio-check";
 import { isOwnRecognitionEnabled } from "@/app/_lib/own-recognition";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
+import { httpsUrl } from "@/modules/connectors";
+import { PLATFORM_LABELS } from "@/components/rights/labels";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
@@ -65,6 +67,7 @@ export default async function WorkspaceItemDetailPage({
   const songOptions = catalogue.map((track) => ({ id: track.id, label: track.artist ? `${track.title} — ${track.artist}` : track.title }));
   const showAudioCheck = isOwnRecognitionEnabled() && session.workspace.slug !== DEMO_WORKSPACE_SLUG;
   const needsSong = item.kind === "NO_MUSIC_MATCH" || item.kind === "MUSIC_ID_ERROR";
+  const postUrl = httpsUrl(item.content.videoUrls[0]);
   // An audio check suggested a song: it is confirmed in that section, so the
   // song picker isn't shown twice.
   const suggested = showAudioCheck && needsSong && (await hasAudioSuggestion(session.workspace.id, contentId));
@@ -79,8 +82,17 @@ export default async function WorkspaceItemDetailPage({
         <div>
           <h1 className="font-display text-[2.25rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{item.creatorUsername}</h1>
           <p className="mt-1 text-sm text-t2">
-            {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
+            {PLATFORM_LABELS[item.content.platform]} · {item.content.brandNames.join(", ") || "Unlabeled brand"} ·{" "}
             {dateFormatter.format(item.content.publishedAt)}
+            {/* The summary links to the post once a song is checked; before that, open it from here to save its audio. */}
+            {item.kind !== "ASSESSED" && session.workspace.slug !== DEMO_WORKSPACE_SLUG && postUrl && (
+              <>
+                {" · "}
+                <a href={postUrl} target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
+                  Open on {PLATFORM_LABELS[item.content.platform]} ↗
+                </a>
+              </>
+            )}
           </p>
         </div>
         {item.kind === "ASSESSED" && <StatusBadge status={item.assessment.status} />}

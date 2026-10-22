@@ -56,6 +56,12 @@ export default function Page() {
           you are a creator with a question about this, please contact the company that monitors your posts. Requests that reach us, we forward to
           that customer.
         </p>
+        <p>
+          Creators&apos; posts come from the platforms&apos; official interfaces, only for the usernames a customer has added: TikTok&apos;s
+          Commercial Content API and Meta&apos;s Instagram API, which shares
+          the public posts of business and creator accounts: username, caption, date, post type and link. Customers can also add a post by hand.
+          We don&apos;t download posts from either platform; a post&apos;s video or sound reaches us only when the customer uploads it.
+        </p>
       </Section>
 
       <Section title="3. Visiting the website">

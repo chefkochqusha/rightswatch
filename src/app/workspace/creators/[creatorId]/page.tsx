@@ -9,6 +9,8 @@ import { getJobStore } from "@/app/_lib/job-store";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { httpsUrl } from "@/modules/connectors";
+import { connectedPlatforms, dataModeFor } from "@/app/_lib/connector-mode";
+import { PLATFORM_LABELS } from "@/components/rights/labels";
 import { SCAN_JOB_TYPE, creatorScanHistory, type ScanJobPayload } from "@/modules/jobs";
 import { buttonStyles } from "@/components/ui/button";
 import { ExternalIcon } from "@/components/ui/icons";
@@ -64,6 +66,9 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
   const history = creatorScanHistory(jobs, creator.id).filter((entry) => entry.result);
   const canManage = canManageCases(session.role);
   const now = new Date();
+  // Posts on this creator's platform come only by hand: it isn't connected, or the demo data has none (it is all TikTok).
+  const isDemoData = dataModeFor(session.workspace) === "DEMO";
+  const notFetched = isDemoData ? creator.platform !== "TIKTOK" : !connectedPlatforms().includes(creator.platform);
 
   return (
     <div className="space-y-8">
@@ -86,7 +91,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-accent hover:underline"
                 >
-                  Profile on TikTok
+                  Profile on {PLATFORM_LABELS[creator.platform]}
                   <ExternalIcon className="h-3 w-3" />
                 </a>
               )}
@@ -125,6 +130,25 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
               <RestoreForm handle={creator.handle} />
             </div>
           )}
+        </Callout>
+      ) : notFetched ? (
+        <Callout tone="neutral">
+          <p className="font-medium">
+            {isDemoData
+              ? `The demo data has no ${PLATFORM_LABELS[creator.platform]} posts.`
+              : `Bekvor isn't connected to ${PLATFORM_LABELS[creator.platform]} yet.`}
+          </p>
+          <p className="mt-1">
+            Scans don&apos;t fetch @{creator.handle}&apos;s posts automatically.{" "}
+            {canManage ? (
+              <Link href="/workspace/posts/new" className="font-medium text-accent hover:underline">
+                Add a paid post by hand
+              </Link>
+            ) : (
+              "An analyst can add their paid posts by hand"
+            )}
+            , and the song and rights check work the same way.
+          </p>
         </Callout>
       ) : (
         creator.status === "ERROR" && (
@@ -296,8 +320,8 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         <section className="rounded-[1.125rem] border border-line bg-surface p-5 sm:p-6">
           <h2 className="text-[1.0625rem] font-semibold tracking-[-0.01em]">Details</h2>
           <p className="mt-1 mb-5 text-[0.8125rem] text-t2">
-            TikTok doesn&apos;t report where a post was shown, so the creator&apos;s country stands in for it when a
-            rights record covers specific territories.
+            {PLATFORM_LABELS[creator.platform]} doesn&apos;t report where a post was shown, so the creator&apos;s country
+            stands in for it when a rights record covers specific territories.
           </p>
           <EditDetailsForm
             countries={countryOptions()}

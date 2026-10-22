@@ -1,5 +1,5 @@
 import { parseCreatorDetails, type CreatorDetailsError, type CreatorDetailsInput } from "./details";
-import { normalizeTikTokUsername, tikTokProfileUrl } from "./username";
+import { normalizeUsername, platformOfProfileLink, profileUrlFor, type WatchablePlatform } from "./username";
 import type { CreatorAllowance, CreatorChanges, CreatorRecord, CreatorRepository } from "./types";
 
 /**
@@ -49,11 +49,15 @@ export interface AddCreatorInput extends CreatorDetailsInput {
   workspaceId: string;
   /** As typed: "@name", "name", or a profile link. */
   username: string;
+  /** Which platform the creator posts on. A pasted profile link must
+   *  match it. Defaults to TikTok. */
+  platform?: WatchablePlatform;
 }
 
 export type AddCreatorError =
   | "USERNAME_REQUIRED"
   | "USERNAME_INVALID"
+  | "PLATFORM_MISMATCH"
   | CreatorDetailsError
   | "ALREADY_ON_WATCHLIST"
   | AllowanceError;
@@ -63,19 +67,23 @@ export type AddCreatorResult =
   | { ok: false; error: AddCreatorError };
 
 /**
- * Adds a TikTok creator to the watchlist, monitored from the start. A
- * creator removed earlier comes back as the same record — with its
- * history — rather than as a second one.
+ * Adds a TikTok or Instagram creator to the watchlist, monitored from the
+ * start. A creator removed earlier comes back as the same record — with
+ * its history — rather than as a second one. The same username on the
+ * other platform is a different creator.
  */
 export async function addCreator(input: AddCreatorInput, deps: MonitoringDependencies): Promise<AddCreatorResult> {
-  const username = normalizeTikTokUsername(input.username);
+  const platform = input.platform ?? "TIKTOK";
+  const linked = platformOfProfileLink(input.username);
+  if (linked && linked !== platform) return { ok: false, error: "PLATFORM_MISMATCH" };
+  const username = normalizeUsername(platform, input.username);
   if (!username.ok) return { ok: false, error: username.error };
 
   const parsed = parseCreatorDetails(input);
   if (!parsed.ok) return { ok: false, error: parsed.error };
   const { details } = parsed;
 
-  const existing = await deps.creatorRepository.findByExternalId(input.workspaceId, "TIKTOK", username.username);
+  const existing = await deps.creatorRepository.findByExternalId(input.workspaceId, platform, username.username);
   if (existing && !existing.removedAt) return { ok: false, error: "ALREADY_ON_WATCHLIST" };
 
   const allowanceError = await checkAllowance(input.workspaceId, deps);
@@ -98,10 +106,10 @@ export async function addCreator(input: AddCreatorInput, deps: MonitoringDepende
   try {
     const creator = await deps.creatorRepository.create({
       workspaceId: input.workspaceId,
-      platform: "TIKTOK",
+      platform,
       externalId: username.username,
       handle: username.username,
-      profileUrl: tikTokProfileUrl(username.username),
+      profileUrl: profileUrlFor(platform, username.username),
       ...details,
     });
     return { ok: true, creator, restored: false };

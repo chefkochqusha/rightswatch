@@ -19,6 +19,34 @@ describe("parseManualPost", () => {
     assert.equal(parsed.post.publishedAt.toISOString(), "2026-10-01T12:00:00.000Z");
   });
 
+  it("takes Instagram post and reel links apart, with or without a username", () => {
+    for (const [url, clean, handle] of [
+      ["https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=MTc4", "https://www.instagram.com/reel/C1a2B3c4D5e/", null],
+      ["https://instagram.com/p/C1a2B3c4D5e", "https://www.instagram.com/p/C1a2B3c4D5e/", null],
+      ["https://www.instagram.com/reels/C1a2B3c4D5e/", "https://www.instagram.com/reel/C1a2B3c4D5e/", null],
+      ["https://www.instagram.com/tv/C1a2B3c4D5e/", "https://www.instagram.com/tv/C1a2B3c4D5e/", null],
+      ["https://www.instagram.com/Lena.Creates/reel/C1a2B3c4D5e/", "https://www.instagram.com/reel/C1a2B3c4D5e/", "lena.creates"],
+    ] as const) {
+      const parsed = parseManualPost({ ...base, url }, now);
+      assert.ok(parsed.ok, url);
+      if (!parsed.ok) continue;
+      assert.equal(parsed.post.platform, "INSTAGRAM");
+      assert.equal(parsed.post.videoId, "C1a2B3c4D5e");
+      assert.equal(parsed.post.url, clean);
+      assert.equal(parsed.post.handle, handle);
+    }
+  });
+
+  it("an Instagram post becomes Instagram content keyed by its shortcode", () => {
+    const parsed = parseManualPost({ ...base, url: "https://www.instagram.com/reel/C1a2B3c4D5e/" }, now);
+    assert.ok(parsed.ok);
+    if (!parsed.ok) return;
+    const content = manualPostContent(parsed.post, { externalId: "lena.creates", handle: "lena.creates" });
+    assert.equal(content.platform, "INSTAGRAM");
+    assert.equal(content.externalContentId, "C1a2B3c4D5e");
+    assert.deepEqual(content.videoUrls, ["https://www.instagram.com/reel/C1a2B3c4D5e/"]);
+  });
+
   it("accepts photo posts and m.tiktok.com", () => {
     assert.ok(parseManualPost({ ...base, url: "https://m.tiktok.com/@abc/photo/7301234567890123456" }, now).ok);
   });
@@ -29,6 +57,10 @@ describe("parseManualPost", () => {
       "https://www.tiktok.com.evil.example/@a/video/7301234567890123456",
       "http://www.tiktok.com/@abc/video/7301234567890123456",
       "https://www.instagram.com/p/abc",
+      "https://www.instagram.com/lena.creates/",
+      "https://www.instagram.com.evil.example/reel/C1a2B3c4D5e/",
+      "http://www.instagram.com/reel/C1a2B3c4D5e/",
+      "https://user:pw@www.instagram.com/reel/C1a2B3c4D5e/",
       "not a link",
     ]) {
       const parsed = parseManualPost({ ...base, url }, now);

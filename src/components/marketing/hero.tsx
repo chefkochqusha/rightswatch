@@ -53,7 +53,7 @@ export function Hero({ actions, aside }: { actions: React.ReactNode; aside: Reac
             </motion.span>
           </motion.h1>
           <motion.p variants={after(0.55)} initial={initial} animate="show" className="mt-7 max-w-[34rem] text-[1.1875rem] leading-relaxed text-t2">
-            We watch the paid posts of the TikTok creators you follow, hear which of your songs are in them, and check each one against your licences.
+            We watch the paid posts of the TikTok and Instagram creators you follow, hear which of your songs are in them, and check each one against your licences.
             You review what doesn&apos;t add up.
           </motion.p>
           <motion.div variants={after(0.75)} initial={initial} animate="show" className="mt-9 flex flex-wrap items-center gap-3">

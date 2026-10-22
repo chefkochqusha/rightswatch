@@ -37,7 +37,7 @@ export async function addSong(page: Page, title: string): Promise<string> {
 /** Adds a post by hand; returns to its page. */
 export async function addPost(page: Page, videoId: string): Promise<void> {
   await page.goto("/workspace/posts/new");
-  await page.selectOption("#creatorId", { label: "@lena.creates" });
+  await page.selectOption("#creatorId", { label: "@lena.creates (TikTok)" });
   await page.fill('input[name="url"]', `https://www.tiktok.com/@lena.creates/video/${videoId}`);
   await page.fill('input[name="brands"]', "Glow Cosmetics");
   await page.getByRole("button", { name: "Add post" }).click();

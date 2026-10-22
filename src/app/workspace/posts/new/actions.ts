@@ -51,7 +51,9 @@ async function addPost(formData: FormData): Promise<AddPostState> {
   const parsed = parseManualPost({ url: field("url"), publishedOn: field("publishedOn"), brands: field("brands"), label: field("label"), territory: field("territory") });
   const fieldErrors: AddPostState["fieldErrors"] = parsed.ok ? {} : { ...parsed.fieldErrors };
   if (!creator || creator.removedAt) fieldErrors.creatorId = "Choose a creator from your watchlist.";
-  else if (parsed.ok && parsed.post.handle !== creator.handle.toLowerCase()) {
+  else if (parsed.ok && parsed.post.platform !== creator.platform) {
+    fieldErrors.url = `This is ${parsed.post.platform === "INSTAGRAM" ? "an Instagram" : "a TikTok"} link, and @${creator.handle} is on your watchlist for ${creator.platform === "INSTAGRAM" ? "Instagram" : "TikTok"}.`;
+  } else if (parsed.ok && parsed.post.handle && parsed.post.handle !== creator.handle.toLowerCase()) {
     fieldErrors.url = `This link is a post by @${parsed.post.handle}, not @${creator.handle}.`;
   }
   if (!parsed.ok || !creator || Object.keys(fieldErrors).length > 0) return { fieldErrors };
@@ -79,7 +81,7 @@ async function addPost(formData: FormData): Promise<AddPostState> {
     action: "post.added",
     targetType: "content",
     targetId: parsed.post.videoId,
-    metadata: { handle: creator.handle },
+    metadata: { handle: creator.handle, platform: creator.platform },
   });
   revalidatePath("/workspace", "layout");
   redirect(`/workspace/items/${parsed.post.videoId}?added=1`);

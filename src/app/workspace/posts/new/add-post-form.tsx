@@ -6,7 +6,7 @@ import { FormField } from "@/components/ui/form-field";
 import { buttonStyles } from "@/components/ui/button";
 import { addPostAction, type AddPostState } from "./actions";
 
-export function AddPostForm({ creators, today }: { creators: { id: string; handle: string }[]; today: string }) {
+export function AddPostForm({ creators, today }: { creators: { id: string; handle: string; platform: string }[]; today: string }) {
   const [state, formAction, pending] = useActionState(addPostAction, {} as AddPostState);
   const creatorError = state.fieldErrors?.creatorId;
   const v = state.values;
@@ -31,7 +31,7 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
           </option>
           {creators.map((creator) => (
             <option key={creator.id} value={creator.id}>
-              @{creator.handle}
+              @{creator.handle} ({creator.platform})
             </option>
           ))}
         </select>
@@ -45,9 +45,9 @@ export function AddPostForm({ creators, today }: { creators: { id: string; handl
         label="Link to the post"
         name="url"
         type="url"
-        placeholder="https://www.tiktok.com/@name/video/7301234567890123456"
+        placeholder="https://www.instagram.com/reel/C1a2B3c4D5e/"
         autoComplete="off"
-        hint="The full link from the address bar or the share menu's “Copy link”."
+        hint="The full TikTok or Instagram link from the address bar or the share menu's “Copy link”."
         defaultValue={v?.url}
         error={state.fieldErrors?.url}
       />

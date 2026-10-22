@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: "Bekvor",
   description:
-    "Know where your music appears commercially: paid TikTok posts, matched to your songs and checked against your licences.",
+    "Know where your music appears commercially: paid TikTok and Instagram posts, matched to your songs and checked against your licences.",
   openGraph: { siteName: "Bekvor", type: "website" },
 };
 

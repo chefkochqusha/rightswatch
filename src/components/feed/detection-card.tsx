@@ -8,7 +8,7 @@ import { CreatorAvatar } from "@/components/creators/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CaseStatusBadge } from "@/components/cases/case-status-badge";
 import { ExternalIcon } from "@/components/ui/icons";
-import { REASON_LABELS, formatConfidence } from "@/components/rights/labels";
+import { PLATFORM_LABELS, REASON_LABELS, formatConfidence } from "@/components/rights/labels";
 import { formatRelativeTime } from "@/components/ui/time";
 
 export interface DetectionSong {
@@ -22,7 +22,7 @@ export interface DetectionSong {
  * One commercial post in a feed (Brief §7 "Recent detections", as cards):
  * the post, who published it for which brand, the song Bekvor heard
  * in it, and what the rights check says — the verdict first, in the
- * engine's own words. The whole card opens the post's page; the TikTok
+ * engine's own words. The whole card opens the post's page; the platform
  * link opens the post itself.
  */
 export function DetectionCard({
@@ -116,7 +116,7 @@ export function DetectionCard({
               </span>
             )}
             {isDemo ? (
-              <span className="ml-auto text-[0.8125rem] text-t2">Demo post, not on TikTok</span>
+              <span className="ml-auto text-[0.8125rem] text-t2">Demo post, not on {PLATFORM_LABELS[content.platform]}</span>
             ) : videoUrl && (
               <a
                 href={videoUrl}
@@ -124,7 +124,7 @@ export function DetectionCard({
                 rel="noopener noreferrer"
                 className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.8125rem] font-medium text-accent hover:bg-accent/10"
               >
-                View on TikTok
+                View on {PLATFORM_LABELS[content.platform]}
                 <ExternalIcon className="h-3.5 w-3.5" />
               </a>
             )}

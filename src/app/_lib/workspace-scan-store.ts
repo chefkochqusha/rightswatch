@@ -1,7 +1,13 @@
 import { runScan } from "@/modules/scan-pipeline";
-import { MockTikTokConnector, TikTokCommercialContentConnector, type PlatformConnector } from "@/modules/connectors";
+import {
+  EmptyConnector,
+  InstagramBusinessDiscoveryConnector,
+  MockTikTokConnector,
+  TikTokCommercialContentConnector,
+  type Platform,
+  type PlatformConnector,
+} from "@/modules/connectors";
 import { FixtureMusicIdentificationProvider, type MusicIdentificationProvider } from "@/modules/music";
-import { PrismaCampaignRepository } from "@/modules/campaigns/prisma-repository";
 import { toRightsRecordInput } from "@/modules/rights";
 import type { RightsRecordInput } from "@/modules/rights-engine/types";
 import { findSameTrack } from "@/modules/catalog";
@@ -21,7 +27,7 @@ import { getJobStore } from "./job-store";
 import { getLibraryStore } from "./library-store";
 import { getCreatorAllowance } from "./creator-allowance";
 import { getAuthStore } from "./auth-store";
-import { dataModeFor, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
+import { connectedPlatforms, dataModeFor, getMetaCredentials, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
 import { openCasesForFlaggedItems } from "./case-automation";
 import { getRecognitionProvider } from "./recognition";
 
@@ -48,9 +54,12 @@ import { getRecognitionProvider } from "./recognition";
  *   or failed when it ends, with per-creator results as its payload — what
  *   a creator's monitoring history (§8) and "last scan" (§7) read.
  *
- * Until the real TikTok connector exists (`connector-mode.ts`), the
- * connector and music identification are the demo dataset's. Swapping in
- * the real ones changes nothing below.
+ * - **Which connector**: each creator's platform's. Until a platform is
+ *   connected (`connector-mode.ts`) a demo scan uses the demo dataset for
+ *   TikTok and finds nothing on Instagram; a real scan skips the creators
+ *   of a platform that isn't connected (counted, not failed), whose posts
+ *   can be added by hand. Swapping in the real connectors changes nothing
+ *   below.
  */
 
 const INITIAL_LOOKBACK_DAYS = 30;
@@ -74,7 +83,7 @@ export async function getWorkspaceScanItem(
 
 export type RunWorkspaceScanResult =
   | { ok: true; job: JobRecord<ScanJobPayload> }
-  | { ok: false; error: "NO_PLAN" | "NO_CREATORS" };
+  | { ok: false; error: "NO_PLAN" | "NO_CREATORS" | "NO_CONNECTED_CREATORS" };
 
 export async function runWorkspaceScan(
   workspaceId: string,
@@ -93,18 +102,22 @@ export async function runWorkspaceScan(
   const creatorRepository = getCreatorStore().creators;
   const monitored = (await creatorRepository.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
   if (monitored.length === 0) return { ok: false, error: "NO_CREATORS" };
-  const creators = monitored.slice(0, allowance.cap);
+  const withinPlan = monitored.slice(0, allowance.cap);
 
   const workspace = await getAuthStore().workspaces.findById(workspaceId);
   if (!workspace) throw new Error("Workspace not found.");
   const connectorMode = dataModeFor(workspace);
+  const fetchable = scannablePlatforms(connectorMode);
+  const creators = withinPlan.filter((c) => fetchable.has(c.platform));
+  if (creators.length === 0) return { ok: false, error: "NO_CONNECTED_CREATORS" };
   const jobs = getJobStore().jobs;
   const startedAt = new Date();
   const payload = emptyScanPayload({
     triggeredByUserId,
     connectorMode,
     creatorsTotal: creators.length,
-    skippedOverLimit: monitored.length - creators.length,
+    skippedOverLimit: monitored.length - withinPlan.length,
+    skippedNotConnected: withinPlan.length - creators.length,
   });
 
   if (options.queuedJobId) {
@@ -149,11 +162,11 @@ async function scanCreators(
 ): Promise<ScanJobPayload> {
   const library = getLibraryStore();
   const catalogue = await library.catalog.findCatalogue(workspaceId);
-  const { connector, musicProvider } = scanProviders(
+  const { connectorFor, musicProvider } = scanProviders(
     mode,
     catalogue.map((track) => ({ trackId: track.id, title: track.title, artist: track.artist, isrc: track.isrc })),
   );
-  const campaigns = new PrismaCampaignRepository(workspaceId);
+  const campaigns = library.campaigns;
   const results = getScanResultStore().results;
   const creatorRepository = getCreatorStore().creators;
 
@@ -175,11 +188,11 @@ async function scanCreators(
   const perCreator: ScanJobCreatorResult[] = [];
   for (const creator of creators) {
     const result = await runScan({
-      connector,
+      connector: connectorFor(creator.platform),
       musicProvider,
       getRightsRecordsForTrack,
-      getCampaignIdsForCreator: async (creatorExternalId) =>
-        (await campaigns.findForCreator(creatorExternalId)).map((c) => c.id),
+      // By the creator's own id: the same username on TikTok and Instagram is two creators.
+      getCampaignIdsForCreator: async () => (await campaigns.findForCreatorId(workspaceId, creator.id)).map((c) => c.id),
       findCatalogueTrack: async (match) =>
         findSameTrack(catalogue, { isrc: match.isrc, title: match.title, artist: match.artist || null })?.id ?? null,
       creatorExternalId: creator.externalId,
@@ -224,21 +237,43 @@ async function scanCreators(
 }
 
 /**
- * The connector and music identification for a scan. Demo: the demo
- * dataset's, for both. Real: TikTok's Commercial Content API, and no music
- * recognition until a provider is connected, so posts are stored as "no
- * song identified" rather than given an invented one.
+ * The connectors and music identification for a scan. Demo: the demo
+ * dataset's for TikTok (and its fixture music identification), nothing for
+ * Instagram. Real: TikTok's Commercial Content API and Instagram's Business
+ * Discovery, each when its credentials are set, and no music recognition
+ * from the platforms (neither carries the audio), so posts are stored as
+ * "no song identified" rather than given an invented one.
  */
 function scanProviders(
   mode: ConnectorMode,
   catalogue: { trackId: string; title: string; artist: string | null; isrc: string | null }[],
-): { connector: PlatformConnector; musicProvider: MusicIdentificationProvider } {
-  const credentials = mode === "REAL" ? getTikTokCredentials() : null;
-  if (mode === "REAL" && !credentials) throw new Error("TikTok credentials are missing.");
-  if (credentials) {
-    return { connector: new TikTokCommercialContentConnector(credentials), musicProvider: getRecognitionProvider() };
+): { connectorFor: (platform: Platform) => PlatformConnector; musicProvider: MusicIdentificationProvider } {
+  if (mode === "DEMO") {
+    const tiktok = new MockTikTokConnector();
+    return {
+      connectorFor: (platform) => (platform === "TIKTOK" ? tiktok : new EmptyConnector(platform)),
+      musicProvider: new FixtureMusicIdentificationProvider({ catalogue }),
+    };
   }
-  return { connector: new MockTikTokConnector(), musicProvider: new FixtureMusicIdentificationProvider({ catalogue }) };
+  const tiktokCredentials = getTikTokCredentials();
+  const metaCredentials = getMetaCredentials();
+  const connectors: Partial<Record<Platform, PlatformConnector>> = {
+    ...(tiktokCredentials ? { TIKTOK: new TikTokCommercialContentConnector(tiktokCredentials) } : {}),
+    ...(metaCredentials ? { INSTAGRAM: new InstagramBusinessDiscoveryConnector(metaCredentials) } : {}),
+  };
+  return {
+    connectorFor: (platform) => {
+      const connector = connectors[platform];
+      if (!connector) throw new Error(`${platform} isn't connected.`);
+      return connector;
+    },
+    musicProvider: getRecognitionProvider(),
+  };
+}
+
+/** The platforms a scan in this mode fetches. */
+function scannablePlatforms(mode: ConnectorMode): Set<Platform> {
+  return new Set<Platform>(mode === "DEMO" ? ["TIKTOK", "INSTAGRAM"] : connectedPlatforms());
 }
 
 function windowStart(creator: CreatorRecord, now: Date, mode: ConnectorMode): Date {

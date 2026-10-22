@@ -20,7 +20,7 @@ export default function OpenGraphImage() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ display: "flex", fontSize: 80, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>Know where your music appears commercially.</div>
-          <div style={{ display: "flex", fontSize: 32, color: "#5b5b63" }}>Paid TikTok posts, matched to your songs and checked against your licences.</div>
+          <div style={{ display: "flex", fontSize: 32, color: "#5b5b63" }}>Paid TikTok and Instagram posts, matched to your songs and checked against your licences.</div>
         </div>
         <div style={{ display: "flex", gap: 16 }}>
           {chip("Cleared", "#1a7f4b", "#dff3e8")}

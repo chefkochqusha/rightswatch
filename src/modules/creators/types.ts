@@ -22,8 +22,10 @@ export interface CreatorRecord {
   id: string;
   workspaceId: string;
   platform: Platform;
-  /** For TikTok, the username: the Commercial Content API is queried by
-   *  username and returns no other stable creator id (Brief §4). */
+  /** The username, on both platforms: TikTok's Commercial Content API and
+   *  Instagram's Business Discovery are queried by username and return no
+   *  other stable creator id the app can rely on (Brief §4). Unique per
+   *  workspace and platform, not across platforms. */
   externalId: string;
   /** The username as shown, without "@". */
   handle: string;

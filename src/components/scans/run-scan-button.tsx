@@ -47,5 +47,8 @@ function summary(state: Extract<ScanActionState, { status: "done" }>): string {
     text += ` ${state.failedCreators} ${state.failedCreators === 1 ? "creator" : "creators"} couldn't be fetched.`;
   }
   if (state.skippedOverLimit > 0) text += ` ${state.skippedOverLimit} over your plan's limit weren't scanned.`;
+  if (state.skippedNotConnected > 0) {
+    text += ` ${state.skippedNotConnected} ${state.skippedNotConnected === 1 ? "creator is" : "creators are"} on a platform that isn't connected yet; add their paid posts by hand.`;
+  }
   return text;
 }

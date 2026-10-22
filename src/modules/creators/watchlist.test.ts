@@ -46,6 +46,42 @@ describe("addCreator", () => {
     });
   });
 
+  test("adds an Instagram creator with its Instagram profile link", async () => {
+    const { deps } = setup();
+    const result = await addCreator({ workspaceId: "w1", platform: "INSTAGRAM", username: "https://www.instagram.com/Lena.Creates/" }, deps);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.creator.platform, "INSTAGRAM");
+    assert.equal(result.creator.handle, "lena.creates");
+    assert.equal(result.creator.profileUrl, "https://www.instagram.com/lena.creates/");
+  });
+
+  test("the same username on TikTok and Instagram is two creators", async () => {
+    const { deps } = setup();
+    const tiktok = await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);
+    const instagram = await addCreator({ workspaceId: "w1", platform: "INSTAGRAM", username: "lena.creates" }, deps);
+    assert.ok(tiktok.ok && instagram.ok);
+    if (!tiktok.ok || !instagram.ok) return;
+    assert.notEqual(tiktok.creator.id, instagram.creator.id);
+    assert.deepEqual(await addCreator({ workspaceId: "w1", platform: "INSTAGRAM", username: "@lena.creates" }, deps), {
+      ok: false,
+      error: "ALREADY_ON_WATCHLIST",
+    });
+  });
+
+  test("a profile link must match the chosen platform", async () => {
+    const { deps, creatorRepository } = setup();
+    assert.deepEqual(await addCreator({ workspaceId: "w1", platform: "INSTAGRAM", username: "https://www.tiktok.com/@lena.creates" }, deps), {
+      ok: false,
+      error: "PLATFORM_MISMATCH",
+    });
+    assert.deepEqual(await addCreator({ workspaceId: "w1", username: "https://instagram.com/lena.creates" }, deps), {
+      ok: false,
+      error: "PLATFORM_MISMATCH",
+    });
+    assert.equal(await creatorRepository.countMonitored("w1"), 0);
+  });
+
   test("the same username in another workspace is a different creator", async () => {
     const { deps } = setup();
     await addCreator({ workspaceId: "w1", username: "lena.creates" }, deps);

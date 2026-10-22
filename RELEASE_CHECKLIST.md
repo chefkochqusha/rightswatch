@@ -228,6 +228,19 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   and tested with stubbed answers only, so expect the first live call to need a
   small fix; a failure shows as "couldn't be fetched" with the reason on the
   creator. The public demo workspace stays on fake data either way.
+- [ ] **Instagram (Meta API)** — built 2026-10-22 and usable by hand today
+  (Instagram creators, posts added by link, song check from the upload). For
+  automatic scans follow `INSTAGRAM_APPLICATION.md`: Bekvor's Instagram
+  professional account and Facebook Page, Meta business portfolio with
+  **Business Verification** (needs the registered business), a Business app
+  with "Instagram API setup with Facebook login", **App Review for Advanced
+  Access** (Bekvor counts as a Tech Provider; Meta allows no live data
+  before), a system user token, then `META_ACCESS_TOKEN`, `META_IG_USER_ID`
+  and `META_APP_SECRET` in Vercel (never in the chat). Run one live scan.
+  Limits to tell customers: only business and creator accounts, only posts
+  whose caption labels them as ads, no audio from Meta. Lawyer first: Meta
+  Platform Terms 3.a.iii/3.a.v (surveillance, profiles) and GDPR Art. 14
+  (`LEGAL_DE.md`).
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.
