@@ -166,7 +166,9 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   copies of each of 60 songs, which made edited posts look much worse than a
   real catalogue would. With 2,000 distinct songs the right song is now on top
   in 192 of 200 edited posts (was 177); four real recordings among them: 147
-  of 160 posts (was 135); no false automatic match in any run.
+  of 160 posts (was 135); 10,000 distinct songs: 186 of 200; no false
+  automatic match in any run (at 10,000, 3 of 48 unrelated posts became a
+  suggestion a person has to dismiss).
   Still weak: sped up + voice-over + phone + AAC together (found as a
   suggestion in about half, missed in the rest) and music 12 dB under a voice
   (found, but mostly a suggestion for a person). Hard posts take longer: p95

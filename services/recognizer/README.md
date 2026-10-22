@@ -367,6 +367,7 @@ post up on the plain grid, `RECOGNIZER_SHORTLIST_GRIDS=dense`, the default):
 |---|---|---|---|
 | 2,000 distinct songs, 200 posts | 177 → **192** | worst case 15 → 8, voice −12 dB 5 → 2 | 1.9 / 4.5 s → **1.2 / 9.7 s** |
 | 5,000 distinct songs (after only; measured before the key cap below, with `=both`) | 184 of 200 | worst case 9, voice −12 dB 3, 3 others | 2.3 / 16.4 s |
+| 10,000 distinct songs (after only, final settings) | **186 of 200**, 139 MATCH, 0 wrong MATCH | worst case 11, voice −12 dB 2, voice −6 dB 1; 3 of 48 posts not in the catalogue became a suggestion for a person | 1.9 / 14.3 s; index 1.1 GB, peak 2.3 GB RAM, built in 101 s |
 | 20,000 songs, copy-based test (`scale_bench.py`), 160 posts | 104 → **125** | sped up 14 → 4, voice −12 dB 9 → 7 | 4.9 / 7.3 s → **12.2 / 20.2 s** |
 | 4 real recordings among 2,000 distinct, 160 posts | 135 → **147** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 11 | 1.1 → 0.9 s |
 | 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
