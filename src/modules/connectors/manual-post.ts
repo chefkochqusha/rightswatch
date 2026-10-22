@@ -2,12 +2,13 @@ import type { NormalizedCommercialContent } from "./types";
 
 /**
  * A commercial post entered by hand (Brief §1's manual path, beside the
- * connectors): for posts the TikTok API doesn't deliver — before API access
- * exists, or a post someone came across — and for every Instagram post,
- * since there is no Instagram connector (`INSTAGRAM_APPLICATION.md`). It
+ * connectors): for posts a platform's API doesn't deliver — before API
+ * access exists (Instagram needs Meta's app review, `INSTAGRAM_APPLICATION.md`),
+ * a post whose caption carries no ad label, or a post someone came across. It
  * becomes the same `NormalizedCommercialContent` a connector produces, keyed
- * by the platform's own id (TikTok's video id, Instagram's shortcode), so a
- * later scan of the same post updates this row instead of adding a second one.
+ * by the platform's own id (TikTok's video id, Instagram's shortcode, the key
+ * `InstagramBusinessDiscoveryConnector` uses too), so a later scan of the same
+ * post updates this row instead of adding a second one.
  */
 
 export interface ManualPostInput {
@@ -39,7 +40,7 @@ export type ParsedManualPost =
 
 const TIKTOK_POST = /^\/@([A-Za-z0-9._]{2,24})\/(?:video|photo)\/(\d{6,25})\/?$/;
 // instagram.com/reel/CODE/, /reels/CODE/, /p/CODE/, /tv/CODE/, optionally after /USERNAME.
-const INSTAGRAM_POST = /^\/(?:([A-Za-z0-9._]{1,30})\/)?(reels?|p|tv)\/([A-Za-z0-9_-]{5,40})\/?$/;
+const INSTAGRAM_POST = /^\/(?:([A-Za-z0-9._]{1,30})\/)?(reels?|p|tv)\/([A-Za-z0-9_-]{5,64})\/?$/;
 
 type ParsedLink = { platform: "TIKTOK" | "INSTAGRAM"; url: string; videoId: string; handle: string | null };
 

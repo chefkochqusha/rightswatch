@@ -30,6 +30,9 @@ export interface ScanJobPayload {
   creatorsTotal: number;
   /** Monitored creators past the plan's limit, left out (Brief §19). */
   skippedOverLimit: number;
+  /** Monitored creators on a platform this scan doesn't fetch (no connector
+   *  in this mode); their posts are added by link. Missing on older scans. */
+  byLink?: number;
   videosChecked: number;
   matches: number;
   /** Matches no earlier scan had found. */
@@ -43,6 +46,7 @@ export function emptyScanPayload(input: {
   connectorMode: "DEMO" | "REAL";
   creatorsTotal: number;
   skippedOverLimit: number;
+  byLink?: number;
 }): ScanJobPayload {
   return { ...input, videosChecked: 0, matches: 0, newMatches: 0, casesOpened: 0, creators: [] };
 }

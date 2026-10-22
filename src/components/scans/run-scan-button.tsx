@@ -47,5 +47,8 @@ function summary(state: Extract<ScanActionState, { status: "done" }>): string {
     text += ` ${state.failedCreators} ${state.failedCreators === 1 ? "creator" : "creators"} couldn't be fetched.`;
   }
   if (state.skippedOverLimit > 0) text += ` ${state.skippedOverLimit} over your plan's limit weren't scanned.`;
+  if (state.byLink > 0) {
+    text += ` ${state.byLink} ${state.byLink === 1 ? "creator is" : "creators are"} on a platform Bekvor doesn't fetch yet; add their posts by link.`;
+  }
   return text;
 }

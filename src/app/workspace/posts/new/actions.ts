@@ -7,9 +7,9 @@ import { recordAudit } from "@/app/_lib/audit-event";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { DEMO_WORKSPACE_SLUG } from "@/app/_lib/demo-constants";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
+import { OWN_OFFER_LABEL } from "@/modules/connectors/types";
 import { manualPostContent, parseManualPost, type ManualPostField } from "@/modules/connectors/manual-post";
 
-const OWN_OFFER_LABEL = "Own paid offer";
 
 const PLATFORM_NAMES: Record<string, string> = { TIKTOK: "TikTok", INSTAGRAM: "Instagram", YOUTUBE: "YouTube" };
 

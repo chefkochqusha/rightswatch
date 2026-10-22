@@ -309,7 +309,7 @@ Server Actions, or pages that use it.
 | Module | Domain | Brief citation |
 |---|---|---|
 | `auth` | Users, workspaces, memberships, sessions, roles, invites | §40, §43 |
-| `connectors` | Platform adapter boundary (TikTok today; Instagram/YouTube named as future extension points) | §1–§5, §9, §44 |
+| `connectors` | Platform adapter boundary (TikTok and Instagram; YouTube a named future extension point) | §1–§5, §9, §44 |
 | `music` | Music identification provider boundary | §1, §43 |
 | `rights-engine` | Pure rights-assessment function — no storage, nothing to swap | §11, §43 |
 | `catalog` | The song catalogue — the Rights Library's songs: add, take out, details; telling two descriptions of a song apart | §10, §43 |
@@ -360,8 +360,10 @@ never as "zero posts found". It returns no music and no territory: the API has
 neither (Brief §4).
 
 **What switches it on:** `getConnectorMode()` (`app/_lib/connector-mode.ts`) is
-`REAL` only when both `TIKTOK_CLIENT_KEY` and `TIKTOK_CLIENT_SECRET` are set and
-`DEMO_MODE` isn't "true"; otherwise `DEMO`. `dataModeFor(workspace)` is the
+`REAL` when TikTok's keys (`TIKTOK_CLIENT_KEY` and `TIKTOK_CLIENT_SECRET`) or
+Meta's (`META_ACCESS_TOKEN` and `META_IG_USER_ID`) are set and `DEMO_MODE`
+isn't "true"; otherwise `DEMO`. A platform without keys isn't fetched in
+`REAL` mode (see "How the platforms fit together"). `dataModeFor(workspace)` is the
 per-workspace answer: the public demo workspace is always `DEMO`, so it keeps
 its made-up posts however the app is configured. In `REAL` mode a scan uses the
 real connector and `NoRecognitionProvider` (`app/_lib/recognition.ts`): a real
@@ -376,32 +378,46 @@ and the "Demo data" labels go.
 Brief §44's secrets rule) but have no application code reading or writing
 them yet — there's nothing to configure before Phase 10.
 
-The same adapter shape is meant to extend to other platforms without
-touching business logic: `FutureInstagramConnector`, `FutureYouTubeConnector`
-(Brief §1). Neither exists — this is a named extension point, not built
-scope. `modules/connectors/channels.ts` records where each channel stands
-(`BETA` / `NEXT` / `PLANNED`); the landing page's "TikTok first. More channels
-next." section reads it, so it can't promise a channel the code lacks.
+The same adapter shape extends to other platforms without touching business
+logic (Brief §1). Instagram is the second (2026-10-22):
+Instagram creators and posts added by link came first (2026-10-17); the
+`InstagramBusinessDiscoveryConnector` (`modules/connectors/instagram/`,
+2026-10-22) reads a creator's public video posts through Meta's Graph API
+(Business Discovery) and keeps those whose caption labels them as ads
+(`disclosure.ts`: Werbung, Anzeige, #ad, sponsored and other languages'
+terms), because the API has no field for Instagram's own "Paid partnership"
+label on another account's post; for a creator the customer marked as
+promoting their own paid offers it keeps every video. It stays off until
+Meta's app review allows live data (`INSTAGRAM_APPLICATION.md`). Like TikTok
+it carries no audio; a post's song comes from the video or sound someone
+uploads. Posts are keyed by their shortcode, the same key a post added by
+link gets. `FutureYouTubeConnector` is still only a named extension point.
+`modules/connectors/channels.ts` records where each channel stands (`BETA` /
+`BY_LINK` / `NEXT` / `PLANNED`); the landing page's channel section reads it,
+so it can't promise a channel the code lacks. Instagram stays `BY_LINK` until
+the connector runs for customers.
 
-### Adding a channel
+How the platforms fit together:
 
-The schema (`Platform` enum, `platform` on creators, content and connectors),
-the connector interface and everything downstream of
-`NormalizedCommercialContent` already allow a second platform. What is still
-TikTok-only, and has to change when the first other connector ships:
+1. `modules/creators/username.ts` — one username rule and profile link per
+   platform; `addCreator` takes the platform, and a pasted profile link must
+   match it. The same username on two platforms is two creators.
+2. `app/_lib/connector-mode.ts` — `connectedPlatforms()` says which platforms
+   have credentials (`TIKTOK_CLIENT_KEY`/`_SECRET`, `META_ACCESS_TOKEN` +
+   `META_IG_USER_ID`); `REAL` means at least one.
+3. `app/_lib/workspace-scan-store.ts` — picks each creator's connector by
+   `creator.platform`. `fetchesAutomatically(platform, workspace)` decides
+   which creators a scan fetches: in demo mode TikTok only (the demo dataset
+   is all TikTok), in real mode the platforms with keys. The others are
+   counted (`byLink` on the scan), never failed and never given invented
+   posts; the watchlist shows "Posts by link" for them and their posts are
+   added by link (`connectors/manual-post.ts` reads TikTok and Instagram links).
+4. Campaign membership is looked up by the creator's own id, not its
+   username, so two creators with one name don't share campaigns.
 
-1. `modules/creators/watchlist.ts` — `addCreator` normalizes the handle with
-   TikTok's rules and writes `platform: "TIKTOK"`; it needs a platform on its
-   input and a per-platform handle/profile-URL rule.
-2. `app/_lib/workspace-scan-store.ts` — builds one connector (real or mock).
-   It needs a lookup from platform to connector, and the scan loop has to pick
-   each creator's connector by `creator.platform`.
-3. `app/_lib/connector-mode.ts` — `REAL` means "TikTok credentials are set";
-   it needs a per-platform answer (and the settings page its own status line
-   per channel).
-4. The add-creator form and watchlist copy say "TikTok" and need a platform
-   choice once there is more than one.
-5. Move the channel's stage in `connectors/channels.ts` to `BETA`.
+Adding a third channel: a connector, a username rule, its credentials in
+`connector-mode.ts`, its link pattern in `manual-post.ts`, then its stage in
+`connectors/channels.ts`.
 
 Music identification (`src/modules/music/`) mirrors this exact boundary one
 layer downstream: a `MusicIdentificationProvider` is the only code allowed
@@ -1148,6 +1164,7 @@ local development and never commit real values.
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_STARTER`, `STRIPE_PRICE_ID_GROWTH`, `STRIPE_PRICE_ID_AGENCY` | Payments (Stripe test mode) | Not set yet — demo billing until all five are set in Vercel (`STRIPE_INTEGRATION.md`) |
 | `MUSIC_SEARCH_PROVIDER` | Song search for the Rights Library: `musicbrainz` (default) or `demo` | Unset in production (MusicBrainz); `demo` for local checks and tests, where the public service isn't reachable |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Real TikTok connector | Blank — demo connector used. Setting both switches every workspace except the public demo to the real one |
+| `META_ACCESS_TOKEN`, `META_IG_USER_ID`, `META_APP_SECRET`, `META_GRAPH_VERSION` | Real Instagram connector (Business Discovery) | Blank — Instagram posts by link. The first two switch real mode on like TikTok's keys; the secret signs calls (`appsecret_proof`); the version defaults to `v26.0` (`INSTAGRAM_APPLICATION.md`) |
 | `JOB_RUNNER` | `inline` (default, Vercel) or `worker` (own server: Postgres job queue, worker and schedule in the server process) | `inline` on Vercel; `worker` in `deploy/compose.yml` |
 | `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`, `STORAGE_ENDPOINT` | Object storage (S3-compatible) | Blank — no provider chosen; blocks `CaseEvidence` |
 | `SENTRY_DSN` | Monitoring | Blank — not used; `/api/health` and JSON logs instead |

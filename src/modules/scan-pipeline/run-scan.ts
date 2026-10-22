@@ -15,6 +15,7 @@ export async function runScan(params: RunScanParams): Promise<ScanResult> {
     creatorUsername: params.creatorUsername,
     since: params.since,
     until: params.until,
+    ownPaidOffers: params.ownPaidOffers,
   });
 
   if (fetchResult.error) {

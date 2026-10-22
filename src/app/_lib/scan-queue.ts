@@ -66,6 +66,8 @@ async function scanRefusal(workspaceId: string): Promise<"NO_PLAN" | "NO_CREATOR
   const allowance = await getCreatorAllowance(workspaceId);
   if (allowance.cap <= 0) return "NO_PLAN";
   const monitored = (await getCreatorStore().creators.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
-  // Scans fetch TikTok only: Instagram creators' posts are added by link.
-  return monitored.slice(0, allowance.cap).some(isScannable) ? null : "NO_CREATORS";
+  // Scans fetch the connected platforms only; the other creators' posts are added by link.
+  const workspace = await getAuthStore().workspaces.findById(workspaceId);
+  if (!workspace) return "NO_CREATORS";
+  return monitored.slice(0, allowance.cap).some((c) => isScannable(c, workspace)) ? null : "NO_CREATORS";
 }

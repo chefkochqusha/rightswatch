@@ -1,7 +1,7 @@
 /**
  * What an uploaded file is, from its first bytes — never from its name or
  * the browser's claim. Only the audio and video containers people actually
- * have (a song from a label, a post saved from TikTok) are accepted; the
+ * have (a song from a label, a post saved from TikTok or Instagram) are accepted; the
  * recognition service then decodes it with ffmpeg, and a file that only
  * looks right fails there with "no readable audio".
  */
