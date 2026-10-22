@@ -15,7 +15,7 @@ This is an engineering inventory, not legal advice.
 | Workspace name, plan, subscription status | The customer | Postgres, Stripe | Accounts, billing |
 | Company name, billing address, VAT ID and its VIES result | The customer (a business; a sole trader's name is personal data) | Postgres (`billing_profiles`), Stripe customer | Invoices (§ 14 UStG), the B2B check; Stripe asks VIES about EU VAT IDs |
 | Creators: platform (TikTok or Instagram), username, display name, profile link, country, follower count; the mark "promotes their own paid offers" (set by a member, never by Bekvor; no kind or platform of offer is stored) | Creators (third parties, public data; the mark is the customer's assessment) | Postgres | The watchlist; the mark makes their posts count as commercial |
-| Posts: date, brand names, label, video link, territory, matched song | Creators (public data) | Postgres | Detections |
+| Posts: date, brand names, label, video link, territory, matched song; for Instagram scans also the caption, post type and audio type as Meta returns them (the raw answer, shown on the post page) | Creators (public data) | Postgres | Detections |
 | Songs, rights records, cases, notes, activity log | The customer | Postgres | The product |
 | Rate-limit counters: an HMAC of the email + IP address or the IP address, failure count, block time | Visitors, members | Postgres (`rate_limits`), on Vercel only | Brute-force and abuse defence. Not reversible without `SESSION_SECRET`; rows untouched for a day are removed |
 | Request logs (IP address, URL, time) | Visitors, members | Vercel (platform logs) | Operation, abuse defence |
@@ -37,7 +37,7 @@ analytics or advertising identifiers (none), keystroke or session recordings
 | **Stripe** | Customer email, workspace id, plan; card data goes to Stripe directly | Once Stripe is on | Own controller for payment data. Webhook logs here hold ids only |
 | **Resend** (email) | Recipient address and the text of reset and confirmation emails | Once configured | Nothing is sent today. DPA to confirm |
 | **TikTok** Commercial Content API | The TikTok creator usernames on a watchlist | Each scan, once keys exist | Terms for commercial monitoring and storing the data are an open question (checklist) |
-| **Instagram (Meta)** | Nothing: Instagram posts are entered by link, and Bekvor fetches nothing from Instagram. There is no Instagram connector | Not in use | Before one is built: Meta's app review and the lawyer (`INSTAGRAM_APPLICATION.md`) |
+| **Instagram (Meta)**, Business Discovery | The Instagram creator usernames on a watchlist, with Bekvor's own access token | Each scan, but only once `META_ACCESS_TOKEN` and `META_IG_USER_ID` are set, after Meta's app review and the lawyer (`INSTAGRAM_APPLICATION.md`). Until then: nothing, posts are entered by link | Meta answers with public posts of business and creator accounts (caption, date, type, link, audio type), kept as the post's raw answer. No media is downloaded. Meta Platform Terms: no surveillance tools, no profiles without consent, Tech Provider duties (`LEGAL_DE.md`) |
 | **Recognition service** (`services/recognizer`, our own) | Uploaded audio, a workspace's fingerprints | Each upload | Runs on our own server on the private network; keeps nothing on disk. Not a third party |
 | **MusicBrainz** | The text a member types into song search, sent by our server (not the member's browser) | Song search | Public data service. Searches are not linked to a member on their side |
 | **Cover Art Archive** (Internet Archive) | A release id | Cover art | Fetched by our server, so no member IP address goes there |
@@ -46,7 +46,7 @@ Never sent anywhere: member passwords, session cookies, rights records and
 cases (they stay in Postgres).
 
 **No AI or language-model feature exists.** No customer text is sent to an AI
-provider, and no model reads TikTok output. If one is added: list the
+provider, and no model reads TikTok or Instagram output. If one is added: list the
 provider here first, sign a DPA, switch off training on customer data, keep
 untrusted text (creator names, brand names, notes) away from any model that can
 take actions, and tell people they are talking to an AI (AI Act, Art. 50).

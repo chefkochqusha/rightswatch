@@ -54,6 +54,9 @@ export interface RunScanParams {
   /** Inclusive publication-date window to scan. */
   since: Date;
   until: Date;
+  /** The creator's paid-offer mark, handed to the connector
+   *  (`ConnectorFetchParams.ownPaidOffers`). */
+  ownPaidOffers?: boolean;
 }
 
 export type ScanItemResult =

@@ -32,4 +32,6 @@ test("an Instagram creator, marked as promoting own paid offers, gets a post add
   await expect(page.getByText("Post added.")).toBeVisible();
   await expect(page.getByText(/Your team marked @mia\.moves as promoting their own paid offers/)).toBeVisible();
   await expect(page.getByText(/No brand named · Own paid offer ·/)).toBeVisible();
+  // Before a song is checked, the post opens from its page to save its video or sound.
+  await expect(page.getByRole("link", { name: /Open on Instagram/ })).toHaveAttribute("href", "https://www.instagram.com/reel/C1a2B3c4D5e/");
 });

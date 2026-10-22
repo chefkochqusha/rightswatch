@@ -18,7 +18,7 @@ export type ScheduledScanSummary = DueScanSummary & {
  * a scan is due, run one, with nobody signed in as the actor. What "due"
  * means and how failures are handled is `modules/jobs/due-scans.ts`.
  *
- * - **Only with the real TikTok connector.** Every scan of the demo
+ * - **Only with a real connector** (TikTok or Instagram). Every scan of the demo
  *   connector produces fictional posts, and a customer's workspace must not
  *   be topped up with invented posts and cases on a timer.
  * - The public demo workspace is never scanned again after it is filled.

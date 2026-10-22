@@ -1,7 +1,12 @@
 import { runScan } from "@/modules/scan-pipeline";
-import { MockTikTokConnector, TikTokCommercialContentConnector, type PlatformConnector } from "@/modules/connectors";
+import {
+  InstagramBusinessDiscoveryConnector,
+  MockTikTokConnector,
+  TikTokCommercialContentConnector,
+  type Platform,
+  type PlatformConnector,
+} from "@/modules/connectors";
 import { FixtureMusicIdentificationProvider, type MusicIdentificationProvider } from "@/modules/music";
-import { PrismaCampaignRepository } from "@/modules/campaigns/prisma-repository";
 import { toRightsRecordInput } from "@/modules/rights";
 import type { RightsRecordInput } from "@/modules/rights-engine/types";
 import { findSameTrack } from "@/modules/catalog";
@@ -21,7 +26,7 @@ import { getJobStore } from "./job-store";
 import { getLibraryStore } from "./library-store";
 import { getCreatorAllowance } from "./creator-allowance";
 import { getAuthStore } from "./auth-store";
-import { dataModeFor, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
+import { dataModeFor, fetchesAutomatically, getMetaCredentials, getTikTokCredentials, type ConnectorMode } from "./connector-mode";
 import { openCasesForFlaggedItems } from "./case-automation";
 import { getRecognitionProvider } from "./recognition";
 
@@ -48,22 +53,25 @@ import { getRecognitionProvider } from "./recognition";
  *   or failed when it ends, with per-creator results as its payload — what
  *   a creator's monitoring history (§8) and "last scan" (§7) read.
  *
- * Until the real TikTok connector exists (`connector-mode.ts`), the
- * connector and music identification are the demo dataset's. Swapping in
- * the real ones changes nothing below.
+ * - **Which connector**: each creator's platform's (`connector-mode.ts`).
+ *   Demo mode fetches TikTok from the demo dataset. Real mode fetches the
+ *   platforms whose keys are set: TikTok's Commercial Content API, Instagram's
+ *   Business Discovery (off until Meta's app review, `INSTAGRAM_APPLICATION.md`).
+ *   The creators of any other platform stay on the watchlist with their posts
+ *   added by link, counted, never failed and never given invented posts.
+ *   Swapping in the real connectors changes nothing below.
  */
 
 const INITIAL_LOOKBACK_DAYS = 30;
 const DAY_MS = 86_400_000;
 
-/** One stored scan item, as the workspace pages render it. */
-/** Creators a scan fetches: TikTok only, the one platform with a connector.
- *  Instagram creators are on the watchlist for posts added by link
- *  (`INSTAGRAM_APPLICATION.md`). */
-export function isScannable(creator: { platform: string }): boolean {
-  return creator.platform === "TIKTOK";
+/** Creators a scan of this workspace fetches: those on a platform with a
+ *  connector in its mode. The others' posts are added by link. */
+export function isScannable(creator: { platform: Platform }, workspace: { slug: string }): boolean {
+  return fetchesAutomatically(creator.platform, workspace);
 }
 
+/** One stored scan item, as the workspace pages render it. */
 export type WorkspaceScanItem = StoredScanItem;
 
 export async function getWorkspaceScanItems(workspaceId: string): Promise<WorkspaceScanItem[]> {
@@ -99,13 +107,14 @@ export async function runWorkspaceScan(
 
   const creatorRepository = getCreatorStore().creators;
   const monitored = (await creatorRepository.findForWorkspace(workspaceId)).filter((c) => c.monitoringEnabled);
-  // The plan's limit counts every monitored creator; a scan then fetches the
-  // TikTok ones among them (Instagram posts are added by link).
-  const creators = monitored.slice(0, allowance.cap).filter(isScannable);
-  if (creators.length === 0) return { ok: false, error: "NO_CREATORS" };
-
   const workspace = await getAuthStore().workspaces.findById(workspaceId);
   if (!workspace) throw new Error("Workspace not found.");
+  // The plan's limit counts every monitored creator; a scan then fetches those
+  // on a connected platform (the others' posts are added by link).
+  const withinPlan = monitored.slice(0, allowance.cap);
+  const creators = withinPlan.filter((c) => isScannable(c, workspace));
+  if (creators.length === 0) return { ok: false, error: "NO_CREATORS" };
+
   const connectorMode = dataModeFor(workspace);
   const jobs = getJobStore().jobs;
   const startedAt = new Date();
@@ -114,6 +123,7 @@ export async function runWorkspaceScan(
     connectorMode,
     creatorsTotal: creators.length,
     skippedOverLimit: Math.max(0, monitored.length - allowance.cap),
+    byLink: withinPlan.length - creators.length,
   });
 
   if (options.queuedJobId) {
@@ -158,11 +168,11 @@ async function scanCreators(
 ): Promise<ScanJobPayload> {
   const library = getLibraryStore();
   const catalogue = await library.catalog.findCatalogue(workspaceId);
-  const { connector, musicProvider } = scanProviders(
+  const { connectorFor, musicProvider } = scanProviders(
     mode,
     catalogue.map((track) => ({ trackId: track.id, title: track.title, artist: track.artist, isrc: track.isrc })),
   );
-  const campaigns = new PrismaCampaignRepository(workspaceId);
+  const campaigns = library.campaigns;
   const results = getScanResultStore().results;
   const creatorRepository = getCreatorStore().creators;
 
@@ -184,11 +194,11 @@ async function scanCreators(
   const perCreator: ScanJobCreatorResult[] = [];
   for (const creator of creators) {
     const result = await runScan({
-      connector,
+      connector: connectorFor(creator.platform),
       musicProvider,
       getRightsRecordsForTrack,
-      getCampaignIdsForCreator: async (creatorExternalId) =>
-        (await campaigns.findForCreator(creatorExternalId)).map((c) => c.id),
+      // By the creator's own id: the same username on TikTok and Instagram is two creators.
+      getCampaignIdsForCreator: async () => (await campaigns.findForCreatorId(workspaceId, creator.id)).map((c) => c.id),
       findCatalogueTrack: async (match) =>
         findSameTrack(catalogue, { isrc: match.isrc, title: match.title, artist: match.artist || null })?.id ?? null,
       creatorExternalId: creator.externalId,
@@ -196,6 +206,7 @@ async function scanCreators(
       creatorCountry: creator.country,
       since: windowStart(creator, now, mode),
       until: now,
+      ownPaidOffers: creator.promotesOwnOffers,
     });
     perCreator.push({
       creatorId: creator.id,
@@ -233,21 +244,41 @@ async function scanCreators(
 }
 
 /**
- * The connector and music identification for a scan. Demo: the demo
- * dataset's, for both. Real: TikTok's Commercial Content API, and no music
- * recognition until a provider is connected, so posts are stored as "no
- * song identified" rather than given an invented one.
+ * The connectors and music identification for a scan. Demo: the demo
+ * dataset's, for both (TikTok only; `isScannable` keeps the rest out). Real:
+ * TikTok's Commercial Content API and Instagram's Business Discovery, each
+ * when its keys are set, and no music recognition from the platforms
+ * (neither carries the audio), so posts are stored as "no song identified"
+ * rather than given an invented one.
  */
 function scanProviders(
   mode: ConnectorMode,
   catalogue: { trackId: string; title: string; artist: string | null; isrc: string | null }[],
-): { connector: PlatformConnector; musicProvider: MusicIdentificationProvider } {
-  const credentials = mode === "REAL" ? getTikTokCredentials() : null;
-  if (mode === "REAL" && !credentials) throw new Error("TikTok credentials are missing.");
-  if (credentials) {
-    return { connector: new TikTokCommercialContentConnector(credentials), musicProvider: getRecognitionProvider() };
+): { connectorFor: (platform: Platform) => PlatformConnector; musicProvider: MusicIdentificationProvider } {
+  if (mode === "DEMO") {
+    const demo = new MockTikTokConnector();
+    return {
+      connectorFor: (platform) => {
+        if (platform !== "TIKTOK") throw new Error(`Demo data has no ${platform} posts.`);
+        return demo;
+      },
+      musicProvider: new FixtureMusicIdentificationProvider({ catalogue }),
+    };
   }
-  return { connector: new MockTikTokConnector(), musicProvider: new FixtureMusicIdentificationProvider({ catalogue }) };
+  const tiktok = getTikTokCredentials();
+  const meta = getMetaCredentials();
+  const connectors: Partial<Record<Platform, PlatformConnector>> = {
+    ...(tiktok ? { TIKTOK: new TikTokCommercialContentConnector(tiktok) } : {}),
+    ...(meta ? { INSTAGRAM: new InstagramBusinessDiscoveryConnector(meta) } : {}),
+  };
+  return {
+    connectorFor: (platform) => {
+      const connector = connectors[platform];
+      if (!connector) throw new Error(`${platform} isn't connected.`);
+      return connector;
+    },
+    musicProvider: getRecognitionProvider(),
+  };
 }
 
 function windowStart(creator: CreatorRecord, now: Date, mode: ConnectorMode): Date {

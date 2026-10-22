@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { dataModeFor, getConnectorMode, getTikTokCredentials } from "./connector-mode";
+import { connectedPlatforms, dataModeFor, fetchesAutomatically, getConnectorMode, getMetaCredentials, getTikTokCredentials } from "./connector-mode";
 
 describe("connector mode", () => {
   test("is demo until both TikTok credentials are set", () => {
@@ -23,5 +23,48 @@ describe("connector mode", () => {
 
   test("credentials are trimmed", () => {
     assert.deepEqual(getTikTokCredentials({ TIKTOK_CLIENT_KEY: " k ", TIKTOK_CLIENT_SECRET: "s\n" }), { clientKey: "k", clientSecret: "s" });
+  });
+
+  test("Instagram alone is enough for real mode, and needs both token and account id", () => {
+    assert.equal(getConnectorMode({ META_ACCESS_TOKEN: "t" }), "DEMO");
+    assert.equal(getConnectorMode({ META_IG_USER_ID: "1784" }), "DEMO");
+    assert.equal(getConnectorMode({ META_ACCESS_TOKEN: "t", META_IG_USER_ID: "1784" }), "REAL");
+    assert.equal(getConnectorMode({ META_ACCESS_TOKEN: "t", META_IG_USER_ID: "1784", DEMO_MODE: "TRUE" }), "DEMO");
+  });
+
+  test("lists which platforms are connected", () => {
+    const tiktok = { TIKTOK_CLIENT_KEY: "k", TIKTOK_CLIENT_SECRET: "s" };
+    const meta = { META_ACCESS_TOKEN: "t", META_IG_USER_ID: "1784" };
+    assert.deepEqual(connectedPlatforms({}), []);
+    assert.deepEqual(connectedPlatforms(tiktok), ["TIKTOK"]);
+    assert.deepEqual(connectedPlatforms(meta), ["INSTAGRAM"]);
+    assert.deepEqual(connectedPlatforms({ ...tiktok, ...meta }), ["TIKTOK", "INSTAGRAM"]);
+    assert.deepEqual(connectedPlatforms({ ...tiktok, ...meta, DEMO_MODE: "true" }), []);
+  });
+
+  test("Meta credentials are trimmed, the optional parts null when empty", () => {
+    assert.deepEqual(getMetaCredentials({ META_ACCESS_TOKEN: " t ", META_IG_USER_ID: "1784\n", META_APP_SECRET: " ", META_GRAPH_VERSION: "v26.0" }), {
+      accessToken: "t",
+      igUserId: "1784",
+      appSecret: null,
+      graphVersion: "v26.0",
+    });
+  });
+
+  test("which platforms a workspace's scans fetch", () => {
+    const acme = { slug: "acme" };
+    const demo = { slug: "northstar-demo" };
+    const tiktok = { TIKTOK_CLIENT_KEY: "k", TIKTOK_CLIENT_SECRET: "s" };
+    const meta = { META_ACCESS_TOKEN: "t", META_IG_USER_ID: "1784" };
+    // Demo data is TikTok only.
+    assert.equal(fetchesAutomatically("TIKTOK", acme, {}), true);
+    assert.equal(fetchesAutomatically("INSTAGRAM", acme, {}), false);
+    assert.equal(fetchesAutomatically("INSTAGRAM", demo, { ...tiktok, ...meta }), false);
+    // Real: what has keys.
+    assert.equal(fetchesAutomatically("TIKTOK", acme, tiktok), true);
+    assert.equal(fetchesAutomatically("INSTAGRAM", acme, tiktok), false);
+    assert.equal(fetchesAutomatically("TIKTOK", acme, meta), false);
+    assert.equal(fetchesAutomatically("INSTAGRAM", acme, meta), true);
+    assert.equal(fetchesAutomatically("YOUTUBE", acme, { ...tiktok, ...meta }), false);
   });
 });

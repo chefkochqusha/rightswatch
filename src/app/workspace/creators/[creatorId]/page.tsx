@@ -9,6 +9,7 @@ import { getJobStore } from "@/app/_lib/job-store";
 import { getScanResultStore } from "@/app/_lib/scan-result-store";
 import { getLibraryStore } from "@/app/_lib/library-store";
 import { httpsUrl } from "@/modules/connectors";
+import { fetchesAutomatically } from "@/app/_lib/connector-mode";
 import { SCAN_JOB_TYPE, creatorScanHistory, type ScanJobPayload } from "@/modules/jobs";
 import { buttonStyles } from "@/components/ui/button";
 import { ExternalIcon } from "@/components/ui/icons";
@@ -64,6 +65,8 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
   });
   const history = creatorScanHistory(jobs, creator.id).filter((entry) => entry.result);
   const canManage = canManageCases(session.role);
+  // On a platform scans don't fetch here (not connected, or demo data, which is all TikTok): posts by link.
+  const byLink = !fetchesAutomatically(creator.platform, session.workspace);
   const now = new Date();
 
   return (
@@ -76,7 +79,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-[2rem] leading-[1.05] font-extrabold tracking-[-0.03em]">@{creator.handle}</h1>
-              {!creator.removedAt && (creator.platform === "TIKTOK" || !creator.monitoringEnabled) && <CreatorStatusBadge status={creator.status} />}
+              {!creator.removedAt && (!byLink || !creator.monitoringEnabled) && <CreatorStatusBadge status={creator.status} />}
               {creator.promotesOwnOffers && (
                 <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-tx">Promotes own paid offers</span>
               )}
@@ -118,7 +121,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         </div>
       </div>
 
-      {!creator.removedAt && creator.platform !== "TIKTOK" && (
+      {!creator.removedAt && byLink && (
         <Callout tone="neutral">
           <p>
             Scans don&apos;t reach {PLATFORM_LABELS[creator.platform]} yet. Add this creator&apos;s paid posts by link,
@@ -160,7 +163,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
         <Fact
           label="Last scan"
           value={
-            creator.platform !== "TIKTOK"
+            byLink
               ? "Posts by link"
               : creator.lastSeenAt
                 ? formatRelativeTime(creator.lastSeenAt, now)
@@ -169,7 +172,7 @@ export default async function CreatorPage({ params }: PageProps<"/workspace/crea
           title={creator.lastSeenAt ? dateTimeFormatter.format(creator.lastSeenAt) : undefined}
         />
         <Fact label="On the watchlist since" value={dateFormatter.format(creator.createdAt)} />
-        {!creator.removedAt && (creator.platform === "TIKTOK" || !creator.monitoringEnabled) && (
+        {!creator.removedAt && (!byLink || !creator.monitoringEnabled) && (
           <p className="col-span-full text-[0.8125rem] text-t2">{CREATOR_STATUS_DESCRIPTIONS[creator.status]}</p>
         )}
       </dl>

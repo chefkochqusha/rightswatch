@@ -16,7 +16,7 @@ export const AUDIO_CHECK_JOB = "audio_check";
 
 /** A full song in a lossless format can be large; 20 minutes of WAV is ~200 MB, so lossless masters are best sent as FLAC. */
 export const MAX_SONG_UPLOAD_BYTES = 150 * 1024 * 1024;
-/** A saved TikTok post (video) of up to 10 minutes. */
+/** A saved TikTok or Instagram post (video) of up to 10 minutes. */
 export const MAX_POST_UPLOAD_BYTES = 200 * 1024 * 1024;
 /** Uploads waiting or being processed per workspace, so one can't fill the disk. */
 export const MAX_PENDING_UPLOADS = 10;

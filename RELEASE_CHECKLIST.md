@@ -34,8 +34,9 @@ or a business decision at release time, it gets a line here.
   validated, never assumed).
 - [ ] **Meta Platform Terms** (lawyer, then Meta's app review): Meta forbids
   tools for surveillance and building user profiles without consent (§ 3.a).
-  Confirm that showing a customer the public fields of the creators they added
-  is acceptable before the Instagram connector is built (`INSTAGRAM_APPLICATION.md`).
+  Confirm that showing a customer the public posts of the creators they added
+  is acceptable before the Instagram connector is switched on (it is built and
+  off, `INSTAGRAM_APPLICATION.md`).
 - [ ] **Self-promotion as commercial use** (lawyer): is music in posts by a
   creator who promotes their own paid offer (bio link, paywall, second
   account) commercial use, and may a customer mark creators that way in Bekvor?
@@ -239,8 +240,14 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   creator. The public demo workspace stays on fake data either way.
 - [ ] **Instagram (Meta)** — facts and steps: `INSTAGRAM_APPLICATION.md`. Bekvor's
   own Instagram professional account and Facebook Page once the name is final, a
-  Meta developer account, business verification after registration, then app
-  review. No Instagram connector is built yet; Instagram posts are added by link.
+  Meta developer account, business portfolio with Business Verification after
+  registration, then App Review for Advanced Access (Bekvor is a Tech Provider;
+  no live data before). The connector is built (2026-10-22) and stays off until
+  `META_ACCESS_TOKEN`, `META_IG_USER_ID` and `META_APP_SECRET` are set in Vercel
+  (never in the chat); use a system user token. Then one live scan, and move
+  Instagram to `BETA` in `connectors/channels.ts`. Tell customers: only business
+  and creator accounts, only posts labelled as ads in the caption (or all of a
+  creator marked as promoting own paid offers), no audio from Meta.
 - [ ] **Stripe** — follow `STRIPE_INTEGRATION.md`: sandbox first (products,
   customer portal, webhook destination, five env vars, redeploy, verify), then
   live mode with the real business details.

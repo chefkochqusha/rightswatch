@@ -97,7 +97,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/worksp
             <span className="truncate font-semibold text-tx">{session.workspace.name}</span>
             {dataModeFor(session.workspace) === "DEMO" && (
               <span
-                title="TikTok isn't connected yet, so scans run against fictional demo data."
+                title="No platform is connected yet, so scans run against fictional demo data."
                 className="shrink-0 rounded-full bg-review-bg px-2.5 py-0.5 text-xs font-medium text-review"
               >
                 Demo data

@@ -64,7 +64,15 @@ export interface ConnectorFetchParams {
   /** Inclusive publication-date window to search. */
   since: Date;
   until: Date;
+  /** The customer marked this creator as promoting their own paid offers
+   *  (`Creator.promotesOwnOffers`): every post counts as commercial, labelled
+   *  or not. A connector whose API returns only commercial posts ignores it. */
+  ownPaidOffers?: boolean;
 }
+
+/** The label a post gets when it counts as commercial because of the
+ *  creator's paid-offer mark rather than a label of its own. */
+export const OWN_OFFER_LABEL = "Own paid offer";
 
 export interface ConnectorFetchResult {
   items: NormalizedCommercialContent[];

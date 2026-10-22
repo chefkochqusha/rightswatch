@@ -22,6 +22,7 @@ export type ScanActionState =
       casesOpened: number;
       failedCreators: number;
       skippedOverLimit: number;
+      byLink: number;
     }
   | { status: "queued"; alreadyQueued: boolean }
   | { status: "error"; message: string };
@@ -39,7 +40,7 @@ export async function runScanAction(_prev: ScanActionState, _formData: FormData)
       message:
         started.error === "NO_PLAN"
           ? "Choose a plan to start monitoring. Every plan starts with a free trial."
-          : "Add a TikTok creator to your watchlist first. A scan checks the TikTok creators you monitor; Instagram posts are added by link.",
+          : "Add a creator on a connected platform first. A scan checks the creators it can fetch (Settings shows which platforms are connected); the others' posts are added by link.",
     };
   }
   if (started.kind === "queued") return { status: "queued", alreadyQueued: started.alreadyQueued };
@@ -54,5 +55,6 @@ export async function runScanAction(_prev: ScanActionState, _formData: FormData)
     casesOpened: payload?.casesOpened ?? 0,
     failedCreators: payload?.creators.filter((creator) => creator.error).length ?? 0,
     skippedOverLimit: payload?.skippedOverLimit ?? 0,
+    byLink: payload?.byLink ?? 0,
   };
 }

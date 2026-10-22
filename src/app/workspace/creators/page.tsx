@@ -3,7 +3,7 @@ import { requireSession } from "@/app/_lib/current-user";
 import { canManageCases } from "@/app/_lib/authorize";
 import { getCreatorStore } from "@/app/_lib/creator-store";
 import { getCreatorAllowance } from "@/app/_lib/creator-allowance";
-import { dataModeFor } from "@/app/_lib/connector-mode";
+import { dataModeFor, fetchesAutomatically } from "@/app/_lib/connector-mode";
 import { getWorkspaceScanItems } from "@/app/_lib/workspace-scan-store";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -37,6 +37,8 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
   const statusFilter = STATUS_FILTERS.find((status) => status === params.status) ?? null;
 
   const canManage = canManageCases(session.role);
+  // Creators on a platform scans don't fetch here: their posts are added by link.
+  const byLink = (creator: CreatorRecord) => !fetchesAutomatically(creator.platform, session.workspace);
   const [creators, allowance, items] = await Promise.all([
     getCreatorStore().creators.findForWorkspace(session.workspace.id),
     getCreatorAllowance(session.workspace.id),
@@ -54,10 +56,10 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
     statsByCreator.set(item.creatorId, stats);
   }
 
-  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || scanStatus(creator) === statusFilter));
+  const visible = creators.filter((creator) => matchesQuery(creator, query) && (!statusFilter || scanStatus(creator, byLink(creator)) === statusFilter));
   const countByStatus = new Map<CreatorStatus, number>();
   for (const creator of creators) {
-    const status = scanStatus(creator);
+    const status = scanStatus(creator, byLink(creator));
     if (status) countByStatus.set(status, (countByStatus.get(status) ?? 0) + 1);
   }
   const now = new Date();
@@ -193,14 +195,14 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
                           <td className="px-4 py-3 text-t2">{countryName(creator.country)}</td>
                           <td className="px-4 py-3 text-right text-t2 tabular-nums">{formatFollowers(creator.followerCount)}</td>
                           <td className="px-4 py-3">
-                            {creator.platform !== "TIKTOK" && creator.monitoringEnabled ? (
+                            {byLink(creator) && creator.monitoringEnabled ? (
                               <span className="text-[0.8125rem] text-t2">Posts by link</span>
                             ) : (
                               <CreatorStatusBadge status={creator.status} />
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-t2">
-                            {creator.platform !== "TIKTOK" ? "—" : creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not yet"}
+                            {byLink(creator) ? "—" : creator.lastSeenAt ? formatRelativeTime(creator.lastSeenAt, now) : "Not yet"}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums">
                             <span className="text-tx">{stats?.matches ?? 0}</span>
@@ -228,10 +230,10 @@ export default async function CreatorsPage({ searchParams }: PageProps<"/workspa
 }
 
 /** The status the filters count: none for a monitored creator on a platform
- *  scans don't reach (Instagram, posts by link), so they never read as
+ *  scans don't reach here (posts by link), so they never read as
  *  "Pending" forever. A paused one is paused on any platform. */
-function scanStatus(creator: CreatorRecord): CreatorStatus | null {
-  return creator.platform !== "TIKTOK" && creator.monitoringEnabled ? null : creator.status;
+function scanStatus(creator: CreatorRecord, byLink: boolean): CreatorStatus | null {
+  return byLink && creator.monitoringEnabled ? null : creator.status;
 }
 
 function matchesQuery(creator: CreatorRecord, query: string): boolean {
