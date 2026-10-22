@@ -440,9 +440,11 @@ SHORTLIST_SIZE = int(os.environ.get("RECOGNIZER_SHORTLIST_SIZE", "50"))
 # shortlist found for it, which is what makes 400 affordable.
 SHORTLIST_WIDE = int(os.environ.get("RECOGNIZER_SHORTLIST_WIDE", "400"))
 # How far from the shortlist's speed estimate (natural log of the speed
-# ratio) the precise check still tries: the estimate's own bin is 3 % wide
-# and can be one bin off, so about ±4.5 %.
-SPEED_WINDOW = 0.045
+# ratio) the precise check still tries. A bin is 3 % wide and under a
+# voice-over the estimate can be two bins off: ±7.5 % found more hard posts
+# than ±4.5 % (2,000 distinct songs 190 -> 192 of 200, real recordings
+# 146 -> 147 of 160, no false suggestions instead of 1) for ~5 % more time.
+SPEED_WINDOW = float(os.environ.get("RECOGNIZER_SPEED_WINDOW", "0.075"))
 # Which deeper passes look the post up on all three grids (`GRID_THIRDS`):
 # "dense" (default) or "both" (also the wide pass: a few more hard posts
 # found, about twice the shortlist time at 20,000 songs).

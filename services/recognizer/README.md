@@ -343,7 +343,7 @@ check put it on top. Two changes followed.
 
 **1. Speed-guided search.** The shortlist knows at which speed each candidate
 matched (the speed bin of its best vote cell). The precise check now tries
-only the transforms near that speed for that song (`SPEED_WINDOW`, ±4.5 %, on
+only the transforms near that speed for that song (`SPEED_WINDOW`, ±7.5 %, on
 the same transform grid as before, since being one grid step off the real
 speed halves the score) instead of all 76. That makes a deeper search
 affordable: the best 50 first; when no song stands out, the best 400
@@ -365,17 +365,17 @@ post up on the plain grid, `RECOGNIZER_SHORTLIST_GRIDS=dense`, the default):
 
 | Test | Right song on top | Missed | Time per post (median / p95) |
 |---|---|---|---|
-| 2,000 distinct songs, 200 posts | 177 → **190** | worst case 15 → 8, voice −12 dB 5 → 3 | 1.9 / 4.5 s → **1.2 / 9.0 s** |
+| 2,000 distinct songs, 200 posts | 177 → **192** | worst case 15 → 8, voice −12 dB 5 → 2 | 1.9 / 4.5 s → **1.2 / 9.7 s** |
 | 5,000 distinct songs (after only; measured before the key cap below, with `=both`) | 184 of 200 | worst case 9, voice −12 dB 3, 3 others | 2.3 / 16.4 s |
 | 20,000 songs, copy-based test (`scale_bench.py`), 160 posts | 104 → **125** | sped up 14 → 4, voice −12 dB 9 → 7 | 4.9 / 7.3 s → **12.2 / 20.2 s** |
-| 4 real recordings among 2,000 distinct, 160 posts | 135 → **146** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 12 | 1.1 → 0.8 s |
+| 4 real recordings among 2,000 distinct, 160 posts | 135 → **147** | voice −12 dB 6 → 2, slowed 3 → 0, worst case 15 → 11 | 1.1 → 0.9 s |
 | 30-song calibration (small catalogues), 360 posts | 332 → **337** | 45 → **36** | |
 
 By edit, 2,000 distinct songs, right song on top before → after: voice −6 dB
-19 → 20, voice −12 dB 15 → 17, sped up 18 → 20, tempo 1.2× 19 → 20, worst
-case 6 → 13; automatic matches (MATCH) 133 → 144, among them slowed 15 → 19
+19 → 20, voice −12 dB 15 → 18, sped up 18 → 20, tempo 1.2× 19 → 20, worst
+case 6 → 14; automatic matches (MATCH) 133 → 144, among them slowed 15 → 19
 and worst case 0 → 2. Real recordings: voice −6 dB 15 → 16, voice −12 dB 10 →
-14, slowed 13 → 16, worst case 1 → 4 of 16. At 20,000 songs: sped up 6 → 16,
+14, slowed 13 → 16, worst case 1 → 5 of 16. At 20,000 songs (before the wider speed window): sped up 6 → 16,
 slowed 12 → 15, voice −6 dB 15 → 18, voice −12 dB 11 → 15, worst case 0 → 1 of 20.
 Looking the wide pass up on all three grids too (`=both`) found 1-2 more
 worst-case posts and cost about 10 % more time at 20,000 songs.
@@ -388,14 +388,17 @@ made lookups 1.75x faster and found more hard posts, not fewer (in the
 shortlist's first 50: voice −12 dB 12 → 16 of 20; worst case within 400:
 14 → 17); half the cap lost posts. With it the numbers above (2,000 songs
 187 → 190 on top, false suggestions 3 → 1 of 48; 20,000 songs median 17.1 →
-12.2 s). The shortlist's counting itself is also compiled in one pass now
+12.2 s). The speed window was then widened from ±4.5 % to ±7.5 % (an
+estimate two bins off under a voice-over had missed a right song ranked
+first): 2,000 songs 190 → 192, real recordings 146 → 147, ~5 % more time.
+The shortlist's counting itself is also compiled in one pass now
 (votes counted per song instead of sorting millions of cells; identical
 scores), and an index of shortlisted songs is built from hash-sorted pairs
 (about 4x faster to sort, identical arrays).
 
 **No wrong MATCH in any run.** Suggestions for posts of songs outside the
 catalogue (a person dismisses them): 1 of 48 at 2,000 distinct songs either
-way, 1 → 0 of 10 for the real recordings, 13 → 14 of 75 in the calibration.
+way (0 with the wider speed window), 1 → 0 of 10 for the real recordings, 13 → 14 of 75 in the calibration.
 The thresholds stay as they are: the calibration's look-alike songs (same
 chords, same instruments) still need them.
 
