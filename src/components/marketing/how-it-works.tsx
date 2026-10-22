@@ -1,10 +1,11 @@
 import { Music2, ScanSearch, Users } from "lucide-react";
-import { CoverArt } from "@/components/music/cover-art";
 import { CreatorAvatar } from "@/components/creators/avatar";
-import { VideoPoster } from "@/components/feed/video-poster";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SearchIcon } from "@/components/ui/icons";
 import { Reveal, RevealItem } from "./reveal";
+import { PostMock } from "./post-mock";
+import { FEATURED, SHOWCASE_NOTE, SONGS, type ShowcaseSongKey } from "./showcase";
+import { Sleeve } from "./sleeve";
 
 const STEPS = [
   { icon: Music2, title: "Add your songs", text: "Search like in a music app, then record what each song's licences cover." },
@@ -17,7 +18,8 @@ const card = "rounded-2xl border border-line bg-surface/90 shadow-[0_12px_40px_r
 /**
  * "How it works", after Watermelon UI's feature-5: the three steps on the left,
  * and on the right the three moments they produce, as floating cards that
- * drift slightly (CSS only, off with reduced motion). Demo data, labelled.
+ * drift slightly (CSS only, off with reduced motion). Real songs (public
+ * domain) and made-up posts, labelled (`showcase.ts`).
  */
 export function HowItWorks() {
   return (
@@ -56,18 +58,20 @@ export function HowItWorks() {
             <div className={`${card} p-3 lg:absolute lg:top-0 lg:left-0 lg:w-[19rem] motion-safe:animate-[float_7s_ease-in-out_infinite]`}>
               <div className="flex items-center gap-2.5 rounded-full bg-surface-2 px-4 py-2.5 text-sm text-t2">
                 <SearchIcon className="h-4 w-4" />
-                Midnight
+                Debussy
               </div>
               <ul className="mt-2">
-                {[
-                  ["Midnight Run", "Aiko", "Added"],
-                  ["Midnight Signals", "Kova", "Add"],
-                ].map(([title, artist, state]) => (
-                  <li key={title} className="flex items-center gap-3 rounded-xl px-2 py-2">
-                    <CoverArt title={title} artist={artist} className="h-10 w-10 shrink-0 rounded-lg" />
+                {(
+                  [
+                    ["clairDeLune", "Added"],
+                    ["reverie", "Add"],
+                  ] as const satisfies readonly (readonly [ShowcaseSongKey, string])[]
+                ).map(([key, state]) => (
+                  <li key={key} className="flex items-center gap-3 rounded-xl px-2 py-2">
+                    <Sleeve song={key} className="h-10 w-10 shrink-0 rounded-lg" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{title}</span>
-                      <span className="block truncate text-[0.8125rem] text-t2">{artist}</span>
+                      <span className="block truncate text-sm font-medium">{SONGS[key].title}</span>
+                      <span className="block truncate text-[0.8125rem] text-t2">{SONGS[key].composer}</span>
                     </span>
                     <span className={`text-[0.8125rem] font-medium ${state === "Added" ? "text-t2" : "text-accent"}`}>{state}</span>
                   </li>
@@ -75,7 +79,7 @@ export function HowItWorks() {
               </ul>
             </div>
 
-            <div className={`${card} z-10 p-4 lg:absolute lg:top-[9.5rem] lg:right-0 lg:w-[17rem] motion-safe:animate-[float_8s_ease-in-out_1s_infinite]`}>
+            <div className={`${card} z-10 p-4 lg:absolute lg:top-[7rem] lg:right-0 lg:w-[17rem] motion-safe:animate-[float_8s_ease-in-out_1s_infinite]`}>
               <p className="text-xs text-t2">Watchlist</p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {["lena.creates", "maxstudio", "theurbanedit", "sophie.makes"].map((handle) => (
@@ -87,21 +91,23 @@ export function HowItWorks() {
               </ul>
             </div>
 
-            <div className={`${card} flex gap-3.5 p-3.5 lg:absolute lg:bottom-0 lg:left-8 lg:w-[22rem] motion-safe:animate-[float_9s_ease-in-out_2s_infinite]`}>
-              <VideoPoster song={{ title: "Golden Hour", artist: "Riva" }} className="w-16 shrink-0 self-start" />
+            <div className={`${card} z-20 flex gap-3.5 p-3.5 lg:absolute lg:bottom-0 lg:left-8 lg:w-[22rem] motion-safe:animate-[float_9s_ease-in-out_2s_infinite]`}>
+              <PostMock post={FEATURED} compact className="w-16 shrink-0 self-start" />
               <div className="min-w-0">
                 <p className="text-[0.875rem] font-semibold">
-                  @maxstudio <span className="font-normal text-t2">for Volt Coffee</span>
+                  @{FEATURED.handle} <span className="font-normal text-t2">for {FEATURED.brand}</span>
                 </p>
-                <p className="mt-0.5 text-[0.8125rem] text-t2">Golden Hour, Riva</p>
+                <p className="mt-0.5 text-[0.8125rem] text-t2">
+                  {SONGS[FEATURED.song].title}, {SONGS[FEATURED.song].short}
+                </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <StatusBadge status="POTENTIAL_MISMATCH" />
                 </div>
-                <p className="mt-1.5 text-[0.8125rem] leading-snug text-t2">The licence term doesn&apos;t cover the date of this post.</p>
+                <p className="mt-1.5 text-[0.8125rem] leading-snug text-t2">The licence for this recording ended before the post went up.</p>
               </div>
             </div>
           </div>
-          <p className="mt-4 text-[0.75rem] text-t2 lg:mt-0 lg:absolute lg:right-6 lg:bottom-4">Demo data</p>
+          <p className="mt-4 text-[0.75rem] text-t2 lg:mt-6">{SHOWCASE_NOTE}</p>
         </div>
       </div>
     </section>

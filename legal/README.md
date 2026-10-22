@@ -11,6 +11,7 @@ Nichts davon darf ungeprüft an Kunden gehen.
 | `datenschutzerklaerung.md` | Datenschutzerklärung (Art. 13 DSGVO) für Website, Konten und Abrechnung, in denen Bekvor Verantwortlicher ist | `/privacy` (englische Fassung auf der Seite, diese hier ist die Vorlage) |
 | `agb.md` | AGB für Unternehmer (B2B), inklusive Upload-Regeln (Art. 14 DSA), Meldeverfahren (Art. 16 DSA) und Anbieterwechsel (Data Act) | Bei Vertragsschluss (Checkout) einbinden; Seite `/terms` nach Freigabe |
 | `avv.md` | Auftragsverarbeitungsvertrag (Art. 28 DSGVO) mit Anlagen: Verarbeitungen, TOM, Unterauftragsverarbeiter | Teil der AGB (Anlage), abrufbar im Konto |
+| `freigabe-songs-website.md` | Wann echte Songs auf der Website gezeigt werden dürfen, und ein Anschreiben für die Freigabe | Vor jedem echten Song auf `bekvor.com` |
 
 Partnerbedingungen: bereits als Entwurf auf `/partner-terms` (Code).
 
