@@ -306,6 +306,14 @@ Added 2026-10-05 (details in `SECURITY.md`, `BACKUP_RESTORE.md`, `INCIDENT_RESPO
   shared rate limits, logins in the audit log and removing a member are done).
   Re-run the checks in its
   "After a change" section on the live address.
+- [ ] **Real songs on the website** (since 2026-10-22): the landing page's
+  examples name public-domain works (Debussy, Satie, Beethoven …; § 64 UrhG),
+  no recording, self-drawn covers, made-up creators and brands, labelled under
+  every example (`src/components/marketing/showcase.ts`). A current song or a
+  customer's catalogue only with written permission of the artist and the
+  rights holders for name, title and cover; request text in
+  `legal/freigabe-songs-website.md`. Lawyer: wording of the example label and
+  whether a verdict next to a real name needs more than that.
 
 ## UI kit
 

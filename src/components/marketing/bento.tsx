@@ -13,9 +13,9 @@ const cardClass =
   "group relative flex flex-col overflow-hidden rounded-2xl bg-surface p-5 lg:p-6 shadow-[inset_0_0_0_1px_var(--ln),0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(0,0,0,0.04)]";
 
 const CASES = [
-  { who: "@maxstudio", song: "Golden Hour", state: "Open", tone: "bg-review-bg text-review" },
-  { who: "@lena.creates", song: "Midnight Run", state: "Waiting", tone: "bg-unknown-bg text-unknown" },
-  { who: "@theurbanedit", song: "Northern Lights", state: "Resolved", tone: "bg-cleared-bg text-cleared" },
+  { who: "@maxstudio", song: "Gymnopédie No. 1", state: "Open", tone: "bg-review-bg text-review" },
+  { who: "@lena.creates", song: "Clair de Lune", state: "Waiting", tone: "bg-unknown-bg text-unknown" },
+  { who: "@theurbanedit", song: "Canon in D", state: "Resolved", tone: "bg-cleared-bg text-cleared" },
 ] as const;
 
 export function Bento() {
@@ -53,6 +53,7 @@ export function Bento() {
                 </motion.li>
               ))}
             </ul>
+            <p className="mt-2.5 text-xs text-t2">Example cases: made-up creators, real public-domain songs.</p>
             <div className="mt-auto pt-6">
               <h3 className="text-xl font-semibold tracking-[-0.01em]">Cases with everything attached</h3>
               <p className="mt-1.5 max-w-md text-[0.9375rem] text-t2">
