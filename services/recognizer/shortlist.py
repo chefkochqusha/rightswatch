@@ -189,6 +189,16 @@ class ShortlistIndex:
         total = int(cnt.sum())
         if total == 0:
             return none
+        if _votes_best_fast is not None:
+            # votes, cells and each song's best cell in one compiled pass,
+            # counted per song instead of sorting millions of cells
+            best, best_cell = _votes_best_fast(
+                start, cnt, tq.astype(np.int64), sq.astype(np.int64), self.P, self.S, self.T, total,
+                SPEED_MIN, SPEED_MAX, OFFSET_FRAMES, SPEED_BINS_PER_OCTAVE, SPEED_BIN_ZERO, self.n,
+            )
+            order = np.argsort(-best)[:top]
+            order = order[best[order] > 0]
+            return order, best[order], (best_cell[order] >> 16) % 64
         if _votes_fast is not None:
             # the same votes as below, without the repeated per-posting arrays
             song, speed, offset = _votes_fast(start, cnt, tq.astype(np.int64), sq.astype(np.int64), self.P, self.S, self.T, total, SPEED_MIN, SPEED_MAX, OFFSET_FRAMES)
@@ -239,6 +249,96 @@ def _votes_loop(start, cnt, tq, sq, P, S, T, total, speed_min, speed_max, offset
 
 
 _votes_fast = njit(cache=True, nogil=True)(_votes_loop) if njit else None
+
+
+def _votes_best_loop(start, cnt, tq, sq, P, S, T, total, speed_min, speed_max, offset_frames, bins_per_octave, bin_zero, n):
+    """`_votes_loop`, the speed bins, the cells and `_best_per_song` in one:
+    the votes are put in order by song (a counting sort, no sort of the
+    cells), each song's votes counted into a small speed x position table,
+    and its cells scored with half of the four neighbours, as before. Ties
+    keep the lowest cell, so best and best cell are identical to the numpy
+    path."""
+    vs = np.empty(total, np.int32)
+    vb = np.empty(total, np.int32)
+    vo = np.empty(total, np.int32)
+    m = 0
+    off_min = np.int64(1) << 40
+    off_max = -off_min
+    # spans are small whole numbers (frames): the speed bin of every
+    # (song span, post span) pair is looked up instead of a log per vote
+    lut = np.full((256, 256), -1, np.int32)
+    for a in range(1, 256):
+        for b in range(1, 256):
+            s = np.float64(a) / np.float64(b)
+            if s > speed_min and s < speed_max:
+                lut[a, b] = np.int64(np.rint(np.log2(s) * bins_per_octave)) + bin_zero
+    for h in range(len(start)):
+        span_q = np.float64(sq[h])
+        qspan = sq[h]
+        tqh = tq[h]
+        for p in range(start[h], start[h] + cnt[h]):
+            sbin = lut[P[p], qspan] if qspan < 256 else -1
+            if sbin >= 0:
+                s = np.float64(P[p]) / span_q
+                o = np.int64(np.floor((np.float64(T[p]) - tqh * s) / offset_frames))
+                vs[m] = S[p]
+                vb[m] = sbin
+                vo[m] = o
+                if o < off_min:
+                    off_min = o
+                if o > off_max:
+                    off_max = o
+                m += 1
+    best = np.zeros(n)
+    best_cell = np.zeros(n, np.int64)
+    if m == 0:
+        return best, best_cell
+    # counting sort by song
+    first = np.zeros(n + 1, np.int64)
+    for i in range(m):
+        first[vs[i] + 1] += 1
+    for i in range(n):
+        first[i + 1] += first[i]
+    fill = first.copy()
+    order = np.empty(m, np.int32)
+    for i in range(m):
+        order[fill[vs[i]]] = i
+        fill[vs[i]] += 1
+    span = off_max - off_min + 1
+    table = np.zeros((66, span + 2), np.int32)  # speed bins 0..63 (+1 each side), positions (+1 each side)
+    step = np.int64(1) << 16
+    for song in range(n):
+        a, b = first[song], first[song + 1]
+        if a == b:
+            continue
+        for j in range(a, b):
+            i = order[j]
+            table[vb[i] + 1, vo[i] - off_min + 1] += 1
+        top = 0.0
+        top_cell = np.int64(0)
+        for j in range(a, b):
+            i = order[j]
+            r, c = vb[i] + 1, vo[i] - off_min + 1
+            v = table[r, c]
+            if v == 0:
+                continue  # this cell was scored already (marked below)
+            score = np.float64(v)
+            score += 0.5 * abs(table[r, c + 1]) + 0.5 * abs(table[r, c - 1])
+            score += 0.5 * abs(table[r + 1, c]) + 0.5 * abs(table[r - 1, c])
+            cell = (np.int64(song) * 64 + vb[i]) * step + (np.int64(vo[i]) + (1 << 15))
+            if score > top or (score == top and cell < top_cell):
+                top = score
+                top_cell = cell
+            table[r, c] = -v  # scored; neighbours still read its count through abs()
+        for j in range(a, b):
+            i = order[j]
+            table[vb[i] + 1, vo[i] - off_min + 1] = 0
+        best[song] = top
+        best_cell[song] = top_cell
+    return best, best_cell
+
+
+_votes_best_fast = njit(cache=True, nogil=True)(_votes_best_loop) if njit else None
 
 
 def _best_per_song(uk: np.ndarray, c: np.ndarray, n: int) -> tuple[np.ndarray, np.ndarray]:

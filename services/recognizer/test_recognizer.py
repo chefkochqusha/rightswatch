@@ -297,13 +297,13 @@ class CompiledPathsTest(unittest.TestCase):
         pk = fp.peaks(post)
         h, tq = fp.pair_hashes(pk)
         fast = index.subset(index.candidates(pk, 8)).score(h, tq)
-        saved = fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast
+        saved = fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast
         try:
-            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast = None, None, None
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast = None, None, None, None
             plain = index.subset(index.candidates(pk, 8)).score(h, tq)
             plain_match = fp.match(index, post)
         finally:
-            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast = saved
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast = saved
         np.testing.assert_array_equal(fast[0], plain[0])
         np.testing.assert_array_equal(fast[1], plain[1])
         self.assertEqual(json.dumps(fp.match(index, post), sort_keys=True), json.dumps(plain_match, sort_keys=True))
@@ -317,6 +317,31 @@ class CompiledPathsTest(unittest.TestCase):
             plain_best, plain_cell = sl._best_per_song(uk, c, n)
             np.testing.assert_array_equal(fast_best, plain_best)
             np.testing.assert_array_equal(fast_cell, plain_cell)
+
+
+class OnePassVotesTest(unittest.TestCase):
+    def test_counting_per_song_equals_sorting_the_cells(self):
+        """The compiled one-pass vote count gives every song the same best
+        score and best cell as sorting all the cells (numpy path)."""
+        import shortlist as sl
+
+        if sl._votes_best_fast is None:
+            self.skipTest("numba not installed")
+        songs = [fp.fingerprint(to_fs(make_song(i, seconds=40))).peaks for i in range(1, 13)]
+        shard = sl.ShortlistIndex(songs)
+        for seed, speed in ((3, 1.0), (5, 1.25), (8, 0.85)):
+            post = to_fs(resample_poly(make_song(seed, seconds=40)[SR * 5: SR * 35], 100, int(100 * speed)))
+            for per_sec in (fp.PEAKS_PER_SEC, fp.PEAKS_PER_SEC * 2):
+                query = sl.query_keys(fp.peaks(post, per_sec=per_sec))
+                fast = shard.scores_with_speed(query, 12)
+                saved = sl._votes_best_fast
+                try:
+                    sl._votes_best_fast = None
+                    plain = shard.scores_with_speed(query, 12)
+                finally:
+                    sl._votes_best_fast = saved
+                for a, b in zip(fast, plain):
+                    np.testing.assert_array_equal(a, b)
 
 
 class ServerTest(unittest.TestCase):
