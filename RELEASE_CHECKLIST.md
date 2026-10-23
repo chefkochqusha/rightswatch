@@ -68,6 +68,15 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   DPMAregister, EUIPO TMview and WIPO Global Brand Database in the music and
   software classes (9, 35, 41, 42), plus the domain and app names; a trademark
   lawyer for the final answer.
+  Web pre-check 2026-10-23 (not a register search; TMview could not be opened
+  from here): exact "Bekvor" only turned up a Facebook page "bekv0r" (content not
+  readable) and a South African security firm "Bekvors Security and Protection
+  Services CC" (other trade, other country). Close spellings found: "BEKRVIO",
+  Canada TMA1331365, furniture (class 20, no overlap); a DPMA mark of Brauerei
+  Beck & Co. (classes 25, 32, 43, cancelled 2020). No software, music or
+  rights-management mark seen. Remaining risk: the registers themselves, so
+  still do the TMview/DPMA search (free, about 30 minutes) before paying for
+  ads, then decide on filing (DPMA class 9 + 42 first).
 - [ ] **Terms (AGB) with a lawyer**: liability limits that German law allows
   (intent and gross negligence cannot be excluded), a place of jurisdiction, and
   a **data processing agreement (AVV)** to sign with each customer, because
@@ -143,7 +152,10 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   `RECOGNITION_AUTO_IDENTIFY`.
 - [ ] **Patent check** (patent attorney): landmark-pair audio matching
   (US6990453, US7627477 and European equivalents) before paying customers rely
-  on own recognition.
+  on own recognition. **First look 2026-10-23 (`PATENTS.md`):** those
+  families appear expired (US 2024/2025, EP by 2021/2023 at the latest);
+  what's left to check is newer ideas (keys from three peaks, the speed-guided
+  search, the melody check) in a freedom-to-operate search for DE/EU.
 - [ ] **DSA duties for uploads** (lawyer): reporting address or form for illegal
   content (Art. 16) and contact point (Art. 11/12) on the imprint; upload rules
   in the terms (Art. 14). See `LEGAL_DE.md`.
