@@ -143,7 +143,10 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   `RECOGNITION_AUTO_IDENTIFY`.
 - [ ] **Patent check** (patent attorney): landmark-pair audio matching
   (US6990453, US7627477 and European equivalents) before paying customers rely
-  on own recognition.
+  on own recognition. **First look 2026-10-23 (`PATENTS.md`):** those
+  families appear expired (US 2024/2025, EP by 2021/2023 at the latest);
+  what's left to check is newer ideas (keys from three peaks, the speed-guided
+  search, the melody check) in a freedom-to-operate search for DE/EU.
 - [ ] **DSA duties for uploads** (lawyer): reporting address or form for illegal
   content (Art. 16) and contact point (Art. 11/12) on the imprint; upload rules
   in the terms (Art. 14). See `LEGAL_DE.md`.
