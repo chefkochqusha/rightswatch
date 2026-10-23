@@ -7,5 +7,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: origin, changeFrequency: "monthly", priority: 1 },
     { url: `${origin}/imprint`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${origin}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${origin}/for-creators`, changeFrequency: "yearly", priority: 0.2 },
   ];
 }

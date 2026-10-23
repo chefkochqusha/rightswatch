@@ -63,6 +63,7 @@ export function SiteFooter() {
               <ul className="mt-4 space-y-2.5">
                 <li><Link href="/imprint" className={linkClass}>Imprint</Link></li>
                 <li><Link href="/privacy" className={linkClass}>Privacy</Link></li>
+                <li><Link href="/for-creators" className={linkClass}>For creators</Link></li>
               </ul>
             </motion.div>
           </nav>
