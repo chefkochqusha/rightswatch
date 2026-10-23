@@ -166,9 +166,12 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   copies of each of 60 songs, which made edited posts look much worse than a
   real catalogue would. With 2,000 distinct songs the right song is now on top
   in 192 of 200 edited posts (was 177); four real recordings among them: 147
-  of 160 posts (was 135); 10,000 distinct songs: 186 of 200; no false
-  automatic match in any run (at 10,000, 3 of 48 unrelated posts became a
-  suggestion a person has to dismiss).
+  of 160 posts (was 135); 10,000 distinct songs: 186 of 200; 20,000
+  distinct songs (2026-10-23): still 186 of 200, so twice the catalogue did
+  not cost hits; no false automatic match in any run (at 10,000, 3 of 48
+  unrelated posts became a suggestion a person has to dismiss, at 20,000 1 of
+  48). Cost at 20,000: index 2.1 GB, peak 3.7 GB RAM, median 2.7 s, p95 18 s
+  per post on one core.
   Still weak: sped up + voice-over + phone + AAC together (found as a
   suggestion in about half, missed in the rest) and music 12 dB under a voice
   (found, but mostly a suggestion for a person). Hard posts take longer: p95
