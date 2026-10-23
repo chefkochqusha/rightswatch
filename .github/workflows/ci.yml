@@ -38,11 +38,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - name: ffmpeg (apt with timeouts and retries; a slow mirror used to eat the job's time)
-        timeout-minutes: 10
+      # ffmpeg as a static build from PyPI: the Ubuntu mirrors held apt for 10+ minutes in
+      # several runs. apt (still used by Playwright's --with-deps) gets timeouts and retries.
+      - name: ffmpeg
+        timeout-minutes: 5
         run: |
           printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99ci-timeouts
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+          pip install imageio-ffmpeg==0.6.0
+          sudo ln -sf "$(python -c 'import imageio_ffmpeg as f; print(f.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg
+          ffmpeg -hide_banner -version | head -1
       - run: pip install -r services/recognizer/requirements.txt
       - run: python -m unittest discover -s services/recognizer -p "test_*.py"
 
@@ -72,11 +76,15 @@ jobs:
         with: { node-version: 22, cache: npm }
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - name: ffmpeg (apt with timeouts and retries; a slow mirror used to eat the job's time)
-        timeout-minutes: 10
+      # ffmpeg as a static build from PyPI: the Ubuntu mirrors held apt for 10+ minutes in
+      # several runs. apt (still used by Playwright's --with-deps) gets timeouts and retries.
+      - name: ffmpeg
+        timeout-minutes: 5
         run: |
           printf 'Acquire::Retries "5";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n' | sudo tee /etc/apt/apt.conf.d/99ci-timeouts
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+          pip install imageio-ffmpeg==0.6.0
+          sudo ln -sf "$(python -c 'import imageio_ffmpeg as f; print(f.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg
+          ffmpeg -hide_banner -version | head -1
       - run: pip install -r services/recognizer/requirements.txt
       - run: npm ci
       - name: Schema, plans and production build
