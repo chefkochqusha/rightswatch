@@ -77,6 +77,17 @@ writing its outcome.
 
 ## Open items
 
+**Update 2026-10-23 (security release):** Next.js 16.3.8 was affected by
+three advisories of 2026-10-14: remote code execution in image processing
+(GHSA-2464-fhr4-w9xw, CVE-2026-96889, critical), remote code execution in
+`use cache` functions returning typed arrays (GHSA-673q-mjm6-r5xr, critical)
+and a denial of service through Server Actions (GHSA-p3m5-59mp-jv5r, high; the
+app has many Server Actions). **Updated to Next.js 16.4.2** (patched from 16.4.1;
+16.4.2 has been public since 15.10.2026), React and React DOM to the patched
+19.2.9, and **Prisma, `@prisma/client` and `@prisma/adapter-pg` to 7.10.1**,
+which fixes the four advisories in item 1. Security updates aren't held back by
+the waiting rule above. `npm audit`: 0 vulnerabilities.
+
 1. **Advisories, checked 2026-10-10.** Next.js 16.3.6 had six advisories
    (cache poisoning of SSG/ISR pages when self-hosted, SSRF in image
    optimisation, metadata-image disclosure, draft-mode leak, dev-server MCP
