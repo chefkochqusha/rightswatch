@@ -27,7 +27,6 @@ European rights count first; US rights matter for US customers or a US server.
 | Predixis / Gracenote: US 7,013,301 "Audio fingerprinting system and method" | SVD-based fingerprints for recommendations (different method) | 23.09.2003 | Expired 23.01.2024 |
 
 So the classic landmark method and the 2002 invariance patent look free now.
-That is why open-source tools such as audfprint and Dejavu can use it.
 
 ## Still to check (newer ideas, possibly still protected)
 
