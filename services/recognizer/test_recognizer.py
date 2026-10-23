@@ -145,9 +145,9 @@ class LargeCatalogueTest(unittest.TestCase):
         tracks.append(("legacy", fp.Fingerprint(old.hashes, old.times, old.duration_sec, old.melody)))
         cls.index = fp.Index(tracks, shortlist_from=2)
 
-    def test_the_second_pass_rescores_the_shortlisted_songs(self):
-        """In a large catalogue the dense pass re-scores the songs the first
-        pass narrowed the post to (no new search), and leaks nothing internal."""
+    def test_a_hard_post_is_found_by_the_wider_passes(self):
+        """A post the first 50 don't settle goes on to the wider and the dense
+        pass, and the result leaks nothing internal."""
         import real_test
 
         clip = to_fs(SONGS["t2"][SR * 20: SR * 45])
@@ -173,6 +173,50 @@ class LargeCatalogueTest(unittest.TestCase):
         top = fp.match(self.index, to_fs(sped))["candidates"][0]
         self.assertEqual(top["trackId"], "t2")
         self.assertAlmostEqual(top["speed"], 1.25, delta=0.03)
+
+    def test_the_shortlist_knows_the_speed(self):
+        from shortlist import speed_of_bin
+
+        sped = resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5)  # played 1.25x as fast
+        found = dict(self.index.candidates_with_speed(fp.peaks(to_fs(sped)), 5))
+        t2 = self.index.ids.index("t2")
+        self.assertAlmostEqual(speed_of_bin(found[t2]), 1.25, delta=0.04)
+        self.assertIsNone(found[self.index.ids.index("legacy")], "no peaks, no speed: every transform")
+
+    def test_transforms_near_a_speed(self):
+        from shortlist import SPEED_BIN_ZERO
+
+        fast = fp._transforms_near(SPEED_BIN_ZERO + 8)  # bin of speed 1.26
+        self.assertTrue(fast and all(abs(np.log(s / 1.26)) <= fp.SPEED_WINDOW for s, _ in fast))
+        self.assertTrue(any(abs(s - 1.25) < 0.005 for s, _ in fast), "the grid point at the real speed")
+        self.assertFalse(any(s == 1.0 for s, _ in fast))
+        normal = fp._transforms_near(SPEED_BIN_ZERO)
+        self.assertEqual({k for s, k in normal if s == 1.0}, set(range(-8, 9)), "pitch-only changes live at speed 1")
+        self.assertEqual(fp._transforms_near(None), fp.TRANSFORMS)
+
+    def test_guided_scores_equal_a_full_search_for_the_right_song(self):
+        """The transforms near the shortlist's speed hold the best one: the
+        right song scores the same as when every transform is tried."""
+        for post in (to_fs(SONGS["t2"][SR * 20: SR * 45]), to_fs(resample_poly(SONGS["t2"][SR * 20: SR * 50], 4, 5))):
+            grids = fp.post_peaks(fp._tonal_spectrum(post))
+            t2 = self.index.ids.index("t2")
+            guided = {self.index.ids[p]: None for p, _ in self.index.candidates_with_speed(grids[0], 5)}
+            parts = fp._guided_parts(self.index, grids, 5, 1, {})
+            score = {tid: w for part, whole, _ in parts for tid, w in zip(part.ids, whole)}
+            full = fp._query_peaks(self.index.subset([t2]), grids, fp.TRANSFORMS)[0][0]
+            self.assertIn("t2", guided)
+            self.assertAlmostEqual(score["t2"], full, places=6)
+
+    def test_a_sped_up_post_is_read_on_the_grid_nearest_its_pitch(self):
+        """1.25x moves the pitch 7.73 log bins: the two-thirds grid, 7 bins over."""
+        grids = {0: np.zeros((1, 2)), 1: np.ones((1, 2)), 2: np.full((1, 2), 2.0)}
+        pk, k, shown = fp._aligned(grids, 1.25, 8)
+        self.assertIs(pk, grids[2])
+        self.assertEqual((k, shown), (7, 8), "7 bins on that grid, shown as the nearest whole shift")
+        self.assertIs(fp._aligned(grids, 1.25, 0)[0], grids[0], "tempo only: the plain grid")
+        self.assertEqual(fp._aligned(grids, 1.0, -6), (grids[0], -6, -6), "pitch only, whole bins")
+        self.assertEqual(fp._aligned(grids, 0.85, -6)[1], -6, "0.85x: -5.63 bins = 6 bins down on the one-third grid")
+        self.assertIs(fp._aligned(grids, 0.85, -6)[0], grids[1])
 
     def test_finds_a_legacy_song(self):
         top = fp.match(self.index, to_fs(make_song(9)[SR * 20: SR * 45]))["candidates"][0]
@@ -223,6 +267,81 @@ class LargeCatalogueTest(unittest.TestCase):
         sharded = ShardedShortlist.build(songs, shard_size=1).shortlist(post, 3)
         self.assertEqual(int(one[0]), int(sharded[0]))
         self.assertEqual(list(SONGS)[int(sharded[0])], "t2")
+
+
+class CompiledPathsTest(unittest.TestCase):
+    """With numba installed, the hot loops run compiled. They must give exactly
+    the numpy results, not just close ones: the app's thresholds were set on them."""
+
+    def setUp(self):
+        if fp._pair_hashes_fast is None:
+            self.skipTest("numba not installed")
+
+    def test_pair_hashes_are_identical(self):
+        rng = np.random.default_rng(11)
+        for _ in range(60):
+            n = int(rng.integers(0, 2500))
+            pk = np.c_[np.sort(rng.uniform(0, 2500, n)) * rng.uniform(0.75, 1.35), rng.uniform(-20, 280, n)]
+            for fanout, lookahead in ((fp.FANOUT, fp.LOOKAHEAD), (fp.FANOUT * 2, fp.LOOKAHEAD * 2)):
+                fast, plain = fp.pair_hashes(pk, fanout, lookahead), fp._pair_hashes_numpy(pk, fanout, lookahead)
+                np.testing.assert_array_equal(fast[0], plain[0])
+                np.testing.assert_array_equal(fast[1], plain[1])
+                self.assertEqual(fast[0].dtype, plain[0].dtype)
+
+    def test_scores_and_shortlist_are_identical(self):
+        import shortlist as sl
+
+        songs = [(f"s{i}", fp.fingerprint(to_fs(make_song(i, seconds=30)))) for i in range(1, 9)]
+        index = fp.Index(songs, shortlist_from=4)
+        post = to_fs(make_song(3, seconds=30)[SR * 5: SR * 20])
+        pk = fp.peaks(post)
+        h, tq = fp.pair_hashes(pk)
+        fast = index.subset(index.candidates(pk, 8)).score(h, tq)
+        saved = fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast
+        try:
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast = None, None, None, None
+            plain = index.subset(index.candidates(pk, 8)).score(h, tq)
+            plain_match = fp.match(index, post)
+        finally:
+            fp._dense_votes_fast, sl._best_per_song_fast, sl._votes_fast, sl._votes_best_fast = saved
+        np.testing.assert_array_equal(fast[0], plain[0])
+        np.testing.assert_array_equal(fast[1], plain[1])
+        self.assertEqual(json.dumps(fp.match(index, post), sort_keys=True), json.dumps(plain_match, sort_keys=True))
+
+        rng = np.random.default_rng(5)
+        for _ in range(50):
+            n, m = int(rng.integers(1, 40)), int(rng.integers(0, 4000))
+            cell = (rng.integers(0, n, m) * 64 + rng.integers(0, 40, m)) * (1 << 16) + (rng.integers(-300, 300, m) + (1 << 15))
+            uk, c = np.unique(cell, return_counts=True)
+            fast_best, fast_cell = sl._best_per_song_fast(uk, c, n)
+            plain_best, plain_cell = sl._best_per_song(uk, c, n)
+            np.testing.assert_array_equal(fast_best, plain_best)
+            np.testing.assert_array_equal(fast_cell, plain_cell)
+
+
+class OnePassVotesTest(unittest.TestCase):
+    def test_counting_per_song_equals_sorting_the_cells(self):
+        """The compiled one-pass vote count gives every song the same best
+        score and best cell as sorting all the cells (numpy path)."""
+        import shortlist as sl
+
+        if sl._votes_best_fast is None:
+            self.skipTest("numba not installed")
+        songs = [fp.fingerprint(to_fs(make_song(i, seconds=40))).peaks for i in range(1, 13)]
+        shard = sl.ShortlistIndex(songs)
+        for seed, speed in ((3, 1.0), (5, 1.25), (8, 0.85)):
+            post = to_fs(resample_poly(make_song(seed, seconds=40)[SR * 5: SR * 35], 100, int(100 * speed)))
+            for per_sec in (fp.PEAKS_PER_SEC, fp.PEAKS_PER_SEC * 2):
+                query = sl.query_keys(fp.peaks(post, per_sec=per_sec))
+                fast = shard.scores_with_speed(query, 12)
+                saved = sl._votes_best_fast
+                try:
+                    sl._votes_best_fast = None
+                    plain = shard.scores_with_speed(query, 12)
+                finally:
+                    sl._votes_best_fast = saved
+                for a, b in zip(fast, plain):
+                    np.testing.assert_array_equal(a, b)
 
 
 class ServerTest(unittest.TestCase):

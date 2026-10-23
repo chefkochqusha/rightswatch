@@ -27,8 +27,11 @@ environment. Expect one small fix on the first `docker compose up`.
    provider's DPA (AVV). Song recognition sizing (`services/recognizer/README.md`):
    about 100 KB of memory per song with reference audio, so a few hundred songs
    fit anywhere; a 20,000-song catalogue (Agency) needs ~2 GB for the index and
-   up to 3.4 GB while it is built, and about 20 s of one core per hard post
-   (roughly 4,000 posts a day per core). The recognition container may use
+   up to 3.4 GB while it is built. Time per post at that size: clear posts
+   a few seconds, hard ones (voice-over, sped up, several edits) 12-20 s of
+   one core with the deeper search of 2026-10-20/22 (plan about 7,000 hard posts
+   a day per core; `RECOGNIZER_DENSE_PASS=0` and `RECOGNIZER_SHORTLIST_WIDE=200`
+   trade the hardest posts for about 5 s each). The recognition container may use
    `RECOGNIZER_MEMORY` (default 4g); raise it, and the server, for very large
    catalogues.
 2. **The domain** (once the name is settled), with an A record pointing at

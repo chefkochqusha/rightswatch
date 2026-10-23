@@ -156,24 +156,30 @@ Added 2026-10-05 from the security and compliance pass (`SECURITY.md`,
   TikTok.
 - [ ] **Server size** (measured 2026-10-11, `services/recognizer/README.md`,
   "Large catalogues"): about 100 KB of memory per catalogue song and 2–10 s of
-  CPU per post (2,000–20,000 songs). Set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY`
+  CPU per post (2,000–20,000 songs; 3–5 s since 2026-10-18). Set `RECOGNIZER_CPUS`/`RECOGNIZER_MEMORY`
   to the plans sold: 2 GB covers Starter/Growth workspaces, one Agency
   workspace with 20,000 songs needs about 4 GB (8 GB server minimum, 16 GB to
   be comfortable).
-- [ ] **Edited posts in large catalogues** (the core risk): sped-up, slowed and
-  voice-over posts are found well in small catalogues but get lost at
-  2,000–20,000 songs in the synthetic test (right song on top 20–60 %). Never a
-  false automatic match. A denser second pass for posts where no song stands
-  out (2026-10-12) cut misses from 65 to 45 of 360 in the 30-song calibration;
-  among 2,000 songs with real recordings it found 16 of 16 voice-overs at
-  −12 dB and 12 of 16 worst-case edits (was 15 and 11), no false match, median
-  2.5 s per post. At 20,000 songs (synthetic): 7 more hard posts found, no
-  false match, median 22 s per post (19.8 s without the pass; the search
-  itself is the slow part). One core: roughly 4,000 posts a day; size the
-  Agency server with that. Measure with real music first (round 2); if it holds,
-  build the second, learned stage (an own neural fingerprint, trained on a
-  rented GPU with music Bekvor may use for training; licences of any
-  pretrained model checked for commercial use).
+- [ ] **Edited posts in large catalogues** (the core risk). Since 2026-10-20
+  (`services/recognizer/README.md`, "Distinct songs, speed-guided search,
+  aligned grids"): the old 20,000-song test filled the catalogue with ~330
+  copies of each of 60 songs, which made edited posts look much worse than a
+  real catalogue would. With 2,000 distinct songs the right song is now on top
+  in 192 of 200 edited posts (was 177); four real recordings among them: 147
+  of 160 posts (was 135); 10,000 distinct songs: 186 of 200; 20,000
+  distinct songs (2026-10-23): still 186 of 200, so twice the catalogue did
+  not cost hits; no false automatic match in any run (at 10,000, 3 of 48
+  unrelated posts became a suggestion a person has to dismiss, at 20,000 1 of
+  48). Cost at 20,000: index 2.1 GB, peak 3.7 GB RAM, median 2.7 s, p95 18 s
+  per post on one core.
+  Still weak: sped up + voice-over + phone + AAC together (found as a
+  suggestion in about half, missed in the rest) and music 12 dB under a voice
+  (found, but mostly a suggestion for a person). Hard posts take longer: p95
+  about 9 s at 2,000 songs, 12-20 s at 20,000 (about 7,000 hard posts a day
+  per core; size the Agency server with that, `SELF_HOSTING.md`). Measure with real music first (round 2); if the
+  combined edits matter in practice, build the second, learned stage (an own
+  neural fingerprint, trained on a rented GPU with music Bekvor may use for
+  training; licences of any pretrained model checked for commercial use).
 - [x] **Index rebuild time** — done 2026-10-11: a catalogue change rebuilds only
   the changed song's shard (10,000 songs: 6 s instead of 2.5 min). After a
   restart of the recognition service the first build is still the full one.
